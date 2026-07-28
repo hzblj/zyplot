@@ -52,7 +52,7 @@
 		"swift-charts",
 		"uplot"
 	],
-	"homepage": "https://zyplot.janblazej.dev/docs",
+	"homepage": "https://zyplot.janblazej.dev",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/hzblj/zyplot.git",
