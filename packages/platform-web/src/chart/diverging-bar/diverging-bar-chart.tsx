@@ -51,7 +51,7 @@ export type DivergingBarChartProps = ChartBaseProps & {
 };
 
 export const DivergingBarChart: FC<DivergingBarChartProps> = ({
-	axes,
+	axis,
 	className,
 	data,
 	format,
@@ -89,7 +89,7 @@ export const DivergingBarChart: FC<DivergingBarChartProps> = ({
 
 		return {
 			...buildChartBaseOption(tokens, texture),
-			...buildCartesianAxes(tokens, categories, format, isHorizontal, axes),
+			...buildCartesianAxes(tokens, categories, format, isHorizontal, axis),
 			grid: buildChartGrid(!isHorizontal),
 			series: [
 				{
@@ -125,7 +125,7 @@ export const DivergingBarChart: FC<DivergingBarChartProps> = ({
 				trigger: "axis",
 			},
 		};
-	}, [axes, data, format, orientation, texture, tokens]);
+	}, [axis, data, format, orientation, texture, tokens]);
 
 	return (
 		<ChartShell
@@ -137,8 +137,8 @@ export const DivergingBarChart: FC<DivergingBarChartProps> = ({
 				<DivergingBarChartSkeleton
 					height={height}
 					legendCount={0}
-					xAxis={axes?.x !== false}
-					yAxis={axes?.y !== false}
+					xAxis={axis?.x !== false}
+					yAxis={axis?.y !== false}
 				/>
 			}
 		/>

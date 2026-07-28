@@ -1,10 +1,15 @@
 "use client";
 
 import { Chart } from "@hzblj/zyplot";
+import Link from "next/link";
+import type { ReactNode } from "react";
 import { docsStyles } from "../docs-styles";
 import { ThemeToggle } from "../theme-toggle";
+import { cn } from "../utils";
 import { ChartSection } from "./components/chart-section";
+import { CodeBlock } from "./components/code-block";
 import { Example } from "./components/example";
+import { PackageInstall } from "./components/package-install";
 import { PropsTable } from "./components/props-table";
 import type { ChartDoc, PropRow } from "./types";
 
@@ -29,7 +34,7 @@ const baseProps: PropRow[] = [
 		defaultValue: "{ x: true, y: true }",
 		description:
 			"Controls horizontal and vertical axis visibility on cartesian charts.",
-		name: "axes",
+		name: "axis",
 		type: "ChartAxes",
 	},
 	{
@@ -969,113 +974,179 @@ const chartDocs: ChartDoc[] = [
 	},
 ];
 
-export const DocsPage = () => (
-	<div className={styles.site()}>
-		<header className={styles.mobileHeader()}>
-			<a className={styles.wordmark()} href="/">
-				zyplot
-			</a>
-			<a href="#getting-started">Docs</a>
-			<ThemeToggle />
-		</header>
+const guidePages = [
+	"introduction",
+	"installation",
+	"first-chart",
+	"web-package",
+	"theming",
+	"dark-mode",
+	"data-types",
+	"loading-states",
+	"composition",
+	...chartDocs.map((chart) => chart.id),
+];
 
-		<aside className={styles.sidebar()}>
-			<div className={styles.sidebarTop()}>
-				<a className={styles.wordmark()} href="/">
+const guidePageHeadings: Record<string, { id: string; label: string }[]> = {
+	"dark-mode": [{ id: "dark-mode", label: "Light and dark mode" }],
+	"data-types": [{ id: "data-types", label: "Data types" }],
+	"first-chart": [{ id: "first-chart", label: "Your first chart" }],
+	installation: [{ id: "installation", label: "Installation" }],
+	introduction: [{ id: "getting-started", label: "Getting started" }],
+	"loading-states": [
+		{ id: "loading-states", label: "Loading states" },
+		{ id: "skeleton-props", label: "Skeleton props" },
+		{ id: "custom-skeleton", label: "Custom skeleton" },
+	],
+	composition: [
+		{ id: "composition", label: "Frame and legend" },
+		{ id: "frame-props", label: "Frame props" },
+		{ id: "legend-props", label: "Legend props" },
+	],
+	theming: [
+		{ id: "theming", label: "Theming" },
+		{ id: "provider-props", label: "Provider props" },
+	],
+	"web-package": [{ id: "web-package", label: "Web overview" }],
+};
+
+export const DocsLayout = ({ children }: { children: ReactNode }) => {
+	return (
+		<div className={styles.site()}>
+			<header className={styles.mobileHeader()}>
+				<Link className={styles.wordmark()} href="/">
 					zyplot
-				</a>
-				<span>Docs</span>
-			</div>
-			<nav aria-label="Documentation" className="grid">
-				<div className={styles.navGroup()}>
-					<p className={styles.navGroupLabel()}>Getting started</p>
-					<a className={styles.navLink()} href="#getting-started">
-						Introduction
-					</a>
-					<a className={styles.navLink()} href="#installation">
-						Installation
-					</a>
-					<a className={styles.navLink()} href="#first-chart">
-						Your first chart
-					</a>
-				</div>
-				<div className={styles.navGroup()}>
-					<p className={styles.navGroupLabel()}>Web</p>
-					<a className={styles.navLink()} href="#web-package">
-						Overview
-					</a>
-					<a className={styles.navLink()} href="#theming">
-						Theming
-					</a>
-					<a className={styles.navLink()} href="#dark-mode">
-						Light and dark mode
-					</a>
-					<a className={styles.navLink()} href="#data-types">
-						Data types
-					</a>
-					<a className={styles.navLink()} href="#loading-states">
-						Loading states
-					</a>
-					<a className={styles.navLink()} href="#composition">
-						Frame and legend
-					</a>
-				</div>
-				<div className={styles.navGroup()}>
-					<p className={styles.navGroupLabel()}>Charts</p>
-					{chartDocs.map((chart) => (
-						<a
-							className={styles.navLink()}
-							href={`#${chart.id}`}
-							key={chart.id}
-						>
-							{chart.name}
-						</a>
-					))}
-				</div>
-			</nav>
-			<div className={styles.sidebarFooter()}>
-				<a href="https://github.com/hzblj/zyplot">GitHub</a>
+				</Link>
+				<Link href="/docs">Docs</Link>
+			</header>
+			<div className={styles.themeCorner()}>
 				<ThemeToggle />
 			</div>
-		</aside>
 
-		<main className={styles.content()}>
-			<section className={styles.hero()} id="getting-started">
-				<p className={styles.kicker()}>Getting started</p>
-				<h1>
-					Beautiful charts,
-					<br />
-					one import away.
-				</h1>
-				<p>
-					Zyplot gives React applications a focused chart API, strong defaults,
-					accessible loading states and native light/dark theming.
-				</p>
-			</section>
-
-			<section className={styles.section()} id="installation">
-				<h2>Installation</h2>
-				<p>
-					Install the web package with the package manager your project uses.
-				</p>
-				<pre>
-					<code>npm install @hzblj/zyplot-platform-web</code>
-				</pre>
-				<div className={styles.note()}>
-					<strong>No stylesheet import.</strong> Zyplot includes its compiled
-					styles through the JavaScript entry point. Your application does not
-					need Tailwind CSS.
+			<aside className={styles.sidebar()}>
+				<div className={styles.sidebarTop()}>
+					<Link className={styles.wordmark()} href="/">
+						zyplot
+					</Link>
+					<span>Docs</span>
 				</div>
-			</section>
+				<nav aria-label="Documentation" className="grid">
+					<div className={styles.navGroup()}>
+						<p className={styles.navGroupLabel()}>Getting started</p>
+						<Link className={styles.navLink()} href="/docs">
+							Introduction
+						</Link>
+						<Link className={styles.navLink()} href="/docs/installation">
+							Installation
+						</Link>
+						<Link className={styles.navLink()} href="/docs/first-chart">
+							Your first chart
+						</Link>
+					</div>
+					<div className={styles.navGroup()}>
+						<p className={styles.navGroupLabel()}>Web</p>
+						<Link className={styles.navLink()} href="/docs/web">
+							Overview
+						</Link>
+						<Link className={styles.navLink()} href="/docs/theming">
+							Theming
+						</Link>
+						<Link className={styles.navLink()} href="/docs/dark-mode">
+							Light and dark mode
+						</Link>
+						<Link className={styles.navLink()} href="/docs/data-types">
+							Data types
+						</Link>
+						<Link className={styles.navLink()} href="/docs/loading-states">
+							Loading states
+						</Link>
+						<Link className={styles.navLink()} href="/docs/composition">
+							Frame and legend
+						</Link>
+					</div>
+					<div className={styles.navGroup()}>
+						<p className={styles.navGroupLabel()}>Charts</p>
+						{chartDocs.map((chart) => (
+							<Link
+								className={styles.navLink()}
+								href={`/docs/charts/${chart.id}`}
+								key={chart.id}
+							>
+								{chart.name}
+							</Link>
+						))}
+					</div>
+				</nav>
+				<div className={styles.sidebarFooter()}>
+					<a href="https://github.com/hzblj/zyplot">GitHub</a>
+				</div>
+			</aside>
+			{children}
+		</div>
+	);
+};
 
-			<section className={styles.section()} id="first-chart">
-				<h2>Your first chart</h2>
-				<p>
-					Import the single <code>Chart</code> namespace and choose a chart by
-					its visual form.
-				</p>
-				<Example
-					source={`import { Chart } from '@hzblj/zyplot-platform-web'
+export const DocsPage = ({ page = "introduction" }: { page?: string }) => {
+	const pageIndex = Math.max(0, guidePages.indexOf(page));
+	const previousPage = guidePages[pageIndex - 1];
+	const nextPage = guidePages[pageIndex + 1];
+	const currentChart = chartDocs.find((chart) => chart.id === page);
+	const pageHeadings = currentChart
+		? [
+				{ id: currentChart.id, label: currentChart.name },
+				{ id: `${currentChart.id}-props`, label: "Props" },
+			]
+		: (guidePageHeadings[page] ?? guidePageHeadings.introduction);
+
+	return (
+		<>
+			<main className={styles.content()}>
+				<section
+					className={cn(styles.hero(), page !== "introduction" && "hidden")}
+					id="getting-started"
+				>
+					<p className={styles.kicker()}>Getting started</p>
+					<h1>
+						Beautiful charts,
+						<br />
+						one import away.
+					</h1>
+					<p>
+						Zyplot gives React applications a focused chart API, strong
+						defaults, accessible loading states and native light/dark theming.
+					</p>
+				</section>
+
+				<section
+					className={cn(styles.section(), page !== "installation" && "hidden")}
+					id="installation"
+				>
+					<h2>Installation</h2>
+					<p>
+						Install the web package with the package manager your project uses.
+					</p>
+					<PackageInstall />
+					<div className={styles.note()}>
+						<strong>No stylesheet import.</strong> Zyplot includes its compiled
+						styles through the JavaScript entry point. Your application does not
+						need Tailwind CSS.
+					</div>
+				</section>
+
+				<section
+					className={cn(styles.section(), page !== "first-chart" && "hidden")}
+					id="first-chart"
+				>
+					<div className={styles.chartIntro()}>
+						<h2>Your first chart</h2>
+						<p>
+							Import the single <code>Chart</code> namespace and choose a chart
+							by its visual form.
+						</p>
+					</div>
+					{page === "first-chart" && (
+						<Example
+							source={`import { Chart } from '@hzblj/zyplot-platform-web'
 
 const series = [{
   id: 'revenue',
@@ -1092,53 +1163,57 @@ export function RevenueChart() {
     />
   )
 }`}
+						>
+							<Chart.Line
+								categories={categories}
+								format={{ prefix: "$" }}
+								height={300}
+								series={[series[0] as (typeof series)[number]]}
+							/>
+						</Example>
+					)}
+				</section>
+
+				<section
+					className={cn(styles.section(), page !== "web-package" && "hidden")}
+					id="web-package"
 				>
-					<Chart.Line
-						categories={categories}
-						format={{ prefix: "$" }}
-						height={300}
-						series={[series[0] as (typeof series)[number]]}
-					/>
-				</Example>
-			</section>
+					<p className={styles.kicker()}>Web</p>
+					<h2>React and React Native charts</h2>
+					<p>
+						Zyplot provides a shared chart model for React on the web and native
+						Expo applications, with platform-specific rendering behind the same
+						focused API.
+					</p>
+					<div className={styles.featureGrid()}>
+						<article className={styles.feature()}>
+							<span>01</span>
+							<h3>Web renderer</h3>
+							<p>ECharts and uPlot with production-ready defaults.</p>
+						</article>
+						<article className={styles.feature()}>
+							<span>02</span>
+							<h3>Shared model</h3>
+							<p>Serializable chart data shared across every platform.</p>
+						</article>
+						<article className={styles.feature()}>
+							<span>03</span>
+							<h3>Native platforms</h3>
+							<p>Expo modules provide native iOS and Android rendering.</p>
+						</article>
+					</div>
+				</section>
 
-			<section className={styles.section()} id="web-package">
-				<p className={styles.kicker()}>Web</p>
-				<h2>Designed for React on the web</h2>
-				<p>
-					The web package uses ECharts for general visualization and uPlot for
-					dense time series. That implementation detail stays behind one
-					serializable React API.
-				</p>
-				<div className={styles.featureGrid()}>
-					<article className={styles.feature()}>
-						<span>01</span>
-						<h3>Zero configuration</h3>
-						<p>Production-ready color, spacing, tooltip and motion defaults.</p>
-					</article>
-					<article className={styles.feature()}>
-						<span>02</span>
-						<h3>Serializable props</h3>
-						<p>
-							Data-first contracts without renderer-specific option objects.
-						</p>
-					</article>
-					<article className={styles.feature()}>
-						<span>03</span>
-						<h3>Stable skeletons</h3>
-						<p>Every chart exposes a matching loading state at `.Skeleton`.</p>
-					</article>
-				</div>
-			</section>
-
-			<section className={styles.section()} id="theming">
-				<h2>Theming</h2>
-				<p>
-					Use <code>Chart.Provider</code> for a scoped theme. Omitted values
-					continue to use Zyplot defaults.
-				</p>
-				<pre>
-					<code>{`<Chart.Provider
+				<section
+					className={cn(styles.section(), page !== "theming" && "hidden")}
+					id="theming"
+				>
+					<h2>Theming</h2>
+					<p>
+						Use <code>Chart.Provider</code> for a scoped theme. Omitted values
+						continue to use Zyplot defaults.
+					</p>
+					<CodeBlock>{`<Chart.Provider
   theme={{
     colors: {
       categorical: ['#7c3aed', '#0284c7', '#ea580c'],
@@ -1150,46 +1225,47 @@ export function RevenueChart() {
   }}
 >
   <Dashboard />
-</Chart.Provider>`}</code>
-				</pre>
-				<h3>Provider props</h3>
-				<PropsTable
-					rows={[
-						{
-							description: "Charts rendered inside the theme scope.",
-							name: "children",
-							required: true,
-							type: "ReactNode",
-						},
-						{
-							defaultValue: '"inherit"',
-							description: "Controls how the color mode is resolved.",
-							name: "colorMode",
-							type: '"inherit" | "light" | "dark" | "system"',
-						},
-						{
-							description: "Scoped colors and typography overrides.",
-							name: "theme",
-							type: "ChartTheme",
-						},
-						{
-							description: "CSS class applied to the provider scope.",
-							name: "className",
-							type: "string",
-						},
-					]}
-				/>
-			</section>
+</Chart.Provider>`}</CodeBlock>
+					<h3 id="provider-props">Provider props</h3>
+					<PropsTable
+						rows={[
+							{
+								description: "Charts rendered inside the theme scope.",
+								name: "children",
+								required: true,
+								type: "ReactNode",
+							},
+							{
+								defaultValue: '"inherit"',
+								description: "Controls how the color mode is resolved.",
+								name: "colorMode",
+								type: '"inherit" | "light" | "dark" | "system"',
+							},
+							{
+								description: "Scoped colors and typography overrides.",
+								name: "theme",
+								type: "ChartTheme",
+							},
+							{
+								description: "CSS class applied to the provider scope.",
+								name: "className",
+								type: "string",
+							},
+						]}
+					/>
+				</section>
 
-			<section className={styles.section()} id="dark-mode">
-				<h2>Light and dark mode</h2>
-				<p>
-					By default charts inherit your application theme. Zyplot understands
-					<code>.dark</code>, <code>data-theme="dark"</code> and the system
-					color preference.
-				</p>
-				<pre>
-					<code>{`:root {
+				<section
+					className={cn(styles.section(), page !== "dark-mode" && "hidden")}
+					id="dark-mode"
+				>
+					<h2>Light and dark mode</h2>
+					<p>
+						By default charts inherit your application theme. Zyplot understands
+						<code>.dark</code>, <code>data-theme="dark"</code> and the system
+						color preference.
+					</p>
+					<CodeBlock language="css">{`:root {
   --zyplot-color-categorical-1: #2563eb;
   --zyplot-color-grid: #e5e7eb;
 }
@@ -1197,196 +1273,235 @@ export function RevenueChart() {
 [data-theme='dark'] {
   --zyplot-color-categorical-1: #60a5fa;
   --zyplot-color-grid: #262626;
-}`}</code>
-				</pre>
-				<p>
-					The font is inherited from the application. Inter is not required. Set{" "}
-					<code>--zyplot-font-family</code> only when charts should use a
-					different stack.
-				</p>
-			</section>
+}`}</CodeBlock>
+					<p>
+						The font is inherited from the application. Inter is not required.
+						Set <code>--zyplot-font-family</code> only when charts should use a
+						different stack.
+					</p>
+				</section>
 
-			<section className={styles.section()} id="data-types">
-				<h2>Data types</h2>
-				<p>
-					A series owns a stable identity, translated label and values. Pin a
-					slot when filtering could otherwise repaint the surviving series.
-				</p>
-				<pre>
-					<code>{`type ChartSeries = {
+				<section
+					className={cn(styles.section(), page !== "data-types" && "hidden")}
+					id="data-types"
+				>
+					<h2>Data types</h2>
+					<p>
+						A series owns a stable identity, translated label and values. Pin a
+						slot when filtering could otherwise repaint the surviving series.
+					</p>
+					<CodeBlock>{`type ChartSeries = {
   id: string
   label: string
   values: Array<number | null>
   slot?: number
   color?: string
-}`}</code>
-				</pre>
-				<p>
-					An explicit <code>color</code> wins over the Provider palette and CSS
-					variables. Use it sparingly when a series has a fixed brand identity.
-				</p>
-			</section>
+}`}</CodeBlock>
+					<p>
+						An explicit <code>color</code> wins over the Provider palette and
+						CSS variables. Use it sparingly when a series has a fixed brand
+						identity.
+					</p>
+				</section>
 
-			<section className={styles.section()} id="loading-states">
-				<h2>Loading states</h2>
-				<p>
-					Every chart form exposes a shape-matched skeleton. It reserves the
-					final dimensions so the surrounding page does not jump when data
-					arrives.
-				</p>
-				<pre>
-					<code>{`<Chart.Line.Skeleton
+				<section
+					className={cn(
+						styles.section(),
+						page !== "loading-states" && "hidden",
+					)}
+					id="loading-states"
+				>
+					<h2>Loading states</h2>
+					<p>
+						Every chart form exposes a shape-matched skeleton. It reserves the
+						final dimensions so the surrounding page does not jump when data
+						arrives.
+					</p>
+					<CodeBlock>{`<Chart.Line.Skeleton
   height={320}
   legendCount={2}
   xAxis={false}
   yAxis
-/>`}</code>
-				</pre>
-				<h3>Skeleton props</h3>
-				<PropsTable
-					rows={[
-						{
-							description: "CSS class applied to the skeleton root.",
-							name: "className",
-							type: "string",
-						},
-						{
-							defaultValue: "240",
-							description: "Reserved height matching the final chart.",
-							name: "height",
-							type: "number",
-						},
-						{
-							description: "Number of legend items whose space is reserved.",
-							name: "legendCount",
-							type: "number",
-						},
-						{
-							defaultValue: "true",
-							description: "Reserves placeholders for horizontal-axis labels.",
-							name: "xAxis",
-							type: "boolean",
-						},
-						{
-							defaultValue: "true",
-							description: "Reserves placeholders for vertical-axis labels.",
-							name: "yAxis",
-							type: "boolean",
-						},
-					]}
-				/>
-				<h3>Custom skeleton</h3>
-				<pre>
-					<code>{`<Chart.Line
+/>`}</CodeBlock>
+					<h3 id="skeleton-props">Skeleton props</h3>
+					<PropsTable
+						rows={[
+							{
+								description: "CSS class applied to the skeleton root.",
+								name: "className",
+								type: "string",
+							},
+							{
+								defaultValue: "240",
+								description: "Reserved height matching the final chart.",
+								name: "height",
+								type: "number",
+							},
+							{
+								description: "Number of legend items whose space is reserved.",
+								name: "legendCount",
+								type: "number",
+							},
+							{
+								defaultValue: "true",
+								description:
+									"Reserves placeholders for horizontal-axis labels.",
+								name: "xAxis",
+								type: "boolean",
+							},
+							{
+								defaultValue: "true",
+								description: "Reserves placeholders for vertical-axis labels.",
+								name: "yAxis",
+								type: "boolean",
+							},
+						]}
+					/>
+					<h3 id="custom-skeleton">Custom skeleton</h3>
+					<p>
+						A custom skeleton can be any React component. Keep its height equal
+						to the final chart to prevent layout shift, then pass the rendered
+						element through <code>skeleton</code>.
+					</p>
+					<CodeBlock>{`function RevenueSkeleton({ height = 320 }) {
+  return (
+    <div
+      aria-label="Loading revenue chart"
+      aria-busy="true"
+      role="status"
+      style={{ height }}
+    >
+      <div className="skeleton-title" />
+      <div className="skeleton-plot" />
+    </div>
+  )
+}
+
+<Chart.Line
   isLoading
-  skeleton={<MyChartSkeleton />}
-  axes={{ x: false, y: true }}
+  skeleton={<RevenueSkeleton height={320} />}
+  height={320}
+  axis={{ x: false, y: true }}
   categories={categories}
   series={series}
-/>`}</code>
-				</pre>
-			</section>
+/>`}</CodeBlock>
+					<div className={styles.note()}>
+						The custom component fully replaces Zyplot’s built-in loading UI.
+						Axis visibility only changes the built-in skeleton, so mirror those
+						details yourself when your custom design needs them.
+					</div>
+				</section>
 
-			<section className={styles.section()} id="composition">
-				<h2>Frame and legend</h2>
-				<p>
-					<code>Chart.Frame</code> supplies the optional title, description,
-					actions and source treatment around any chart. Charts manage their own
-					legend automatically; <code>Chart.Legend</code> is available for
-					custom composition.
-				</p>
-				<pre>
-					<code>{`<Chart.Frame
+				<section
+					className={cn(styles.section(), page !== "composition" && "hidden")}
+					id="composition"
+				>
+					<h2>Frame and legend</h2>
+					<p>
+						<code>Chart.Frame</code> supplies the optional title, description,
+						actions and source treatment around any chart. Charts manage their
+						own legend automatically; <code>Chart.Legend</code> is available for
+						custom composition.
+					</p>
+					<CodeBlock>{`<Chart.Frame
   title="Revenue"
   description="Monthly recurring revenue"
   caption="Source: billing ledger"
 >
   <Chart.Line categories={categories} series={series} />
-</Chart.Frame>`}</code>
-				</pre>
-				<h3>Frame props</h3>
-				<PropsTable
-					rows={[
-						{
-							description: "Chart or composed visualization content.",
-							name: "children",
-							required: true,
-							type: "ReactNode",
-						},
-						{
-							description: "Heading rendered above the chart.",
-							name: "title",
-							type: "string",
-						},
-						{
-							description: "Supporting text below the title.",
-							name: "description",
-							type: "string",
-						},
-						{
-							description: "Filters and controls aligned with the heading.",
-							name: "actions",
-							type: "ReactNode",
-						},
-						{
-							description: "Source, method or caveat below the chart.",
-							name: "caption",
-							type: "string",
-						},
-						{
-							description: "CSS class applied to the frame.",
-							name: "className",
-							type: "string",
-						},
-					]}
-				/>
-				<h3>Legend props</h3>
-				<PropsTable
-					rows={[
-						{
-							description: "Stable IDs, labels and resolved swatch colors.",
-							name: "items",
-							required: true,
-							type: "ChartLegendItem[]",
-						},
-						{
-							description: "CSS class applied to the legend.",
-							name: "className",
-							type: "string",
-						},
-					]}
-				/>
-			</section>
+</Chart.Frame>`}</CodeBlock>
+					<h3 id="frame-props">Frame props</h3>
+					<PropsTable
+						rows={[
+							{
+								description: "Chart or composed visualization content.",
+								name: "children",
+								required: true,
+								type: "ReactNode",
+							},
+							{
+								description: "Heading rendered above the chart.",
+								name: "title",
+								type: "string",
+							},
+							{
+								description: "Supporting text below the title.",
+								name: "description",
+								type: "string",
+							},
+							{
+								description: "Filters and controls aligned with the heading.",
+								name: "actions",
+								type: "ReactNode",
+							},
+							{
+								description: "Source, method or caveat below the chart.",
+								name: "caption",
+								type: "string",
+							},
+							{
+								description: "CSS class applied to the frame.",
+								name: "className",
+								type: "string",
+							},
+						]}
+					/>
+					<h3 id="legend-props">Legend props</h3>
+					<PropsTable
+						rows={[
+							{
+								description: "Stable IDs, labels and resolved swatch colors.",
+								name: "items",
+								required: true,
+								type: "ChartLegendItem[]",
+							},
+							{
+								description: "CSS class applied to the legend.",
+								name: "className",
+								type: "string",
+							},
+						]}
+					/>
+				</section>
 
-			<div className={styles.sectionDivider()}>
-				<span>Web charts</span>
-				<strong>{chartDocs.length} forms</strong>
-			</div>
+				{currentChart && <ChartSection chart={currentChart} />}
 
-			{chartDocs.map((chart) => (
-				<ChartSection chart={chart} key={chart.id} />
-			))}
-		</main>
+				<nav aria-label="Documentation pagination" className={styles.pager()}>
+					{previousPage ? (
+						<Link
+							className={styles.pagerLink()}
+							href={
+								previousPage === "introduction"
+									? "/docs"
+									: `/docs/${chartDocs.some((chart) => chart.id === previousPage) ? `charts/${previousPage}` : previousPage === "web-package" ? "web" : previousPage}`
+							}
+						>
+							← Previous
+						</Link>
+					) : (
+						<span />
+					)}
+					{nextPage && (
+						<Link
+							className={styles.pagerLink()}
+							href={`/docs/${chartDocs.some((chart) => chart.id === nextPage) ? `charts/${nextPage}` : nextPage === "web-package" ? "web" : nextPage}`}
+						>
+							Continue →
+						</Link>
+					)}
+				</nav>
+			</main>
 
-		<aside className={styles.toc()}>
-			<p className={styles.tocLabel()}>On this page</p>
-			<nav aria-label="On this page" className={styles.tocNav()}>
-				<a href="#getting-started">Getting started</a>
-				<a href="#installation">Installation</a>
-				<a href="#first-chart">First chart</a>
-				<a href="#web-package">Web package</a>
-				<a href="#theming">Theming</a>
-				<a href="#dark-mode">Light and dark</a>
-				<a href="#data-types">Data types</a>
-				<a href="#loading-states">Loading states</a>
-				<a href="#composition">Frame and legend</a>
-				<span>Chart reference</span>
-				{chartDocs.map((chart) => (
-					<a href={`#${chart.id}-props`} key={chart.id}>
-						{chart.name} props
-					</a>
-				))}
-			</nav>
-		</aside>
-	</div>
-);
+			<aside className={styles.toc()}>
+				<p className={styles.tocLabel()}>On this page</p>
+				<nav aria-label="On this page" className={styles.tocNav()}>
+					{pageHeadings.map((heading) => (
+						<a href={`#${heading.id}`} key={heading.id}>
+							{heading.label}
+						</a>
+					))}
+				</nav>
+			</aside>
+		</>
+	);
+};

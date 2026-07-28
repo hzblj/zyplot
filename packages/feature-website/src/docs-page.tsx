@@ -1,1 +1,1 @@
-export { DocsPage } from "./docs/docs-page";
+export { DocsLayout, DocsPage } from "./docs/docs-page";

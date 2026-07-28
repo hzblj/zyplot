@@ -5,10 +5,44 @@ html {
 	background: var(--color-surface-base);
 	color: var(--color-content-primary);
 	color-scheme: light;
-	font-family: var(--font-inter);
+	font-family:
+		var(--font-zyplot-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
 	scroll-behavior: smooth;
 }
 
 html.dark {
 	color-scheme: dark;
+}
+
+::view-transition-old(.docs-page) {
+	animation: 120ms ease-in both docs-page-out;
+}
+
+::view-transition-new(.docs-page) {
+	animation: 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both docs-page-in;
+}
+
+@keyframes docs-page-out {
+	to {
+		opacity: 0;
+		transform: translateY(-3px);
+	}
+}
+
+@keyframes docs-page-in {
+	from {
+		opacity: 0;
+		transform: translateY(5px);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	::view-transition-old(.docs-page),
+	::view-transition-new(.docs-page) {
+		animation: none;
+	}
+
+	html {
+		scroll-behavior: auto;
+	}
 }

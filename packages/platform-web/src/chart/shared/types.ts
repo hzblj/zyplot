@@ -36,7 +36,7 @@ export type ChartLegendItem = {
 /** What every chart in this organism accepts on top of its own data props. */
 export type ChartBaseProps = {
 	/** Controls the visible axes on cartesian chart forms. */
-	axes?: ChartAxes;
+	axis?: ChartAxes;
 	className?: string;
 	/**
 	 * Held true while the data is in flight. The chart shows its own `Skeleton` —

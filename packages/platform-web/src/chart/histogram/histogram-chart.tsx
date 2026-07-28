@@ -74,7 +74,7 @@ const buildBins = (
 };
 
 export const HistogramChart: FC<HistogramChartProps> = ({
-	axes,
+	axis,
 	binCount = DEFAULT_BIN_COUNT,
 	className,
 	height,
@@ -128,11 +128,11 @@ export const HistogramChart: FC<HistogramChartProps> = ({
 					tokens,
 					bins.map((bin) => bin.label),
 				),
-				show: axes?.x !== false,
+				show: axis?.x !== false,
 			},
-			yAxis: { ...buildValueAxis(tokens), show: axes?.y !== false },
+			yAxis: { ...buildValueAxis(tokens), show: axis?.y !== false },
 		};
-	}, [axes, binCount, texture, tokens, valueFormat, values]);
+	}, [axis, binCount, texture, tokens, valueFormat, values]);
 
 	return (
 		<ChartShell
@@ -144,8 +144,8 @@ export const HistogramChart: FC<HistogramChartProps> = ({
 				<HistogramChartSkeleton
 					height={height}
 					legendCount={0}
-					xAxis={axes?.x !== false}
-					yAxis={axes?.y !== false}
+					xAxis={axis?.x !== false}
+					yAxis={axis?.y !== false}
 				/>
 			}
 		/>

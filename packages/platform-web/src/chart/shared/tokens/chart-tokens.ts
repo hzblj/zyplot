@@ -122,16 +122,24 @@ export const useChartTokens = (): ChartTokens | null => {
 		sync();
 
 		const observer = new MutationObserver(sync);
+		const attributeFilter = [
+			"class",
+			"data-theme",
+			"data-zyplot-color-mode",
+			"style",
+		];
 		observer.observe(document.documentElement, {
-			attributeFilter: [
-				"class",
-				"data-theme",
-				"data-zyplot-color-mode",
-				"style",
-			],
+			attributeFilter,
 			attributes: true,
-			subtree: true,
 		});
+
+		const themeRoot = theme?.rootRef.current;
+		if (themeRoot && themeRoot !== document.documentElement) {
+			observer.observe(themeRoot, {
+				attributeFilter,
+				attributes: true,
+			});
+		}
 		const media = window.matchMedia("(prefers-color-scheme: dark)");
 		media.addEventListener("change", sync);
 

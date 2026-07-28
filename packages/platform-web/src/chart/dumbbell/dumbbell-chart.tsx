@@ -49,7 +49,7 @@ export type DumbbellChartProps = ChartBaseProps & {
 
 export const DumbbellChart: FC<DumbbellChartProps> = ({
 	afterLabel,
-	axes,
+	axis,
 	beforeLabel,
 	className,
 	format,
@@ -136,16 +136,16 @@ export const DumbbellChart: FC<DumbbellChartProps> = ({
 				},
 				trigger: "axis",
 			},
-			xAxis: { ...buildValueAxis(tokens, format), show: axes?.x !== false },
+			xAxis: { ...buildValueAxis(tokens, format), show: axis?.x !== false },
 			yAxis: {
 				...buildCategoryAxis(
 					tokens,
 					rows.map((row) => row.label),
 				),
-				show: axes?.y !== false,
+				show: axis?.y !== false,
 			},
 		};
-	}, [afterLabel, axes, beforeLabel, format, rows, texture, tokens]);
+	}, [afterLabel, axis, beforeLabel, format, rows, texture, tokens]);
 
 	const legend = useMemo(() => {
 		if (!tokens) {
@@ -173,8 +173,8 @@ export const DumbbellChart: FC<DumbbellChartProps> = ({
 				<DumbbellChartSkeleton
 					height={height}
 					legendCount={2}
-					xAxis={axes?.x !== false}
-					yAxis={axes?.y !== false}
+					xAxis={axis?.x !== false}
+					yAxis={axis?.y !== false}
 				/>
 			}
 		/>

@@ -49,7 +49,7 @@ export type HeatmapChartProps = ChartBaseProps & {
 };
 
 export const HeatmapChart: FC<HeatmapChartProps> = ({
-	axes,
+	axis,
 	cells,
 	className,
 	columns,
@@ -112,16 +112,16 @@ export const HeatmapChart: FC<HeatmapChartProps> = ({
 			},
 			xAxis: {
 				...buildCategoryAxis(tokens, columns),
-				show: axes?.x !== false,
+				show: axis?.x !== false,
 				splitArea: { show: false },
 			},
 			yAxis: {
 				...buildCategoryAxis(tokens, rows),
-				show: axes?.y !== false,
+				show: axis?.y !== false,
 				splitArea: { show: false },
 			},
 		};
-	}, [axes, cells, columns, format, rows, texture, tokens]);
+	}, [axis, cells, columns, format, rows, texture, tokens]);
 
 	return (
 		<ChartShell
@@ -133,8 +133,8 @@ export const HeatmapChart: FC<HeatmapChartProps> = ({
 				<HeatmapChartSkeleton
 					height={height}
 					legendCount={0}
-					xAxis={axes?.x !== false}
-					yAxis={axes?.y !== false}
+					xAxis={axis?.x !== false}
+					yAxis={axis?.y !== false}
 				/>
 			}
 		/>

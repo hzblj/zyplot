@@ -50,7 +50,7 @@ export type BoxplotChartProps = ChartBaseProps & {
 };
 
 export const BoxplotChart: FC<BoxplotChartProps> = ({
-	axes,
+	axis,
 	className,
 	format,
 	groups,
@@ -81,7 +81,7 @@ export const BoxplotChart: FC<BoxplotChartProps> = ({
 
 		return {
 			...buildChartBaseOption(tokens, texture),
-			...buildCartesianAxes(tokens, categories, format, isHorizontal, axes),
+			...buildCartesianAxes(tokens, categories, format, isHorizontal, axis),
 			grid: buildChartGrid(!isHorizontal),
 			series: [
 				{
@@ -139,7 +139,7 @@ export const BoxplotChart: FC<BoxplotChartProps> = ({
 				trigger: "item",
 			},
 		};
-	}, [axes, format, groups, labels, orientation, texture, tokens]);
+	}, [axis, format, groups, labels, orientation, texture, tokens]);
 
 	return (
 		<ChartShell
@@ -151,8 +151,8 @@ export const BoxplotChart: FC<BoxplotChartProps> = ({
 				<BoxplotChartSkeleton
 					height={height}
 					legendCount={0}
-					xAxis={axes?.x !== false}
-					yAxis={axes?.y !== false}
+					xAxis={axis?.x !== false}
+					yAxis={axis?.y !== false}
 				/>
 			}
 		/>

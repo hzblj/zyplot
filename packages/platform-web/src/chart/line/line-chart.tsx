@@ -46,7 +46,7 @@ export type LineChartProps = ChartBaseProps & {
 };
 
 export const LineChart: FC<LineChartProps> = ({
-	axes,
+	axis,
 	categories,
 	className,
 	emphasisId,
@@ -88,11 +88,11 @@ export const LineChart: FC<LineChartProps> = ({
 			},
 			xAxis: {
 				...buildCategoryAxis(tokens, categories),
-				show: axes?.x !== false,
+				show: axis?.x !== false,
 			},
-			yAxis: { ...buildValueAxis(tokens, format), show: axes?.y !== false },
+			yAxis: { ...buildValueAxis(tokens, format), show: axis?.y !== false },
 		};
-	}, [axes, categories, emphasisId, format, isSmooth, series, texture, tokens]);
+	}, [axis, categories, emphasisId, format, isSmooth, series, texture, tokens]);
 
 	const legend = useMemo(() => {
 		if (!tokens) {
@@ -113,8 +113,8 @@ export const LineChart: FC<LineChartProps> = ({
 				<LineChartSkeleton
 					height={height}
 					legendCount={series.length}
-					xAxis={axes?.x !== false}
-					yAxis={axes?.y !== false}
+					xAxis={axis?.x !== false}
+					yAxis={axis?.y !== false}
 				/>
 			}
 		/>

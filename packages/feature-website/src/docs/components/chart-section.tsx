@@ -7,7 +7,7 @@ const styles = docsStyles();
 
 export const ChartSection = ({ chart }: { chart: ChartDoc }) => (
 	<section className={styles.chartDoc()} id={chart.id}>
-		<div>
+		<div className={styles.chartIntro()}>
 			<p className={styles.kicker()}>Chart</p>
 			<h2>{chart.name}</h2>
 			<p>{chart.description}</p>

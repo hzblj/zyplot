@@ -67,7 +67,7 @@ const toPercentSeries = (series: ChartSeries[]): ChartSeries[] => {
 };
 
 export const StackedBarChart: FC<StackedBarChartProps> = ({
-	axes,
+	axis,
 	categories,
 	className,
 	emphasisId,
@@ -101,7 +101,7 @@ export const StackedBarChart: FC<StackedBarChartProps> = ({
 				categories,
 				valueFormat,
 				isHorizontal,
-				axes,
+				axis,
 			),
 			grid: buildChartGrid(!isHorizontal),
 			series: plotted.map((item, index) => ({
@@ -124,7 +124,7 @@ export const StackedBarChart: FC<StackedBarChartProps> = ({
 			},
 		};
 	}, [
-		axes,
+		axis,
 		categories,
 		emphasisId,
 		format,
@@ -155,8 +155,8 @@ export const StackedBarChart: FC<StackedBarChartProps> = ({
 					height={height}
 					legendCount={series.length}
 					orientation={orientation}
-					xAxis={axes?.x !== false}
-					yAxis={axes?.y !== false}
+					xAxis={axis?.x !== false}
+					yAxis={axis?.y !== false}
 				/>
 			}
 		/>

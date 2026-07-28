@@ -54,7 +54,7 @@ const barRadiusFor = (orientation: BarChartOrientation): number[] => {
 };
 
 export const BarChart: FC<BarChartProps> = ({
-	axes,
+	axis,
 	categories,
 	className,
 	emphasisId,
@@ -76,7 +76,7 @@ export const BarChart: FC<BarChartProps> = ({
 
 		return {
 			...buildChartBaseOption(tokens, texture),
-			...buildCartesianAxes(tokens, categories, format, isHorizontal, axes),
+			...buildCartesianAxes(tokens, categories, format, isHorizontal, axis),
 			grid: buildChartGrid(!isHorizontal),
 			series: series.map((item, index) => ({
 				barGap: "12%",
@@ -97,7 +97,7 @@ export const BarChart: FC<BarChartProps> = ({
 			},
 		};
 	}, [
-		axes,
+		axis,
 		categories,
 		emphasisId,
 		format,
@@ -127,8 +127,8 @@ export const BarChart: FC<BarChartProps> = ({
 					height={height}
 					legendCount={series.length}
 					orientation={orientation}
-					xAxis={axes?.x !== false}
-					yAxis={axes?.y !== false}
+					xAxis={axis?.x !== false}
+					yAxis={axis?.y !== false}
 				/>
 			}
 		/>

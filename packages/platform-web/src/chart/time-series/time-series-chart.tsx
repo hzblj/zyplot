@@ -37,7 +37,7 @@ export type TimeSeriesChartProps = ChartBaseProps & {
 };
 
 export const TimeSeriesChart: FC<TimeSeriesChartProps> = ({
-	axes,
+	axis,
 	className,
 	format,
 	height = DEFAULT_HEIGHT,
@@ -61,10 +61,10 @@ export const TimeSeriesChart: FC<TimeSeriesChartProps> = ({
 
 		const options: uPlot.Options = {
 			axes: [
-				{ ...axisStyle, show: axes?.x !== false },
+				{ ...axisStyle, show: axis?.x !== false },
 				{
 					...axisStyle,
-					show: axes?.y !== false,
+					show: axis?.y !== false,
 					size: 48,
 					values: (_plot, splits) =>
 						splits.map((split) => formatChartNumber(split, format)),
@@ -94,7 +94,7 @@ export const TimeSeriesChart: FC<TimeSeriesChartProps> = ({
 		] as unknown as uPlot.AlignedData;
 
 		return { data, options };
-	}, [axes, format, height, points, series, tokens]);
+	}, [axis, format, height, points, series, tokens]);
 
 	const containerRef = useUplot(setup);
 
@@ -118,8 +118,8 @@ export const TimeSeriesChart: FC<TimeSeriesChartProps> = ({
 				<TimeSeriesChartSkeleton
 					height={height}
 					legendCount={series.length}
-					xAxis={axes?.x !== false}
-					yAxis={axes?.y !== false}
+					xAxis={axis?.x !== false}
+					yAxis={axis?.y !== false}
 				/>
 			}
 		>

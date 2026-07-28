@@ -7,7 +7,7 @@
  */
 @theme static {
 	--font-inter:
-		var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
+		var(--font-zyplot-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
 
 	/* Neutral primitives */
 	--color-gray-0: #ffffff;

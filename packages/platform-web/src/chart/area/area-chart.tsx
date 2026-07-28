@@ -48,7 +48,7 @@ export type AreaChartProps = ChartBaseProps & {
 };
 
 export const AreaChart: FC<AreaChartProps> = ({
-	axes,
+	axis,
 	categories,
 	className,
 	emphasisId,
@@ -101,12 +101,12 @@ export const AreaChart: FC<AreaChartProps> = ({
 			xAxis: {
 				...buildCategoryAxis(tokens, categories),
 				boundaryGap: false,
-				show: axes?.x !== false,
+				show: axis?.x !== false,
 			},
-			yAxis: { ...buildValueAxis(tokens, format), show: axes?.y !== false },
+			yAxis: { ...buildValueAxis(tokens, format), show: axis?.y !== false },
 		};
 	}, [
-		axes,
+		axis,
 		categories,
 		emphasisId,
 		format,
@@ -136,8 +136,8 @@ export const AreaChart: FC<AreaChartProps> = ({
 				<AreaChartSkeleton
 					height={height}
 					legendCount={series.length}
-					xAxis={axes?.x !== false}
-					yAxis={axes?.y !== false}
+					xAxis={axis?.x !== false}
+					yAxis={axis?.y !== false}
 				/>
 			}
 		/>

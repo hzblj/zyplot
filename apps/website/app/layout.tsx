@@ -24,14 +24,19 @@ const inter = localFont({
 			weight: "100 900",
 		},
 	],
-	variable: "--font-inter",
+	variable: "--font-zyplot-inter",
 });
 
 export default function RootLayout({
 	children,
 }: Readonly<{ children: ReactNode }>) {
 	return (
-		<html className={inter.variable} lang="en" suppressHydrationWarning>
+		<html
+			className={`${inter.className} ${inter.variable}`}
+			data-scroll-behavior="smooth"
+			lang="en"
+			suppressHydrationWarning
+		>
 			<head>
 				<Script id="theme" strategy="beforeInteractive">
 					{
@@ -39,7 +44,14 @@ export default function RootLayout({
 					}
 				</Script>
 			</head>
-			<body>{children}</body>
+			<body
+				style={{
+					fontFamily:
+						"var(--font-zyplot-inter), system-ui, -apple-system, 'Segoe UI', sans-serif",
+				}}
+			>
+				{children}
+			</body>
 		</html>
 	);
 }

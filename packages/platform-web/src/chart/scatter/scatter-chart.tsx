@@ -64,7 +64,7 @@ const symbolSizeFor = (maxSize: number) => (value: number[]) => {
 };
 
 export const ScatterChart: FC<ScatterChartProps> = ({
-	axes,
+	axis,
 	className,
 	height,
 	isLoading,
@@ -138,12 +138,12 @@ export const ScatterChart: FC<ScatterChartProps> = ({
 			},
 			xAxis: {
 				...buildValueAxis(tokens, xFormat),
-				show: axes?.x !== false,
+				show: axis?.x !== false,
 				splitLine: { lineStyle: { color: tokens.grid } },
 			},
-			yAxis: { ...buildValueAxis(tokens, yFormat), show: axes?.y !== false },
+			yAxis: { ...buildValueAxis(tokens, yFormat), show: axis?.y !== false },
 		};
-	}, [axes, plotted, texture, tokens, xFormat, xLabel, yFormat, yLabel]);
+	}, [axis, plotted, texture, tokens, xFormat, xLabel, yFormat, yLabel]);
 
 	const legend = useMemo(() => {
 		if (!tokens) {
@@ -164,8 +164,8 @@ export const ScatterChart: FC<ScatterChartProps> = ({
 				<ScatterChartSkeleton
 					height={height}
 					legendCount={plotted.length}
-					xAxis={axes?.x !== false}
-					yAxis={axes?.y !== false}
+					xAxis={axis?.x !== false}
+					yAxis={axis?.y !== false}
 				/>
 			}
 		/>
