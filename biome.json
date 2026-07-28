@@ -8,5 +8,27 @@
 	},
 	"files": {
 		"includes": ["**", "!!**/build", "!!**/dist", "!!**/.next"]
-	}
+	},
+	"overrides": [
+		{
+			"includes": ["packages/platform-web/src/chart/**/*-skeleton.tsx"],
+			"linter": {
+				"rules": {
+					"suspicious": {
+						"noArrayIndexKey": "off"
+					}
+				}
+			}
+		},
+		{
+			"includes": ["packages/platform-web/src/chart/meter/meter-bar.tsx"],
+			"linter": {
+				"rules": {
+					"a11y": {
+						"useSemanticElements": "off"
+					}
+				}
+			}
+		}
+	]
 }

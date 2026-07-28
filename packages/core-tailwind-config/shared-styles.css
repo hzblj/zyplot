@@ -71,8 +71,10 @@
 	--color-content-tertiary: var(--color-gray-12);
 	--color-content-quaternary: var(--color-gray-9);
 	--color-content-accent: var(--color-purple-10);
+	--color-content-destructive: var(--color-red-12);
 	--color-content-on-bg: var(--color-gray-0);
 	--color-content-on-inverse: var(--color-gray-0);
+	--color-content-success: var(--color-green-8);
 
 	/* Borders */
 	--color-border-primary: var(--color-gray-6);
@@ -89,6 +91,8 @@
 	--color-fill-accent-hover: var(--color-purple-9);
 	--color-fill-accent-pressed: var(--color-purple-6);
 	--color-fill-disabled: var(--color-gray-4);
+	--color-fill-secondary: var(--color-gray-4);
+	--color-fill-tertiary: var(--color-gray-3);
 
 	/* Button-specific aliases: enough for primary, secondary and disabled. */
 	--color-btn-primary: var(--color-fill-accent-primary);
@@ -182,8 +186,10 @@
 	--color-content-tertiary: var(--color-gray-14);
 	--color-content-quaternary: var(--color-gray-15);
 	--color-content-accent: var(--color-purple-16);
+	--color-content-destructive: var(--color-red-13);
 	--color-content-on-bg: var(--color-gray-0);
 	--color-content-on-inverse: var(--color-gray-23);
+	--color-content-success: var(--color-green-8);
 
 	--color-border-primary: var(--color-gray-17);
 	--color-border-secondary: var(--color-gray-18);
@@ -198,6 +204,8 @@
 	--color-fill-accent-hover: var(--color-purple-9);
 	--color-fill-accent-pressed: var(--color-purple-6);
 	--color-fill-disabled: var(--color-gray-18);
+	--color-fill-secondary: var(--color-gray-17);
+	--color-fill-tertiary: var(--color-gray-18);
 
 	--color-chart-1: var(--color-purple-12);
 	--color-chart-2: var(--color-blue-9);

@@ -1,6 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { tv } from "tailwind-variants";
+
+const themeToggle = tv({
+	base: "cursor-pointer rounded-full border border-border-secondary bg-fill-secondary-primary px-3 py-[7px] text-content-secondary hover:bg-fill-secondary-hover hover:text-content-primary",
+});
 
 type Theme = "dark" | "light";
 
@@ -28,7 +33,7 @@ export const ThemeToggle = () => {
 	return (
 		<button
 			aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-			className="theme-toggle"
+			className={themeToggle()}
 			onClick={toggleTheme}
 			type="button"
 		>

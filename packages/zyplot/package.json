@@ -8,7 +8,10 @@
 	"react-native": "./build/index.native.js",
 	"exports": {
 		".": {
-			"react-native": "./build/index.native.js",
+			"react-native": {
+				"types": "./build/index.native.d.ts",
+				"default": "./build/index.native.js"
+			},
 			"types": "./build/index.d.ts",
 			"import": "./build/index.js"
 		},

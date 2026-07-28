@@ -1,0 +1,122 @@
+"use client";
+
+import {
+	type CSSProperties,
+	createContext,
+	type FC,
+	type ReactNode,
+	type RefObject,
+	useMemo,
+	useRef,
+} from "react";
+
+export type ChartColorMode = "dark" | "inherit" | "light" | "system";
+
+export type ChartTheme = {
+	colors?: {
+		axis?: string;
+		border?: string;
+		categorical?: string[];
+		diverging?: {
+			negative?: string;
+			negativeSoft?: string;
+			neutral?: string;
+			positive?: string;
+			positiveSoft?: string;
+		};
+		grid?: string;
+		label?: string;
+		muted?: string;
+		sequential?: string[];
+		surface?: string;
+		track?: string;
+	};
+	typography?: {
+		fontFamily?: string;
+	};
+};
+
+export type ChartProviderProps = {
+	children: ReactNode;
+	className?: string;
+	colorMode?: ChartColorMode;
+	theme?: ChartTheme;
+};
+
+type ChartThemeContextValue = {
+	rootRef: RefObject<HTMLDivElement | null>;
+};
+
+export const ChartThemeContext = createContext<ChartThemeContextValue | null>(
+	null,
+);
+
+type ChartCSSProperties = CSSProperties & Record<`--zyplot-${string}`, string>;
+
+const setPalette = (
+	style: ChartCSSProperties,
+	name: "categorical" | "sequential",
+	values: string[] | undefined,
+) => {
+	values?.forEach((value, index) => {
+		style[`--zyplot-color-${name}-${index + 1}`] = value;
+	});
+};
+
+const createThemeStyle = (
+	theme: ChartTheme | undefined,
+): ChartCSSProperties => {
+	const style = {} as ChartCSSProperties;
+	const colors = theme?.colors;
+
+	setPalette(style, "categorical", colors?.categorical);
+	setPalette(style, "sequential", colors?.sequential);
+
+	const values = {
+		"--zyplot-color-axis": colors?.axis,
+		"--zyplot-color-border": colors?.border,
+		"--zyplot-color-diverging-negative": colors?.diverging?.negative,
+		"--zyplot-color-diverging-negative-soft": colors?.diverging?.negativeSoft,
+		"--zyplot-color-diverging-neutral": colors?.diverging?.neutral,
+		"--zyplot-color-diverging-positive": colors?.diverging?.positive,
+		"--zyplot-color-diverging-positive-soft": colors?.diverging?.positiveSoft,
+		"--zyplot-color-grid": colors?.grid,
+		"--zyplot-color-label": colors?.label,
+		"--zyplot-color-muted": colors?.muted,
+		"--zyplot-color-surface": colors?.surface,
+		"--zyplot-color-track": colors?.track,
+		"--zyplot-font-family": theme?.typography?.fontFamily,
+	} as const;
+
+	for (const [name, value] of Object.entries(values)) {
+		if (value !== undefined) {
+			style[name as `--zyplot-${string}`] = value;
+		}
+	}
+
+	return style;
+};
+
+export const ChartProvider: FC<ChartProviderProps> = ({
+	children,
+	className,
+	colorMode = "inherit",
+	theme,
+}) => {
+	const rootRef = useRef<HTMLDivElement | null>(null);
+	const context = useMemo(() => ({ rootRef }), []);
+	const style = useMemo(() => createThemeStyle(theme), [theme]);
+
+	return (
+		<ChartThemeContext.Provider value={context}>
+			<div
+				className={className}
+				data-zyplot-color-mode={colorMode}
+				ref={rootRef}
+				style={style}
+			>
+				{children}
+			</div>
+		</ChartThemeContext.Provider>
+	);
+};

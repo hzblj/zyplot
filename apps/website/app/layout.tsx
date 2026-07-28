@@ -1,4 +1,3 @@
-import "@hzblj/zyplot/style.css";
 import "./styles.css";
 
 import type { Metadata } from "next";

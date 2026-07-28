@@ -1,33 +1,27 @@
 "use client";
 
-import { type ChartSeries, LineChart } from "@hzblj/zyplot";
+import { Chart } from "@hzblj/zyplot";
+import { marketingStyles } from "./marketing-styles";
 
-const demoSeries: ChartSeries[] = [
+const styles = marketingStyles();
+
+const demoSeries = [
 	{
-		color: "var(--color-chart-1)",
-		data: [
-			{ x: 0, y: 18 },
-			{ x: 1, y: 29 },
-			{ x: 2, y: 24 },
-			{ x: 3, y: 46 },
-			{ x: 4, y: 55 },
-			{ x: 5, y: 72 },
-			{ x: 6, y: 68 },
-			{ x: 7, y: 91 },
-		],
 		id: "signal",
 		label: "Signal",
+		slot: 1,
+		values: [18, 29, 24, 46, 55, 72, 68, 91],
 	},
 ];
 
 export const ChartDemo = () => (
-	<div className="chart-card">
-		<div className="chart-card__header">
+	<div className={styles.chartCard()}>
+		<div className={styles.chartHeader()}>
 			<span>Live preview</span>
-			<span className="status">Web · uPlot</span>
+			<span className={styles.status()}>Web · ECharts</span>
 		</div>
-		<LineChart
-			accessibilityLabel="Zyplot line chart preview"
+		<Chart.Line
+			categories={["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"]}
 			height={340}
 			series={demoSeries}
 		/>
