@@ -1,0 +1,21 @@
+{
+	"name": "@zyplot/core-tailwind-config",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": "./shared-styles.css",
+		"./postcss": "./postcss.config.js"
+	},
+	"scripts": {
+		"build": "node -e \"import('./postcss.config.js')\"",
+		"lint": "biome check .",
+		"lint:fix": "biome check --write ."
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.5.4",
+		"@hzblj/biome-config": "^0.2.0",
+		"@tailwindcss/postcss": "^4.3.2",
+		"postcss": "^8",
+		"tailwindcss": "^4.3.2"
+	}
+}

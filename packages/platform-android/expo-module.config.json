@@ -1,0 +1,7 @@
+{
+	"platforms": ["android"],
+	"android": {
+		"modules": ["com.hzblj.zyplot.ZyplotAndroidModule"]
+	},
+	"coreFeatures": ["compose"]
+}

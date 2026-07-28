@@ -1,0 +1,12 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.5.4/schema.json",
+	"extends": ["@hzblj/biome-config/react"],
+	"css": {
+		"parser": {
+			"tailwindDirectives": true
+		}
+	},
+	"files": {
+		"includes": ["**", "!!**/build", "!!**/dist", "!!**/.next"]
+	}
+}

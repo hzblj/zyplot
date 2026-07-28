@@ -1,0 +1,32 @@
+{
+	"name": "@hzblj/zyplot-core",
+	"version": "0.0.0",
+	"description": "Platform-neutral chart contracts for Zyplot.",
+	"type": "module",
+	"main": "./build/index.js",
+	"types": "./build/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./build/index.d.ts",
+			"import": "./build/index.js"
+		}
+	},
+	"files": [
+		"build"
+	],
+	"scripts": {
+		"build": "tsc -p tsconfig.build.json",
+		"lint": "biome check .",
+		"lint:fix": "biome check --write ."
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.5.4",
+		"@hzblj/biome-config": "^0.2.0",
+		"typescript": "^5.9.3"
+	},
+	"publishConfig": {
+		"access": "public",
+		"provenance": true
+	},
+	"license": "MIT"
+}

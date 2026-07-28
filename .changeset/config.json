@@ -1,0 +1,19 @@
+{
+	"$schema": "https://unpkg.com/@changesets/config@3.1.4/schema.json",
+	"changelog": ["@changesets/changelog-github", { "repo": "hzblj/zyplot" }],
+	"commit": false,
+	"fixed": [
+		[
+			"@hzblj/zyplot",
+			"@hzblj/zyplot-core",
+			"@hzblj/zyplot-platform-web",
+			"@hzblj/zyplot-platform-ios",
+			"@hzblj/zyplot-platform-android"
+		]
+	],
+	"linked": [],
+	"access": "public",
+	"baseBranch": "main",
+	"updateInternalDependencies": "patch",
+	"ignore": []
+}

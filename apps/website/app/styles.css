@@ -1,0 +1,234 @@
+@import "@zyplot/core-tailwind-config";
+@source "../../../packages";
+
+* {
+	box-sizing: border-box;
+}
+
+html {
+	background: var(--color-surface-base);
+	color: var(--color-content-primary);
+	color-scheme: light;
+	font-family: var(--font-inter);
+	scroll-behavior: smooth;
+}
+
+html.dark {
+	color-scheme: dark;
+}
+
+body {
+	margin: 0;
+}
+
+a {
+	color: inherit;
+	text-decoration: none;
+}
+
+.shell {
+	margin-inline: auto;
+	max-width: 1180px;
+	padding-inline: 28px;
+}
+
+.nav {
+	align-items: center;
+	display: flex;
+	height: 80px;
+	justify-content: space-between;
+}
+
+.wordmark {
+	font-size: 20px;
+	font-weight: 750;
+	letter-spacing: -0.04em;
+}
+
+.nav__links {
+	align-items: center;
+	color: var(--color-content-tertiary);
+	display: flex;
+	gap: 28px;
+}
+
+.theme-toggle {
+	background: var(--color-fill-secondary-primary);
+	border: 1px solid var(--color-border-secondary);
+	border-radius: 999px;
+	color: var(--color-content-secondary);
+	cursor: pointer;
+	font: inherit;
+	padding: 7px 12px;
+}
+
+.theme-toggle:hover {
+	background: var(--color-fill-secondary-hover);
+	color: var(--color-content-primary);
+}
+
+.hero {
+	align-items: center;
+	display: grid;
+	gap: 68px;
+	grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+	min-height: 680px;
+}
+
+.eyebrow,
+.status {
+	color: var(--color-content-accent);
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+}
+
+h1 {
+	font-size: clamp(48px, 6vw, 82px);
+	letter-spacing: -0.06em;
+	line-height: 0.96;
+	margin: 20px 0 28px;
+	max-width: 760px;
+}
+
+.lede {
+	color: var(--color-content-secondary);
+	font-size: 20px;
+	line-height: 1.55;
+	max-width: 620px;
+}
+
+.actions {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 22px;
+	margin-top: 38px;
+}
+
+.actions code,
+pre {
+	background: var(--color-surface-secondary);
+	border: 1px solid var(--color-border-secondary);
+	border-radius: 12px;
+	color: var(--color-content-secondary);
+	padding: 14px 18px;
+}
+
+.button {
+	border-radius: 999px;
+	font-weight: 700;
+	padding: 14px 22px;
+}
+
+.button--primary {
+	background: var(--color-fill-accent-primary);
+	color: var(--color-content-on-bg);
+}
+
+.chart-card {
+	background: var(--color-chart-surface);
+	border: 1px solid var(--color-border-secondary);
+	border-radius: 24px;
+	box-shadow: var(--shadow-card-default);
+	overflow: hidden;
+	padding: 22px;
+}
+
+.chart-card__header {
+	align-items: center;
+	display: flex;
+	justify-content: space-between;
+	margin-bottom: 24px;
+}
+
+.platforms {
+	border-top: 1px solid var(--color-border-secondary);
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+}
+
+.platforms article {
+	min-height: 250px;
+	padding: 48px 36px;
+}
+
+.platforms article + article {
+	border-left: 1px solid var(--color-border-secondary);
+}
+
+.platforms__number {
+	color: var(--color-content-accent);
+	font-family: ui-monospace, monospace;
+}
+
+.platforms p,
+.docs article > p {
+	color: var(--color-content-secondary);
+	line-height: 1.65;
+}
+
+.docs {
+	display: grid;
+	gap: 80px;
+	grid-template-columns: 200px minmax(0, 720px);
+	padding-block: 64px 120px;
+}
+
+.docs aside {
+	position: sticky;
+	top: 64px;
+	height: fit-content;
+}
+
+.docs aside nav {
+	color: var(--color-content-tertiary);
+	display: grid;
+	gap: 14px;
+	margin-top: 42px;
+}
+
+.docs aside > .theme-toggle {
+	margin-top: 24px;
+}
+
+.docs h1 {
+	font-size: clamp(48px, 7vw, 72px);
+}
+
+.docs h2 {
+	border-top: 1px solid var(--color-border-secondary);
+	margin-top: 64px;
+	padding-top: 32px;
+}
+
+pre {
+	line-height: 1.6;
+	overflow-x: auto;
+	padding: 22px;
+}
+
+@media (max-width: 800px) {
+	.hero {
+		grid-template-columns: 1fr;
+		padding-block: 80px;
+	}
+
+	.platforms {
+		grid-template-columns: 1fr;
+	}
+
+	.platforms article + article {
+		border-left: 0;
+		border-top: 1px solid var(--color-border-secondary);
+	}
+
+	.docs {
+		grid-template-columns: 1fr;
+	}
+
+	.docs aside {
+		position: static;
+	}
+}

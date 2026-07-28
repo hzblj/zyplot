@@ -1,0 +1,24 @@
+{
+	"name": "@zyplot/feature-website",
+	"private": true,
+	"version": "0.0.0",
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"scripts": {
+		"build": "tsc --noEmit",
+		"lint": "biome check .",
+		"lint:fix": "biome check --write ."
+	},
+	"dependencies": {
+		"@hzblj/zyplot": "workspace:*",
+		"react": "19.2.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.5.4",
+		"@hzblj/biome-config": "^0.2.0",
+		"@types/react": "^19.2.0",
+		"typescript": "^5.9.3"
+	}
+}

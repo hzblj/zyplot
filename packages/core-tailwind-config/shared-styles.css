@@ -1,0 +1,230 @@
+@import "tailwindcss";
+
+/*
+ * Zyplot's intentionally small design-token foundation.
+ * Primitives exist only to back semantic UI and chart tokens. Product code
+ * should consume the semantic names below rather than these raw ramps.
+ */
+@theme static {
+	--font-inter:
+		var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
+
+	/* Neutral primitives */
+	--color-gray-0: #ffffff;
+	--color-gray-1: #fcfcfc;
+	--color-gray-2: #fafafa;
+	--color-gray-3: #f5f5f5;
+	--color-gray-4: #ebebeb;
+	--color-gray-5: #d9d9d9;
+	--color-gray-6: #cccccc;
+	--color-gray-7: #bfbfbf;
+	--color-gray-9: #a6a6a6;
+	--color-gray-11: #8c8c8c;
+	--color-gray-12: #808080;
+	--color-gray-14: #666666;
+	--color-gray-15: #595959;
+	--color-gray-17: #404040;
+	--color-gray-18: #333333;
+	--color-gray-20: #212121;
+	--color-gray-21: #171717;
+	--color-gray-22: #0a0a0a;
+	--color-gray-23: #000000;
+
+	/* Chart and brand primitives */
+	--color-purple-6: #2f00ae;
+	--color-purple-9: #3c00e1;
+	--color-purple-10: #4400fc;
+	--color-purple-12: #7135ff;
+	--color-purple-13: #814eff;
+	--color-purple-15: #9c74ff;
+	--color-purple-16: #a580ff;
+	--color-purple-17: #b89bff;
+	--color-purple-18: #d1beff;
+	--color-blue-6: #006fac;
+	--color-blue-8: #0080c5;
+	--color-blue-9: #0092de;
+	--color-blue-11: #00b3ff;
+	--color-blue-15: #59c4fd;
+	--color-green-8: #00a546;
+	--color-orange-7: #d23100;
+	--color-orange-9: #f33b00;
+	--color-orange-10: #ff4500;
+	--color-orange-11: #ff5700;
+	--color-orange-12: #ff641b;
+	--color-orange-14: #ff7d4f;
+	--color-red-12: #ff133c;
+	--color-red-13: #ff354e;
+
+	/* Backgrounds and surfaces */
+	--color-background-primary: var(--color-gray-2);
+	--color-background-secondary: var(--color-gray-4);
+	--color-background-inverse: var(--color-gray-22);
+	--color-surface-base: var(--color-gray-2);
+	--color-surface-primary: var(--color-gray-0);
+	--color-surface-secondary: var(--color-gray-1);
+	--color-surface-tertiary: var(--color-gray-3);
+	--color-surface-elevated: var(--color-gray-0);
+
+	/* Text and icons */
+	--color-content-primary: var(--color-gray-23);
+	--color-content-secondary: var(--color-gray-14);
+	--color-content-tertiary: var(--color-gray-12);
+	--color-content-quaternary: var(--color-gray-9);
+	--color-content-accent: var(--color-purple-10);
+	--color-content-on-bg: var(--color-gray-0);
+	--color-content-on-inverse: var(--color-gray-0);
+
+	/* Borders */
+	--color-border-primary: var(--color-gray-6);
+	--color-border-secondary: var(--color-gray-4);
+	--color-border-tertiary: var(--color-gray-3);
+	--color-border-focus: var(--color-purple-10);
+
+	/* Generic fills */
+	--color-fill-primary: var(--color-gray-23);
+	--color-fill-secondary-primary: var(--color-gray-1);
+	--color-fill-secondary-hover: var(--color-gray-3);
+	--color-fill-secondary-pressed: var(--color-gray-4);
+	--color-fill-accent-primary: var(--color-purple-10);
+	--color-fill-accent-hover: var(--color-purple-9);
+	--color-fill-accent-pressed: var(--color-purple-6);
+	--color-fill-disabled: var(--color-gray-4);
+
+	/* Button-specific aliases: enough for primary, secondary and disabled. */
+	--color-btn-primary: var(--color-fill-accent-primary);
+	--color-btn-primary-hover: var(--color-fill-accent-hover);
+	--color-btn-primary-pressed: var(--color-fill-accent-pressed);
+	--color-btn-secondary: var(--color-fill-secondary-primary);
+	--color-btn-secondary-hover: var(--color-fill-secondary-hover);
+	--color-btn-secondary-pressed: var(--color-fill-secondary-pressed);
+	--color-btn-disabled: var(--color-fill-disabled);
+	--color-btn-focus: var(--color-border-focus);
+
+	/* Categorical chart series. The order is stable and must not be cycled. */
+	--color-chart-1: var(--color-purple-10);
+	--color-chart-2: var(--color-blue-9);
+	--color-chart-3: var(--color-orange-11);
+	--color-chart-4: var(--color-purple-15);
+	--color-chart-5: var(--color-green-8);
+	--color-chart-6: var(--color-blue-6);
+	--color-chart-7: var(--color-red-12);
+
+	/* Sequential and diverging chart scales */
+	--color-chart-sequential-1: var(--color-purple-17);
+	--color-chart-sequential-2: var(--color-purple-15);
+	--color-chart-sequential-3: var(--color-purple-12);
+	--color-chart-sequential-4: var(--color-purple-10);
+	--color-chart-sequential-5: var(--color-purple-6);
+	--color-chart-diverging-negative: var(--color-orange-7);
+	--color-chart-diverging-negative-soft: var(--color-orange-14);
+	--color-chart-diverging-neutral: var(--color-gray-5);
+	--color-chart-diverging-positive-soft: var(--color-blue-15);
+	--color-chart-diverging-positive: var(--color-blue-6);
+
+	/* Chart chrome */
+	--color-chart-axis: var(--color-content-quaternary);
+	--color-chart-grid: var(--color-border-tertiary);
+	--color-chart-label: var(--color-content-secondary);
+	--color-chart-muted: var(--color-content-tertiary);
+	--color-chart-surface: var(--color-surface-secondary);
+	--color-chart-track: var(--color-gray-4);
+
+	/* Shadows */
+	--shadow-card-default: 0 1px 2px #0000000a, 0 12px 36px #0000000f;
+	--shadow-card-elevated: 0 2px 6px #0000000f, 0 24px 64px #00000014;
+	--shadow-btn-default: 0 1px 2px #0000001f;
+	--shadow-btn-focused: 0 0 0 3px #4400fc33, 0 1px 2px #0000001f;
+
+	/* Compact typography scale */
+	--text-display: 48px;
+	--text-display--line-height: 52px;
+	--text-display--font-weight: 600;
+	--text-heading: 32px;
+	--text-heading--line-height: 38px;
+	--text-heading--font-weight: 600;
+	--text-title: 20px;
+	--text-title--line-height: 28px;
+	--text-title--font-weight: 600;
+	--text-body: 16px;
+	--text-body--line-height: 24px;
+	--text-body--font-weight: 400;
+	--text-body-medium: 16px;
+	--text-body-medium--line-height: 24px;
+	--text-body-medium--font-weight: 500;
+	--text-footnote: 13px;
+	--text-footnote--line-height: 18px;
+	--text-footnote--font-weight: 400;
+	--text-footnote-medium: 13px;
+	--text-footnote-medium--line-height: 18px;
+	--text-footnote-medium--font-weight: 500;
+	--text-caption: 11px;
+	--text-caption--line-height: 16px;
+	--text-caption--font-weight: 400;
+	--text-caption-medium: 11px;
+	--text-caption-medium--line-height: 16px;
+	--text-caption-medium--font-weight: 500;
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+.dark {
+	--color-background-primary: var(--color-gray-22);
+	--color-background-secondary: var(--color-gray-20);
+	--color-background-inverse: var(--color-gray-2);
+	--color-surface-base: var(--color-gray-22);
+	--color-surface-primary: var(--color-gray-21);
+	--color-surface-secondary: var(--color-gray-21);
+	--color-surface-tertiary: var(--color-gray-20);
+	--color-surface-elevated: var(--color-gray-20);
+
+	--color-content-primary: var(--color-gray-0);
+	--color-content-secondary: var(--color-gray-11);
+	--color-content-tertiary: var(--color-gray-14);
+	--color-content-quaternary: var(--color-gray-15);
+	--color-content-accent: var(--color-purple-16);
+	--color-content-on-bg: var(--color-gray-0);
+	--color-content-on-inverse: var(--color-gray-23);
+
+	--color-border-primary: var(--color-gray-17);
+	--color-border-secondary: var(--color-gray-18);
+	--color-border-tertiary: var(--color-gray-20);
+	--color-border-focus: var(--color-purple-16);
+
+	--color-fill-primary: var(--color-gray-0);
+	--color-fill-secondary-primary: var(--color-gray-20);
+	--color-fill-secondary-hover: var(--color-gray-18);
+	--color-fill-secondary-pressed: var(--color-gray-17);
+	--color-fill-accent-primary: var(--color-purple-10);
+	--color-fill-accent-hover: var(--color-purple-9);
+	--color-fill-accent-pressed: var(--color-purple-6);
+	--color-fill-disabled: var(--color-gray-18);
+
+	--color-chart-1: var(--color-purple-12);
+	--color-chart-2: var(--color-blue-9);
+	--color-chart-3: var(--color-orange-10);
+	--color-chart-4: var(--color-purple-15);
+	--color-chart-5: var(--color-green-8);
+	--color-chart-6: var(--color-blue-6);
+	--color-chart-7: var(--color-red-13);
+	--color-chart-sequential-1: var(--color-purple-18);
+	--color-chart-sequential-2: var(--color-purple-17);
+	--color-chart-sequential-3: var(--color-purple-15);
+	--color-chart-sequential-4: var(--color-purple-13);
+	--color-chart-sequential-5: var(--color-purple-12);
+	--color-chart-diverging-negative: var(--color-orange-12);
+	--color-chart-diverging-negative-soft: var(--color-orange-9);
+	--color-chart-diverging-neutral: var(--color-gray-17);
+	--color-chart-diverging-positive-soft: var(--color-blue-8);
+	--color-chart-diverging-positive: var(--color-blue-11);
+	--color-chart-axis: var(--color-content-quaternary);
+	--color-chart-grid: var(--color-border-tertiary);
+	--color-chart-label: var(--color-content-secondary);
+	--color-chart-muted: var(--color-content-tertiary);
+	--color-chart-surface: var(--color-surface-secondary);
+	--color-chart-track: var(--color-gray-18);
+
+	--shadow-card-default: 0 1px 2px #00000052, 0 12px 36px #00000066;
+	--shadow-card-elevated: 0 2px 6px #00000052, 0 24px 64px #0000007a;
+	--shadow-btn-default: 0 1px 2px #00000066;
+	--shadow-btn-focused: 0 0 0 3px #a580ff52, 0 1px 2px #00000066;
+}

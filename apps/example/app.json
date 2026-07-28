@@ -1,0 +1,21 @@
+{
+	"expo": {
+		"name": "Zyplot Example",
+		"slug": "zyplot-example",
+		"scheme": "zyplot-example",
+		"version": "0.0.0",
+		"orientation": "portrait",
+		"userInterfaceStyle": "automatic",
+		"ios": {
+			"bundleIdentifier": "com.hzblj.zyplot.example",
+			"supportsTablet": true
+		},
+		"android": {
+			"package": "com.hzblj.zyplot.example"
+		},
+		"plugins": ["expo-router"],
+		"experiments": {
+			"typedRoutes": true
+		}
+	}
+}

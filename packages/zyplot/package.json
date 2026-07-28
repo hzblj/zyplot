@@ -1,0 +1,71 @@
+{
+	"name": "@hzblj/zyplot",
+	"version": "0.0.0",
+	"description": "Native-feeling cross-platform charts for React and Expo.",
+	"type": "module",
+	"main": "./build/index.js",
+	"types": "./build/index.d.ts",
+	"react-native": "./build/index.native.js",
+	"exports": {
+		".": {
+			"react-native": "./build/index.native.js",
+			"types": "./build/index.d.ts",
+			"import": "./build/index.js"
+		},
+		"./style.css": "./style.css"
+	},
+	"files": [
+		"build",
+		"style.css"
+	],
+	"keywords": [
+		"charts",
+		"expo",
+		"react",
+		"react-native",
+		"swift-charts",
+		"uplot"
+	],
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/hzblj/zyplot.git"
+	},
+	"scripts": {
+		"build": "tsc -p tsconfig.build.json",
+		"lint": "biome check .",
+		"lint:fix": "biome check --write ."
+	},
+	"dependencies": {
+		"@hzblj/zyplot-core": "workspace:*",
+		"@hzblj/zyplot-platform-android": "workspace:*",
+		"@hzblj/zyplot-platform-ios": "workspace:*",
+		"@hzblj/zyplot-platform-web": "workspace:*"
+	},
+	"peerDependencies": {
+		"expo": ">=55",
+		"react": ">=19",
+		"react-native": ">=0.83"
+	},
+	"peerDependenciesMeta": {
+		"expo": {
+			"optional": true
+		},
+		"react-native": {
+			"optional": true
+		}
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.5.4",
+		"@hzblj/biome-config": "^0.2.0",
+		"@types/react": "^19.2.0",
+		"expo": "55.0.28",
+		"react": "19.2.0",
+		"react-native": "0.83.6",
+		"typescript": "^5.9.3"
+	},
+	"publishConfig": {
+		"access": "public",
+		"provenance": true
+	},
+	"license": "MIT"
+}
