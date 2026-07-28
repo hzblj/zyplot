@@ -1,1 +1,2 @@
-@import "@hzblj/zyplot-platform-web/style.css";
+@import "uplot/dist/uPlot.min.css";
+@import "./build/charts.css";

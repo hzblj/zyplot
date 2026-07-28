@@ -7,11 +7,19 @@
 		}
 	},
 	"files": {
-		"includes": ["**", "!!**/build", "!!**/dist", "!!**/.next"]
+		"includes": [
+			"**",
+			"!!**/build",
+			"!!**/dist",
+			"!!**/.expo",
+			"!!**/.next",
+			"!!apps/example/android",
+			"!!apps/example/ios"
+		]
 	},
 	"overrides": [
 		{
-			"includes": ["packages/platform-web/src/chart/**/*-skeleton.tsx"],
+			"includes": ["packages/zyplot/src/web/**/*-skeleton.tsx"],
 			"linter": {
 				"rules": {
 					"suspicious": {
@@ -21,7 +29,7 @@
 			}
 		},
 		{
-			"includes": ["packages/platform-web/src/chart/meter/meter-bar.tsx"],
+			"includes": ["packages/zyplot/src/web/meter/meter-bar.tsx"],
 			"linter": {
 				"rules": {
 					"a11y": {

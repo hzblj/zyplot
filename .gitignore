@@ -2,6 +2,7 @@
 .env
 .env.local
 .expo
+.idea/
 .next
 .turbo
 .yarn/
@@ -9,3 +10,8 @@ build
 coverage
 dist
 node_modules
+*.tsbuildinfo
+
+# Expo prebuild (CNG) output — regenerate with `expo prebuild`
+/apps/example/android/
+/apps/example/ios/

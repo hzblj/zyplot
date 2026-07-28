@@ -4,7 +4,7 @@
 	"version": "0.0.0",
 	"scripts": {
 		"build": "next build",
-		"dev": "next dev --turbopack -p ${PORT:-4200}",
+		"dev": "next dev --turbopack -p ${PORT:-4222}",
 		"lint": "biome check .",
 		"lint:fix": "biome check --write .",
 		"start": "next start -p ${PORT:-4200}"

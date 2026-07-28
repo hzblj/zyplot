@@ -15,15 +15,38 @@
 			"types": "./build/index.d.ts",
 			"import": "./build/index.js"
 		},
-		"./style.css": "./style.css"
+		"./web": {
+			"types": "./build/web/index.d.ts",
+			"import": "./build/web/index.js"
+		},
+		"./ios": {
+			"types": "./build/ios/index.d.ts",
+			"import": "./build/ios/index.js"
+		},
+		"./android": {
+			"types": "./build/android/index.d.ts",
+			"import": "./build/android/index.js"
+		},
+		"./style.css": "./style.css",
+		"./expo-module.config.json": "./expo-module.config.json",
+		"./package.json": "./package.json"
 	},
 	"files": [
+		"android",
 		"build",
+		"expo-module.config.json",
+		"ios",
 		"style.css"
+	],
+	"sideEffects": [
+		"*.css",
+		"./build/web/**"
 	],
 	"keywords": [
 		"charts",
+		"echarts",
 		"expo",
+		"jetpack-compose",
 		"react",
 		"react-native",
 		"swift-charts",
@@ -34,15 +57,15 @@
 		"url": "git+https://github.com/hzblj/zyplot.git"
 	},
 	"scripts": {
-		"build": "tsc -p tsconfig.build.json",
+		"build": "tsc -p tsconfig.build.json && tailwindcss -i src/web/chart.css -o build/charts.css --minify",
 		"lint": "biome check .",
 		"lint:fix": "biome check --write ."
 	},
 	"dependencies": {
 		"@hzblj/zyplot-core": "workspace:*",
-		"@hzblj/zyplot-platform-android": "workspace:*",
-		"@hzblj/zyplot-platform-ios": "workspace:*",
-		"@hzblj/zyplot-platform-web": "workspace:*"
+		"echarts": "^6.1.0",
+		"tailwind-variants": "^3.2.2",
+		"uplot": "1.6.32"
 	},
 	"peerDependencies": {
 		"expo": ">=55",
@@ -60,7 +83,9 @@
 	"devDependencies": {
 		"@biomejs/biome": "2.5.4",
 		"@hzblj/biome-config": "^0.2.0",
+		"@tailwindcss/cli": "^4.3.2",
 		"@types/react": "^19.2.0",
+		"@zyplot/core-tailwind-config": "workspace:*",
 		"expo": "55.0.28",
 		"react": "19.2.0",
 		"react-native": "0.83.6",

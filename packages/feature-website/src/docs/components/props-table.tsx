@@ -6,27 +6,42 @@ const styles = docsStyles();
 
 const typeReferences: Record<string, string> = {
 	BoxplotLabels: "/docs/data-types#specialized-data",
+	ChartAnimation: "/docs/data-types#plot-style",
+	ChartAnnotation: "/docs/data-types#annotations",
 	ChartAxes: "/docs/data-types#chart-options",
+	ChartAxisOptions: "/docs/data-types#axis-options",
 	ChartBoxplotGroup: "/docs/data-types#specialized-data",
+	ChartCandlestickDatum: "/docs/data-types#finance-data",
+	ChartCandlestickStyle: "/docs/data-types#finance-data",
 	ChartDatum: "/docs/data-types#chart-datum",
 	ChartDumbbellRow: "/docs/data-types#specialized-data",
 	ChartFlowLink: "/docs/data-types#specialized-data",
 	ChartFlowNode: "/docs/data-types#specialized-data",
 	ChartHeatmapCell: "/docs/data-types#specialized-data",
 	ChartHierarchyNode: "/docs/data-types#specialized-data",
+	ChartInteraction: "/docs/data-types#interaction",
+	ChartInteractionEvent: "/docs/data-types#interaction",
 	ChartLegendItem: "/docs/data-types#chart-legend",
 	ChartNumberFormat: "/docs/data-types#chart-options",
+	ChartPlotStyle: "/docs/data-types#plot-style",
 	ChartRadarAxis: "/docs/data-types#specialized-data",
 	ChartScatterSeries: "/docs/data-types#specialized-data",
 	ChartSeries: "/docs/data-types#chart-series",
-	ChartTheme: "/docs/theming#provider-props",
+	ChartSeriesStyle: "/docs/data-types#plot-style",
+	ChartSurface: "/docs/theming#surface",
+	ChartSurfacePadding: "/docs/theming#surface",
+	ChartTheme: "/docs/theming#theme-keys",
 	ChartTimePoints: "/docs/data-types#specialized-data",
 };
 
+/**
+ * The longest matching name wins. `Record<string, ChartSeriesStyle>` contains
+ * `ChartSeries` too, and a first-match lookup sent it to the series anchor.
+ */
 const getTypeReference = (type: string) => {
-	const typeName = Object.keys(typeReferences).find((name) =>
-		type.includes(name),
-	);
+	const typeName = Object.keys(typeReferences)
+		.filter((name) => type.includes(name))
+		.sort((first, second) => second.length - first.length)[0];
 	return typeName ? typeReferences[typeName] : undefined;
 };
 

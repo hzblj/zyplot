@@ -17,8 +17,7 @@ const demoSeries = [
 export const ChartDemo = () => (
 	<div className={styles.chartCard()}>
 		<div className={styles.chartHeader()}>
-			<span>Live preview</span>
-			<span className={styles.status()}>Web · ECharts</span>
+			<span className={styles.status()}>Web</span>
 		</div>
 		<Chart.Line
 			categories={["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"]}

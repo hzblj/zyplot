@@ -1,0 +1,25 @@
+export const NATIVE_CHART_KINDS = [
+	"line",
+	"area",
+	"bar",
+	"stacked-bar",
+	"pie",
+	"gauge",
+	"meter",
+	"histogram",
+	"boxplot",
+	"candlestick",
+	"diverging-bar",
+	"dumbbell",
+	"funnel",
+	"heatmap",
+	"radar",
+	"scatter",
+	"sankey",
+	"sunburst",
+	"treemap",
+	"time-series",
+	"sparkline",
+] as const;
+
+export type NativeChartKind = (typeof NATIVE_CHART_KINDS)[number];

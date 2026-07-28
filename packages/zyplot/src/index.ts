@@ -1,1 +1,1 @@
-export * from "@hzblj/zyplot-platform-web";
+export * from "./web/index";

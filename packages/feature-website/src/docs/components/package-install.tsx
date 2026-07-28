@@ -2,18 +2,14 @@
 
 import { useState } from "react";
 import { docsStyles } from "../../docs-styles";
+import {
+	INSTALL_COMMANDS as commands,
+	PACKAGE_MANAGERS,
+	type PackageManager,
+} from "../../install-commands";
 import { cn } from "../../utils";
 
 const styles = docsStyles();
-
-const commands = {
-	npm: "npm install @hzblj/zyplot-platform-web",
-	yarn: "yarn add @hzblj/zyplot-platform-web",
-	pnpm: "pnpm add @hzblj/zyplot-platform-web",
-	bun: "bun add @hzblj/zyplot-platform-web",
-} as const;
-
-type PackageManager = keyof typeof commands;
 
 export const PackageInstall = () => {
 	const [manager, setManager] = useState<PackageManager>("npm");
@@ -33,7 +29,7 @@ export const PackageInstall = () => {
 					className={styles.tabs()}
 					role="tablist"
 				>
-					{(Object.keys(commands) as PackageManager[]).map((value) => (
+					{PACKAGE_MANAGERS.map((value) => (
 						<button
 							aria-selected={manager === value}
 							className={cn(

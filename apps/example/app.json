@@ -13,7 +13,17 @@
 		"android": {
 			"package": "com.hzblj.zyplot.example"
 		},
-		"plugins": ["expo-router"],
+		"plugins": [
+			"expo-router",
+			[
+				"expo-build-properties",
+				{
+					"ios": {
+						"deploymentTarget": "17.0"
+					}
+				}
+			]
+		],
 		"experiments": {
 			"typedRoutes": true
 		}

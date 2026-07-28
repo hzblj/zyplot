@@ -7,6 +7,27 @@ import type { ReactNode } from "react";
 
 export const metadata: Metadata = {
 	description: "Native-feeling cross-platform charts for React and Expo.",
+	/**
+	 * The mark on the accent square rather than on transparency: a tab strip is
+	 * light in one theme and dark in the other, and a bare glyph disappears into
+	 * one of them.
+	 */
+	icons: {
+		apple: {
+			sizes: "180x180",
+			type: "image/png",
+			url: "/favicon/favicon-180.png",
+		},
+		icon: [
+			{ sizes: "any", url: "/favicon.ico" },
+			{ sizes: "16x16", type: "image/png", url: "/favicon/favicon-16.png" },
+			{ sizes: "32x32", type: "image/png", url: "/favicon/favicon-32.png" },
+			{ sizes: "48x48", type: "image/png", url: "/favicon/favicon-48.png" },
+			{ sizes: "64x64", type: "image/png", url: "/favicon/favicon-64.png" },
+			{ sizes: "192x192", type: "image/png", url: "/favicon/favicon-192.png" },
+			{ sizes: "512x512", type: "image/png", url: "/favicon/favicon-512.png" },
+		],
+	},
 	title: "Zyplot",
 };
 
