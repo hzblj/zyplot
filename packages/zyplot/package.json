@@ -52,9 +52,11 @@
 		"swift-charts",
 		"uplot"
 	],
+	"homepage": "https://zyplot.janblazej.dev/docs",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/hzblj/zyplot.git"
+		"url": "git+https://github.com/hzblj/zyplot.git",
+		"directory": "packages/zyplot"
 	},
 	"scripts": {
 		"build": "tsc -p tsconfig.build.json && tailwindcss -i src/web/chart.css -o build/charts.css --minify",

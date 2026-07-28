@@ -1,21 +1,24 @@
 # Zyplot
 
-Cross-platform React charting with a shared TypeScript contract and native
-rendering on every platform:
+[![npm version][npm-badge]][npm-url]
+[![License: MIT][license-badge]][license-url]
+[![Buy me a coffee][coffee-badge]][coffee-url]
 
-- **Web** — ECharts and uPlot
-- **iOS** — Swift Charts through an Expo Module
-- **Android** — Jetpack Compose through an Expo Module
+[npm-badge]: https://img.shields.io/npm/v/@hzblj/zyplot?labelColor=27272a&color=4400fc&label=%40hzblj%2Fzyplot
+[npm-url]: https://www.npmjs.com/package/@hzblj/zyplot
+[license-badge]: https://img.shields.io/badge/license-MIT-4400fc?labelColor=27272a
+[license-url]: https://github.com/hzblj/zyplot/blob/main/LICENSE
+[coffee-badge]: https://img.shields.io/badge/buy%20me%20a%20coffee-hzblj-4400fc?labelColor=27272a&logo=buymeacoffee&logoColor=white
+[coffee-url]: https://buymeacoffee.com/hzblj
 
-Consumers install one package, `@hzblj/zyplot`, whatever they target.
+**One chart API. Native everywhere.**
 
-```bash
-npm install @hzblj/zyplot
-```
+High-performance, natively rendered graphs for web, iOS, and Android, designed
+for developers and coding agents.
 
 ## Documentation
 
-Coming soon.
+[zyplot.janblazej.dev/docs](https://zyplot.janblazej.dev/docs)
 
 ## License
 

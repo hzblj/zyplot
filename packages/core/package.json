@@ -14,6 +14,11 @@
 	"files": [
 		"build"
 	],
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/hzblj/zyplot.git",
+		"directory": "packages/core"
+	},
 	"scripts": {
 		"build": "tsc -p tsconfig.build.json",
 		"lint": "biome check .",
