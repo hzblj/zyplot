@@ -1,5 +1,15 @@
 # @hzblj/zyplot
 
+## 0.1.1
+
+### Patch Changes
+
+- [`ab6e55e`](https://github.com/hzblj/zyplot/commit/ab6e55e15bcd9bb54e12fedd4981444b13d9e524) - Add `repository` metadata and a bundled LICENSE file to both published
+  packages. npm verifies a provenance-signed publish against `repository.url`,
+  so the missing field left `@hzblj/zyplot-core` unpublishable.
+- Updated dependencies [[`ab6e55e`](https://github.com/hzblj/zyplot/commit/ab6e55e15bcd9bb54e12fedd4981444b13d9e524)]:
+  - @hzblj/zyplot-core@0.1.1
+
 ## 0.1.0
 
 ### Minor Changes
