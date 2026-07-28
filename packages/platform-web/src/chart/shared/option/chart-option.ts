@@ -98,7 +98,7 @@ export const buildChartTooltip = (
 ) => ({
 	axisPointer: {
 		lineStyle: { color: tokens.axis, width: 1 },
-		shadowStyle: { color: tokens.track },
+		shadowStyle: { color: "transparent" },
 		type: pointer,
 	},
 	backgroundColor: tokens.surface,

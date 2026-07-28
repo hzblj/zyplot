@@ -47,6 +47,8 @@ export const docsStyles = tv({
 		propsTable:
 			"w-full min-w-[660px] border-collapse text-xs [&_th]:bg-surface-secondary [&_th]:text-left [&_th]:text-[10px] [&_th]:uppercase [&_th]:tracking-[0.08em] [&_th]:text-content-tertiary [&_th]:px-3.5 [&_th]:py-[13px] [&_td]:border-b [&_td]:border-border-secondary [&_td]:px-3.5 [&_td]:py-[13px] [&_td]:align-top [&_tbody_tr:last-child_td]:border-b-0",
 		propsTableWrap: "overflow-x-auto rounded-xl border border-border-secondary",
+		propsTypeLink:
+			"rounded-sm text-content-accent underline decoration-transparent underline-offset-4 transition-colors hover:decoration-current",
 		section:
 			"scroll-mt-6 border-b border-border-secondary py-[72px] max-[820px]:py-[60px] [&>h2]:mb-[18px] [&>h2]:text-[34px] [&>h2]:font-semibold [&>h2]:tracking-[-0.035em] [&>h3]:mb-4 [&>h3]:mt-10 [&>h3]:text-[17px] [&>p]:max-w-[680px] [&>p]:text-base [&>p]:leading-7 [&>p]:text-content-secondary [&>pre]:mt-6",
 		sidebar:

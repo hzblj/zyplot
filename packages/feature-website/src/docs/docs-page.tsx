@@ -733,7 +733,12 @@ const chartDocs: ChartDoc[] = [
 			/>
 		),
 		props: withBase(
-			seriesProp,
+			{
+				description: "Named groups of points in a two-measure space.",
+				name: "series",
+				required: true,
+				type: "ChartScatterSeries[]",
+			},
 			{
 				description: "Label shown for the horizontal measure.",
 				name: "xLabel",
@@ -989,7 +994,13 @@ const guidePages = [
 
 const guidePageHeadings: Record<string, { id: string; label: string }[]> = {
 	"dark-mode": [{ id: "dark-mode", label: "Light and dark mode" }],
-	"data-types": [{ id: "data-types", label: "Data types" }],
+	"data-types": [
+		{ id: "data-types", label: "Data types" },
+		{ id: "chart-series", label: "ChartSeries" },
+		{ id: "chart-datum", label: "ChartDatum" },
+		{ id: "chart-options", label: "Axes and formatting" },
+		{ id: "specialized-data", label: "Specialized data" },
+	],
 	"first-chart": [{ id: "first-chart", label: "Your first chart" }],
 	installation: [{ id: "installation", label: "Installation" }],
 	introduction: [{ id: "getting-started", label: "Getting started" }],
@@ -1287,21 +1298,146 @@ export function RevenueChart() {
 				>
 					<h2>Data types</h2>
 					<p>
-						A series owns a stable identity, translated label and values. Pin a
-						slot when filtering could otherwise repaint the surviving series.
+						These serializable data contracts are shared by the chart
+						components. Type names in every props table link back to this
+						reference.
+					</p>
+					<h3 id="chart-series">ChartSeries</h3>
+					<p>
+						Used by line, area, bar, stacked bar, radar and other multi-series
+						charts. Each values entry aligns with the category at the same
+						index.
 					</p>
 					<CodeBlock>{`type ChartSeries = {
+  /** Stable identity used for rendering and interaction. */
   id: string
+  /** Display-ready series name used by legends and tooltips. */
   label: string
+  /** One value per category. null creates a real gap. */
   values: Array<number | null>
+  /** Stable 1-based palette position when series can be filtered. */
   slot?: number
+  /** Explicit color overriding Provider and CSS palettes. */
   color?: string
 }`}</CodeBlock>
 					<p>
 						An explicit <code>color</code> wins over the Provider palette and
-						CSS variables. Use it sparingly when a series has a fixed brand
-						identity.
+						CSS variables. Use <code>slot</code> when filtering must not change
+						a series color.
 					</p>
+					<CodeBlock>{`const series: ChartSeries[] = [
+  {
+    id: 'revenue',
+    label: 'Revenue',
+    values: [42, 56, null, 72],
+    slot: 1,
+    color: '#16a34a',
+  },
+]`}</CodeBlock>
+					<h3 id="chart-datum">ChartDatum</h3>
+					<p>
+						Used by part-to-whole and ranked charts where each item has one
+						scalar value.
+					</p>
+					<CodeBlock>{`type ChartDatum = {
+  id: string
+  label: string
+  value: number
+  slot?: number
+  color?: string
+}`}</CodeBlock>
+					<h3 id="chart-options">Axes and number formatting</h3>
+					<CodeBlock>{`type ChartAxes = {
+  x?: boolean
+  y?: boolean
+}
+
+type ChartNumberFormat = {
+  decimals?: number
+  locale?: string
+  prefix?: string
+  suffix?: string
+}`}</CodeBlock>
+					<h3 id="chart-legend">ChartLegendItem</h3>
+					<CodeBlock>{`type ChartLegendItem = {
+  id: string
+  label: string
+  color: string
+}`}</CodeBlock>
+					<h3 id="specialized-data">Specialized chart data</h3>
+					<p>
+						Some chart forms use a shape-specific contract instead of
+						<code>ChartSeries</code>. Their field names describe the visual
+						encoding directly.
+					</p>
+					<CodeBlock>{`type ChartRadarAxis = {
+  label: string
+  max: number
+}
+
+type ChartHeatmapCell = {
+  columnIndex: number
+  rowIndex: number
+  value: number | null
+}
+
+type ChartDumbbellRow = {
+  id: string
+  label: string
+  before: number
+  after: number
+}
+
+type ChartBoxplotGroup = {
+  id: string
+  label: string
+  min: number
+  q1: number
+  median: number
+  q3: number
+  max: number
+  outliers?: number[]
+}
+
+type ChartFlowNode = {
+  id: string
+  label: string
+  slot?: number
+  color?: string
+}
+
+type ChartFlowLink = {
+  source: string
+  target: string
+  value: number
+}
+
+type ChartHierarchyNode = {
+  id: string
+  label: string
+  value?: number
+  children?: ChartHierarchyNode[]
+  slot?: number
+  color?: string
+}
+
+type ChartScatterSeries = {
+  id: string
+  label: string
+  points: Array<{
+    x: number
+    y: number
+    size?: number
+    label?: string
+  }>
+  slot?: number
+  color?: string
+}
+
+type ChartTimePoints = {
+  timestamps: number[]
+  values: Array<Array<number | null>>
+}`}</CodeBlock>
 				</section>
 
 				<section
