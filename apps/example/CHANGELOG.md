@@ -1,5 +1,12 @@
 # @zyplot/example
 
+## 0.0.2
+
+### Patch Changes
+
+- Updated dependencies [[`ab6e55e`](https://github.com/hzblj/zyplot/commit/ab6e55e15bcd9bb54e12fedd4981444b13d9e524)]:
+  - @hzblj/zyplot@0.1.1
+
 ## 0.0.1
 
 ### Patch Changes
