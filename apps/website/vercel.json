@@ -1,4 +1,5 @@
 {
 	"$schema": "https://openapi.vercel.sh/vercel.json",
-	"installCommand": "corepack enable && COREPACK_ENABLE_DOWNLOAD_PROMPT=0 yarn install --immutable"
+	"installCommand": "corepack yarn install --immutable",
+	"buildCommand": "cd ../.. && corepack yarn turbo run build --filter=@zyplot/website"
 }
