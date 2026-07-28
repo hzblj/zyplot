@@ -14,7 +14,8 @@
 			"!!**/.expo",
 			"!!**/.next",
 			"!!apps/example/android",
-			"!!apps/example/ios"
+			"!!apps/example/ios",
+			"!!**/expo-env.d.ts"
 		]
 	},
 	"overrides": [
