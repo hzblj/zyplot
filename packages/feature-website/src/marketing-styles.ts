@@ -77,7 +77,14 @@ export const marketingStyles = tv({
 		menuLink:
 			"rounded-[9px] px-2 py-2.5 text-content-secondary transition-colors hover:bg-fill-secondary-hover hover:text-content-primary",
 		menuNav: "grid gap-px text-[15px]",
-		/** `px-5` on a phone is the docs header's gutter, so the two headers line up. */
+		/**
+		 * The measurements a reader crosses pages on, and the docs copy all three:
+		 * `h-20`, `max-w-[1180px]` and this pair of gutters. The docs header is the
+		 * same 80px row below 820px, the docs grid caps at the same 1180 with the same
+		 * `px-7` on its sidebar, and the wordmark sits at the same x and y in both —
+		 * clicking into the docs moves nothing. Changing any of the three here means
+		 * changing `mobileHeader`, `sidebarTop`, `site` and `themeCorner` with it.
+		 */
 		nav: "mx-auto flex h-20 max-w-[1180px] items-center justify-between gap-4 px-7 max-[560px]:px-5",
 		navActions: "flex shrink-0 items-center gap-7 max-[820px]:gap-2.5",
 		navIconLink:

@@ -82,7 +82,18 @@ export const docsStyles = tv({
 		codeCopy:
 			"cursor-pointer rounded-md px-2 py-1 transition-colors hover:bg-fill-secondary-hover hover:text-content-primary",
 		compactPreview: "flex min-h-[280px] items-center px-[12%]",
-		content: "min-w-0 px-16 pb-40 max-[820px]:px-5 max-[820px]:pb-24",
+		/**
+		 * `px-10` rather than the 16 it was. The grid caps at 1180 to stay aligned
+		 * with the marketing container, which leaves this column 740px wide — at 64px
+		 * of padding a side the measure came to 612, and a props table declares
+		 * `min-w-[660px]`, so every one of them opened already scrolled sideways.
+		 *
+		 * The two mobile gutters are the header's, which are the marketing page's:
+		 * `px-5` on a phone, `px-7` from 560 up, so the prose starts under the
+		 * wordmark rather than 8px inside it through that range.
+		 */
+		content:
+			"min-w-0 px-10 pb-40 max-[820px]:px-7 max-[820px]:pb-24 max-[560px]:px-5",
 		example:
 			"overflow-hidden rounded-2xl border border-border-secondary bg-surface-primary shadow-card-default",
 		exampleBar:
@@ -94,8 +105,20 @@ export const docsStyles = tv({
 		hero: "scroll-mt-6 border-b border-border-secondary pb-[72px] pt-[108px] max-[820px]:pt-[72px] [&_h1]:mb-[30px] [&_h1]:text-[clamp(52px,6vw,76px)] [&_h1]:font-bold [&_h1]:leading-[.98] [&_h1]:tracking-[-.06em] [&>p:last-child]:max-w-[680px] [&>p:last-child]:text-base [&>p:last-child]:leading-7 [&>p:last-child]:text-content-secondary",
 		kicker:
 			"mb-5 text-[11px] font-bold uppercase tracking-[0.12em] text-content-accent",
+		/**
+		 * `h-20` and the marketing gutters, both to the letter: this row and the
+		 * landing page's nav are the two headers a reader crosses between, so the
+		 * wordmark has to land on the same pixel in both. It used to be 64px tall at
+		 * a flat `px-5`, which moved the logo up 8px on every hop into the docs and
+		 * sideways by another 8 between 560 and 820px.
+		 *
+		 * 81px, not 80, and the odd pixel is the rule underneath. Preflight sizes
+		 * boxes with `border-box`, so `h-20` and a bottom border leave a 79px content
+		 * box for `items-center` to work in — the wordmark centred half a pixel above
+		 * where the nav puts it, and rendered a shade softer for it.
+		 */
 		mobileHeader:
-			"sticky top-0 z-20 hidden h-16 items-center justify-between gap-4 border-b border-border-secondary bg-surface-base/90 px-5 backdrop-blur max-[820px]:flex",
+			"sticky top-0 z-20 hidden h-[81px] items-center justify-between gap-4 border-b border-border-secondary bg-surface-base/90 px-7 backdrop-blur max-[820px]:flex max-[560px]:px-5",
 		mobileHeaderActions: "flex shrink-0 items-center gap-2.5",
 		/**
 		 * No colour on the row. It used to carry `text-content-tertiary` for the
@@ -104,7 +127,8 @@ export const docsStyles = tv({
 		 * purple. The label owns its own colour instead.
 		 */
 		mobileHeaderBrand: "flex min-w-0 items-baseline gap-2.5",
-		mobileHeaderLabel: "text-sm text-content-tertiary",
+		/** Shared with `sidebarBrand`: one "Docs" beside the wordmark, one size. */
+		brandLabel: "text-sm text-content-tertiary",
 		navGroup: "mb-7 grid gap-[3px]",
 		navGroupLabel:
 			"mb-2 text-xs font-bold tracking-[0.01em] text-content-primary",
@@ -146,8 +170,12 @@ export const docsStyles = tv({
 		propsTypeLink:
 			"rounded-sm text-content-accent underline decoration-transparent underline-offset-4 transition-colors hover:decoration-current",
 		section: `scroll-mt-6 border-b border-border-secondary py-[72px] max-[820px]:py-[60px] ${flow} ${inlineCode} [&>h2+*]:mt-0 [&>h2]:mb-6 [&>h2]:text-[34px] [&>h2]:font-semibold [&>h2]:tracking-[-0.035em] [&>h3]:text-[17px] [&>p]:max-w-[680px] [&>p]:text-base [&>p]:leading-7 [&>p]:text-content-secondary`,
+		/**
+		 * No top padding: `sidebarTop` is a fixed 80px band that stands in for the
+		 * header this column replaces, and the padding used to sit on top of it.
+		 */
 		sidebar:
-			"sticky top-0 left-0 flex h-screen flex-col overflow-y-auto border-r border-border-secondary px-7 pb-6 pt-7 [scrollbar-color:var(--color-gray-5)_transparent] [scrollbar-width:thin] max-[820px]:hidden",
+			"sticky top-0 left-0 flex h-screen flex-col overflow-y-auto border-r border-border-secondary px-7 pb-6 [scrollbar-color:var(--color-gray-5)_transparent] [scrollbar-width:thin] max-[820px]:hidden",
 		/**
 		 * Stacked, not a row. Two links reading "GitHub" and "Buy me a coffee" come
 		 * to roughly 200px of text in a 208px column, so side by side they had
@@ -158,8 +186,32 @@ export const docsStyles = tv({
 		sidebarFooterLink:
 			"inline-flex items-center gap-2 text-content-tertiary transition-colors hover:text-content-primary",
 		sidebarFooterMark: "size-4 shrink-0",
-		sidebarTop: "mb-11 flex items-baseline gap-2.5",
-		site: "mx-auto grid min-h-screen max-w-[1344px] grid-cols-[264px_minmax(0,860px)_220px] justify-center max-[1180px]:grid-cols-[240px_minmax(0,820px)] max-[820px]:block",
+		/**
+		 * The desktop stand-in for the marketing nav, and the reason the wordmark
+		 * does not move when a reader clicks into the docs: same 80px band, same
+		 * `items-center`, same brand group inside it as `mobileHeader`. Anything that
+		 * changes the height here has to change there and in `marketingStyles.nav`.
+		 *
+		 * The 24px beneath it replaces the old `pt-7` plus `mb-11`, which put the
+		 * first nav group 101px down — this lands it at 104.
+		 */
+		sidebarTop: "mb-6 flex h-20 shrink-0 items-center",
+		/** Baseline-aligned, so "Docs" sits on the wordmark's own baseline. */
+		sidebarBrand: "flex min-w-0 items-baseline gap-2.5",
+		/**
+		 * 1180 rather than 1344, and both rails narrower with it. The wordmark in
+		 * `sidebarTop` has to sit at the same x as the one in the marketing nav, and
+		 * that nav is a `max-w-[1180px]` container with the same `px-7` — a wider grid
+		 * here dragged the logo 82px left of where the landing page left it on a
+		 * 1440px screen. The cost is the 120px the content column gives up, which
+		 * `content` buys most of back in padding.
+		 *
+		 * `minmax(0,1fr)` on the middle column, not a pixel cap. A capped column
+		 * leaves free space the grid then has to distribute, and `justify-center`
+		 * spent it on both margins — which moved the sidebar, and the logo with it,
+		 * by up to 20px through the 1060–1180 range.
+		 */
+		site: "mx-auto grid min-h-screen max-w-[1180px] grid-cols-[240px_minmax(0,1fr)_200px] max-[1180px]:grid-cols-[240px_minmax(0,1fr)] max-[820px]:block",
 		/**
 		 * The transparent border is load-bearing: the active state adds a real one,
 		 * and without a placeholder every tab would shift a pixel on selection.
@@ -174,7 +226,7 @@ export const docsStyles = tv({
 			"border-border-secondary bg-surface-elevated text-content-primary shadow-[0_1px_2px_#0000001f]",
 		tabInactive: "text-content-tertiary",
 		tabs: "flex gap-0.5",
-		toc: "sticky top-0 h-screen overflow-y-auto px-6 py-[72px] max-[1180px]:hidden",
+		toc: "sticky top-0 h-screen overflow-y-auto px-5 py-[72px] max-[1180px]:hidden",
 		tocLabel: "mb-2 text-xs font-bold text-content-primary",
 		tocSection:
 			"mx-2 mb-1 mt-[22px] text-[11px] font-bold uppercase text-content-primary",
@@ -182,10 +234,21 @@ export const docsStyles = tv({
 			"grid gap-px text-[11px] leading-[1.35] text-content-tertiary [&_a]:rounded-md [&_a]:px-2 [&_a]:py-1 [&_a]:transition-colors [&_a:hover]:bg-fill-secondary-hover [&_a:hover]:text-content-primary",
 		/**
 		 * Desktop only. The mobile header owns a toggle of its own, and this one is
-		 * pinned over the same corner — both together read as two controls.
+		 * pinned over the same row — both together read as two controls.
+		 *
+		 * A full-width band rather than the `right-5 top-5` corner it was. The toggle
+		 * has to land where the marketing nav's own toggle sits, and that one is the
+		 * last item in a centred `max-w-[1180px] px-7` row 80px tall — a viewport
+		 * corner is 138px to the right of it and 20px above on a 1440px screen.
+		 *
+		 * `pointer-events-none` is load-bearing now that the band is the full width:
+		 * it spans the top 80px of the page, which is the sidebar's brand row and the
+		 * link home inside it. The toggle takes its own events back.
 		 */
-		themeCorner: "fixed right-5 top-5 z-50 max-[820px]:hidden",
-		wordmarkRow: "mb-11 flex items-baseline gap-2.5",
+		themeCorner:
+			"pointer-events-none fixed inset-x-0 top-0 z-50 flex h-20 items-center max-[820px]:hidden",
+		themeCornerInner:
+			"mx-auto flex w-full max-w-[1180px] justify-end px-7 [&>*]:pointer-events-auto",
 		/** Matches the marketing nav's brand link — opacity reads in both themes. */
 		brandLink: "transition-opacity hover:opacity-70",
 		wordmark: "text-xl font-bold tracking-[-0.04em]",

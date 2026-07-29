@@ -1266,15 +1266,16 @@ export const DocsLayout = ({ children }: { children: ReactNode }) => (
 	<div className={styles.site()}>
 		{/*
 		 * Below 820px the sidebar is gone and this header carries the nav instead:
-		 * the drawer's hamburger, and the theme toggle the fixed corner one hands
-		 * over to — that one is positioned over exactly this row.
+		 * the drawer's hamburger, and the theme toggle the fixed desktop band hands
+		 * over to — that band is 80px tall over exactly this row, and puts its own
+		 * toggle on the same pixel.
 		 */}
 		<header className={styles.mobileHeader()}>
 			<div className={styles.mobileHeaderBrand()}>
 				<Link className={styles.brandLink()} href="/">
 					<Wordmark className={styles.wordmark()} />
 				</Link>
-				<span className={styles.mobileHeaderLabel()}>Docs</span>
+				<span className={styles.brandLabel()}>Docs</span>
 			</div>
 			<div className={styles.mobileHeaderActions()}>
 				<ThemeToggle />
@@ -1285,15 +1286,24 @@ export const DocsLayout = ({ children }: { children: ReactNode }) => (
 			</div>
 		</header>
 		<div className={styles.themeCorner()}>
-			<ThemeToggle />
+			<div className={styles.themeCornerInner()}>
+				<ThemeToggle />
+			</div>
 		</div>
 
 		<aside className={styles.sidebar()}>
+			{/*
+			 * The 80px band the marketing nav also is, so the wordmark carries over at
+			 * the same height — the brand group inside it is the one from the mobile
+			 * header, down to the baseline alignment.
+			 */}
 			<div className={styles.sidebarTop()}>
-				<Link className={styles.brandLink()} href="/">
-					<Wordmark className={styles.wordmark()} />
-				</Link>
-				<span>Docs</span>
+				<div className={styles.sidebarBrand()}>
+					<Link className={styles.brandLink()} href="/">
+						<Wordmark className={styles.wordmark()} />
+					</Link>
+					<span className={styles.brandLabel()}>Docs</span>
+				</div>
 			</div>
 			<DocsNav charts={chartDocs} label="Documentation" />
 			<div className={styles.sidebarFooter()}>{supportLinks}</div>
