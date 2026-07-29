@@ -97,8 +97,14 @@ export const docsStyles = tv({
 		mobileHeader:
 			"sticky top-0 z-20 hidden h-16 items-center justify-between gap-4 border-b border-border-secondary bg-surface-base/90 px-5 backdrop-blur max-[820px]:flex",
 		mobileHeaderActions: "flex shrink-0 items-center gap-2.5",
-		mobileHeaderBrand:
-			"flex min-w-0 items-baseline gap-2.5 text-sm text-content-tertiary",
+		/**
+		 * No colour on the row. It used to carry `text-content-tertiary` for the
+		 * "Docs" label beside the wordmark, and the wordmark inherited it — the
+		 * logo's letters came out grey on every phone while its mark stayed accent
+		 * purple. The label owns its own colour instead.
+		 */
+		mobileHeaderBrand: "flex min-w-0 items-baseline gap-2.5",
+		mobileHeaderLabel: "text-sm text-content-tertiary",
 		navGroup: "mb-7 grid gap-[3px]",
 		navGroupLabel:
 			"mb-2 text-xs font-bold tracking-[0.01em] text-content-primary",

@@ -1274,7 +1274,7 @@ export const DocsLayout = ({ children }: { children: ReactNode }) => (
 				<Link className={styles.brandLink()} href="/">
 					<Wordmark className={styles.wordmark()} />
 				</Link>
-				<span>Docs</span>
+				<span className={styles.mobileHeaderLabel()}>Docs</span>
 			</div>
 			<div className={styles.mobileHeaderActions()}>
 				<ThemeToggle />
