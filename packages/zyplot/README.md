@@ -11,14 +11,15 @@
 [coffee-badge]: https://img.shields.io/badge/buy%20me%20a%20coffee-hzblj-4400fc?labelColor=27272a&logo=buymeacoffee&logoColor=white
 [coffee-url]: https://buymeacoffee.com/hzblj
 
-**One chart API. Native everywhere.**
+<a href="https://zyplot.janblazej.dev"><img src="https://zyplot.janblazej.dev/og.png" alt="Zyplot — one chart API, native everywhere on web, iOS and Android" width="720"></a>
 
-High-performance, natively rendered graphs for web, iOS, and Android, designed
-for developers and coding agents.
+## 🚀 Docs
 
-## Documentation
+[Here!](https://zyplot.janblazej.dev/docs)
 
-[zyplot.janblazej.dev/docs](https://zyplot.janblazej.dev/docs)
+## Sponsorship
+
+<a href="https://www.buymeacoffee.com/hzblj" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee" style="height: 60px !important;width: 217px !important;" ></a>
 
 ## License
 
