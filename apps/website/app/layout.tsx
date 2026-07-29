@@ -1,6 +1,10 @@
 import "./styles.css";
 
-import { HERO_HEADLINE, HERO_LEDE } from "@zyplot/feature-website";
+import {
+	AnalyticsEvents,
+	HERO_HEADLINE,
+	HERO_LEDE,
+} from "@zyplot/feature-website";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import Script from "next/script";
@@ -116,6 +120,13 @@ export default function RootLayout({
 				}}
 			>
 				{children}
+				{/*
+				 * Mounted in every environment, unlike the script below. It reads
+				 * `data-analytics` off whatever was clicked and hands it to `gtag`,
+				 * which is absent outside production — so the listener is a no-op there
+				 * rather than a second thing to remember to turn on.
+				 */}
+				<AnalyticsEvents />
 				{/*
 				 * Production only: a dev server reloads on every keystroke, and every
 				 * one of those is a session in the property otherwise.

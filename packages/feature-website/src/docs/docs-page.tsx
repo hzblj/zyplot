@@ -3,9 +3,11 @@
 import { Chart } from "@hzblj/zyplot";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { CoffeeMark } from "../coffee-mark";
 import { docsStyles } from "../docs-styles";
 import { GithubMark } from "../github-mark";
 import { HERO_HEADLINE, HERO_LEDE } from "../hero-copy";
+import { COFFEE_URL, REPOSITORY_URL } from "../links";
 import { MobileNav } from "../mobile-nav";
 import { ThemeToggle } from "../theme-toggle";
 import { cn } from "../utils";
@@ -1236,14 +1238,28 @@ const guidePageHeadings: Record<string, { id: string; label: string }[]> = {
 	],
 };
 
-const githubLink = (
-	<a
-		className={styles.sidebarFooterLink()}
-		href="https://github.com/hzblj/zyplot"
-	>
-		<GithubMark className={styles.sidebarFooterMark()} />
-		GitHub
-	</a>
+/** Rendered twice — the sidebar above 820px, the drawer below it. */
+const supportLinks = (
+	<>
+		<a
+			className={styles.sidebarFooterLink()}
+			data-analytics="github_click"
+			data-analytics-placement="docs"
+			href={REPOSITORY_URL}
+		>
+			<GithubMark className={styles.sidebarFooterMark()} />
+			GitHub
+		</a>
+		<a
+			className={styles.sidebarFooterLink()}
+			data-analytics="coffee_click"
+			data-analytics-placement="docs"
+			href={COFFEE_URL}
+		>
+			<CoffeeMark className={styles.sidebarFooterMark()} />
+			Buy me a coffee
+		</a>
+	</>
 );
 
 export const DocsLayout = ({ children }: { children: ReactNode }) => (
@@ -1264,7 +1280,7 @@ export const DocsLayout = ({ children }: { children: ReactNode }) => (
 				<ThemeToggle />
 				<MobileNav>
 					<DocsNav charts={chartDocs} label="Documentation menu" />
-					<div className={styles.sidebarFooter()}>{githubLink}</div>
+					<div className={styles.sidebarFooter()}>{supportLinks}</div>
 				</MobileNav>
 			</div>
 		</header>
@@ -1280,7 +1296,7 @@ export const DocsLayout = ({ children }: { children: ReactNode }) => (
 				<span>Docs</span>
 			</div>
 			<DocsNav charts={chartDocs} label="Documentation" />
-			<div className={styles.sidebarFooter()}>{githubLink}</div>
+			<div className={styles.sidebarFooter()}>{supportLinks}</div>
 		</aside>
 		{children}
 	</div>

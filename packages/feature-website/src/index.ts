@@ -1,3 +1,4 @@
+export { AnalyticsEvents } from "./analytics";
 export {
 	DEFAULT_PREFERENCES,
 	type DocsPreferences,

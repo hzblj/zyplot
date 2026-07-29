@@ -142,8 +142,13 @@ export const docsStyles = tv({
 		section: `scroll-mt-6 border-b border-border-secondary py-[72px] max-[820px]:py-[60px] ${flow} ${inlineCode} [&>h2+*]:mt-0 [&>h2]:mb-6 [&>h2]:text-[34px] [&>h2]:font-semibold [&>h2]:tracking-[-0.035em] [&>h3]:text-[17px] [&>p]:max-w-[680px] [&>p]:text-base [&>p]:leading-7 [&>p]:text-content-secondary`,
 		sidebar:
 			"sticky top-0 left-0 flex h-screen flex-col overflow-y-auto border-r border-border-secondary px-7 pb-6 pt-7 [scrollbar-color:var(--color-gray-5)_transparent] [scrollbar-width:thin] max-[820px]:hidden",
+		/**
+		 * Stacked, not a row. Two links reading "GitHub" and "Buy me a coffee" come
+		 * to roughly 200px of text in a 208px column, so side by side they had
+		 * nothing between them and wrapped at the first narrow viewport.
+		 */
 		sidebarFooter:
-			"mt-auto flex items-center justify-between border-t border-border-secondary pt-5 text-[13px]",
+			"mt-auto grid gap-2.5 border-t border-border-secondary pt-5 text-[13px]",
 		sidebarFooterLink:
 			"inline-flex items-center gap-2 text-content-tertiary transition-colors hover:text-content-primary",
 		sidebarFooterMark: "size-4 shrink-0",

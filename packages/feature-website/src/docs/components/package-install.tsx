@@ -45,7 +45,14 @@ export const PackageInstall = () => {
 						</button>
 					))}
 				</div>
-				<button className={styles.codeCopy()} onClick={copy} type="button">
+				<button
+					className={styles.codeCopy()}
+					data-analytics="install_copy"
+					data-analytics-package-manager={manager}
+					data-analytics-placement="docs"
+					onClick={copy}
+					type="button"
+				>
 					{copied ? "Copied" : "Copy"}
 				</button>
 			</div>

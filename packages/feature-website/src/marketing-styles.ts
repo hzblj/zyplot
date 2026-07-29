@@ -62,16 +62,16 @@ export const marketingStyles = tv({
 		lede: "max-w-[620px] text-xl leading-[1.55] text-content-secondary",
 		/** The wordmark is a link home on every page; opacity says so in both themes. */
 		brandLink: "transition-opacity hover:opacity-70",
-		menuGithub:
+		menuIconLink:
 			"inline-flex items-center gap-2.5 rounded-[9px] px-2 py-2.5 text-content-secondary transition-colors hover:bg-fill-secondary-hover hover:text-content-primary",
 		menuLink:
 			"rounded-[9px] px-2 py-2.5 text-content-secondary transition-colors hover:bg-fill-secondary-hover hover:text-content-primary",
 		menuNav: "grid gap-px text-[15px]",
 		nav: "mx-auto flex h-20 max-w-[1180px] items-center justify-between gap-4 px-7",
 		navActions: "flex shrink-0 items-center gap-7 max-[820px]:gap-2.5",
-		navGithub:
+		navIconLink:
 			"inline-flex items-center gap-2 transition-colors hover:text-content-primary",
-		navGithubMark: "size-4 shrink-0",
+		navMark: "size-4 shrink-0",
 		navLink: "transition-colors hover:text-content-primary",
 		navLinks:
 			"flex items-center gap-7 text-content-tertiary max-[820px]:hidden",

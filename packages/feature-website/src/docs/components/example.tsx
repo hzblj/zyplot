@@ -94,6 +94,11 @@ export const Example = ({
 				</div>
 				{available.length > 1 ? (
 					<div aria-label="Platform" className={styles.tabs()} role="tablist">
+						{/*
+						 * Which platform a reader switches to, per chart. On a library
+						 * whose whole claim is three renderers, that is the one number
+						 * worth having, and nothing else on the site reveals it.
+						 */}
 						{available.map((value) => (
 							<button
 								aria-selected={platform === value}
@@ -103,6 +108,9 @@ export const Example = ({
 										? styles.tabActive()
 										: styles.tabInactive(),
 								)}
+								data-analytics="chart_platform"
+								data-analytics-chart={chartId}
+								data-analytics-platform={value}
 								key={value}
 								onClick={() => setPlatform(value)}
 								role="tab"

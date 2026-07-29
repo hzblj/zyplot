@@ -57,9 +57,13 @@ export const InstallCommand = () => {
 			<code className={styles.installCommand()}>
 				{INSTALL_COMMANDS[manager]}
 			</code>
+			{/* The manager rides along: which one people copy is the useful half. */}
 			<button
 				aria-label={copied ? "Copied" : "Copy install command"}
 				className={styles.installCopy()}
+				data-analytics="install_copy"
+				data-analytics-package-manager={manager}
+				data-analytics-placement="hero"
 				onClick={copy}
 				type="button"
 			>

@@ -1,7 +1,9 @@
 import { ChartDemo } from "./chart-demo";
+import { CoffeeMark } from "./coffee-mark";
 import { GithubMark } from "./github-mark";
 import { HERO_HEADLINE, HERO_LEDE } from "./hero-copy";
 import { InstallCommand } from "./install-command";
+import { COFFEE_URL, REPOSITORY_URL } from "./links";
 import { marketingStyles } from "./marketing-styles";
 import { MobileNav } from "./mobile-nav";
 import { ThemeToggle } from "./theme-toggle";
@@ -53,31 +55,64 @@ export const MarketingPage = () => (
 			 */}
 			<div className={styles.navActions()}>
 				<div className={styles.navLinks()}>
-					<a className={styles.navLink()} href="/docs">
+					<a
+						className={styles.navLink()}
+						data-analytics="docs_click"
+						data-analytics-placement="nav"
+						href="/docs"
+					>
 						Docs
 					</a>
 					<a
-						className={styles.navGithub()}
-						href="https://github.com/hzblj/zyplot"
+						className={styles.navIconLink()}
+						data-analytics="github_click"
+						data-analytics-placement="nav"
+						href={REPOSITORY_URL}
 					>
-						<GithubMark className={styles.navGithubMark()} />
+						<GithubMark className={styles.navMark()} />
 						GitHub
+					</a>
+					<a
+						className={styles.navIconLink()}
+						data-analytics="coffee_click"
+						data-analytics-placement="nav"
+						href={COFFEE_URL}
+					>
+						<CoffeeMark className={styles.navMark()} />
+						Buy me a coffee
 					</a>
 				</div>
 				<ThemeToggle />
 				<MobileNav>
 					<nav aria-label="Site menu" className={styles.menuNav()}>
 						{menuLinks.map(([href, label]) => (
-							<a className={styles.menuLink()} href={href} key={href}>
+							<a
+								className={styles.menuLink()}
+								data-analytics="docs_click"
+								data-analytics-placement="drawer"
+								href={href}
+								key={href}
+							>
 								{label}
 							</a>
 						))}
 						<a
-							className={styles.menuGithub()}
-							href="https://github.com/hzblj/zyplot"
+							className={styles.menuIconLink()}
+							data-analytics="github_click"
+							data-analytics-placement="drawer"
+							href={REPOSITORY_URL}
 						>
-							<GithubMark className={styles.navGithubMark()} />
+							<GithubMark className={styles.navMark()} />
 							GitHub
+						</a>
+						<a
+							className={styles.menuIconLink()}
+							data-analytics="coffee_click"
+							data-analytics-placement="drawer"
+							href={COFFEE_URL}
+						>
+							<CoffeeMark className={styles.navMark()} />
+							Buy me a coffee
 						</a>
 					</nav>
 				</MobileNav>
@@ -93,7 +128,11 @@ export const MarketingPage = () => (
 				<p className={styles.lede()}>{HERO_LEDE}</p>
 				<div className={styles.actions()}>
 					{/* Straight to installation — the intro page is one click further on. */}
-					<a className={styles.primaryButton()} href="/docs/installation">
+					<a
+						className={styles.primaryButton()}
+						data-analytics="get_started"
+						href="/docs/installation"
+					>
 						Get started
 					</a>
 					<InstallCommand />
