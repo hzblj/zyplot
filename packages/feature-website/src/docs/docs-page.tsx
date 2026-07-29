@@ -2,16 +2,17 @@
 
 import { Chart } from "@hzblj/zyplot";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { docsStyles } from "../docs-styles";
 import { GithubMark } from "../github-mark";
 import { HERO_HEADLINE, HERO_LEDE } from "../hero-copy";
+import { MobileNav } from "../mobile-nav";
 import { ThemeToggle } from "../theme-toggle";
 import { cn } from "../utils";
 import { Wordmark } from "../wordmark";
 import { ChartSection } from "./components/chart-section";
 import { CodeBlock } from "./components/code-block";
+import { DocsNav } from "./components/docs-nav";
 import { PackageInstall } from "./components/package-install";
 import { PlatformBadges } from "./components/platform-badges";
 import { PropsTable } from "./components/props-table";
@@ -1226,144 +1227,64 @@ const guidePageHeadings: Record<string, { id: string; label: string }[]> = {
 	"native-ios": [
 		{ id: "native-ios", label: "iOS" },
 		{ id: "native-ios-extensions", label: "iOS-only charts" },
-		{ id: "native-ios-source", label: "The Swift renderer" },
 		{ id: "native-ios-axis", label: "iOS axis options" },
 	],
 	"native-android": [
 		{ id: "native-android", label: "Android" },
 		{ id: "native-android-extensions", label: "Android-only charts" },
-		{ id: "native-android-source", label: "The Compose renderer" },
 		{ id: "native-android-axis", label: "Android axis options" },
 	],
 };
 
-export const DocsLayout = ({ children }: { children: ReactNode }) => {
-	const pathname = usePathname();
-	/** Marks the entry for the page being read. */
-	const navLinkFor = (href: string) =>
-		cn(
-			styles.navLink(),
-			pathname === href ? styles.navLinkActive() : styles.navLinkInactive(),
-		);
+const githubLink = (
+	<a
+		className={styles.sidebarFooterLink()}
+		href="https://github.com/hzblj/zyplot"
+	>
+		<GithubMark className={styles.sidebarFooterMark()} />
+		GitHub
+	</a>
+);
 
-	return (
-		<div className={styles.site()}>
-			<header className={styles.mobileHeader()}>
-				<Link href="/">
+export const DocsLayout = ({ children }: { children: ReactNode }) => (
+	<div className={styles.site()}>
+		{/*
+		 * Below 820px the sidebar is gone and this header carries the nav instead:
+		 * the drawer's hamburger, and the theme toggle the fixed corner one hands
+		 * over to — that one is positioned over exactly this row.
+		 */}
+		<header className={styles.mobileHeader()}>
+			<div className={styles.mobileHeaderBrand()}>
+				<Link className={styles.brandLink()} href="/">
 					<Wordmark className={styles.wordmark()} />
 				</Link>
-				<Link href="/docs">Docs</Link>
-			</header>
-			<div className={styles.themeCorner()}>
-				<ThemeToggle />
+				<span>Docs</span>
 			</div>
-
-			<aside className={styles.sidebar()}>
-				<div className={styles.sidebarTop()}>
-					<Link href="/">
-						<Wordmark className={styles.wordmark()} />
-					</Link>
-					<span>Docs</span>
-				</div>
-				<nav aria-label="Documentation" className="grid">
-					<div className={styles.navGroup()}>
-						<p className={styles.navGroupLabel()}>Getting started</p>
-						<Link className={navLinkFor("/docs")} href="/docs">
-							Introduction
-						</Link>
-						<Link
-							className={navLinkFor("/docs/installation")}
-							href="/docs/installation"
-						>
-							Installation
-						</Link>
-					</div>
-					{/*
-					 * Shared before platform-specific: these three describe the model
-					 * every renderer implements, while the Web and Native groups below
-					 * are what only one of them has.
-					 */}
-					<div className={styles.navGroup()}>
-						<p className={styles.navGroupLabel()}>Concepts</p>
-						<Link className={navLinkFor("/docs/theming")} href="/docs/theming">
-							Theming
-						</Link>
-						<Link
-							className={navLinkFor("/docs/data-types")}
-							href="/docs/data-types"
-						>
-							Data types
-						</Link>
-						<Link
-							className={navLinkFor("/docs/loading-states")}
-							href="/docs/loading-states"
-						>
-							Loading states
-						</Link>
-					</div>
-					<div className={styles.navGroup()}>
-						<p className={styles.navGroupLabel()}>Web</p>
-						<Link className={navLinkFor("/docs/web")} href="/docs/web">
-							Overview
-						</Link>
-						<Link
-							className={navLinkFor("/docs/dark-mode")}
-							href="/docs/dark-mode"
-						>
-							Light and dark mode
-						</Link>
-						<Link
-							className={navLinkFor("/docs/composition")}
-							href="/docs/composition"
-						>
-							Frame and legend
-						</Link>
-					</div>
-					<div className={styles.navGroup()}>
-						<p className={styles.navGroupLabel()}>Native</p>
-						<Link className={navLinkFor("/docs/native")} href="/docs/native">
-							Overview
-						</Link>
-						<Link
-							className={navLinkFor("/docs/native/ios")}
-							href="/docs/native/ios"
-						>
-							iOS
-						</Link>
-						<Link
-							className={navLinkFor("/docs/native/android")}
-							href="/docs/native/android"
-						>
-							Android
-						</Link>
-					</div>
-					<div className={styles.navGroup()}>
-						<p className={styles.navGroupLabel()}>Charts</p>
-						{chartDocs.map((chart) => (
-							<Link
-								className={navLinkFor(`/docs/charts/${chart.id}`)}
-								href={`/docs/charts/${chart.id}`}
-								key={chart.id}
-							>
-								{chart.name}
-							</Link>
-						))}
-					</div>
-				</nav>
-				<div className={styles.sidebarFooter()}>
-					<a
-						className={styles.sidebarFooterLink()}
-						href="https://github.com/hzblj/zyplot"
-					>
-						<GithubMark className={styles.sidebarFooterMark()} />
-						GitHub
-					</a>
-				</div>
-			</aside>
-			{children}
+			<div className={styles.mobileHeaderActions()}>
+				<ThemeToggle />
+				<MobileNav>
+					<DocsNav charts={chartDocs} label="Documentation menu" />
+					<div className={styles.sidebarFooter()}>{githubLink}</div>
+				</MobileNav>
+			</div>
+		</header>
+		<div className={styles.themeCorner()}>
+			<ThemeToggle />
 		</div>
-	);
-};
+
+		<aside className={styles.sidebar()}>
+			<div className={styles.sidebarTop()}>
+				<Link className={styles.brandLink()} href="/">
+					<Wordmark className={styles.wordmark()} />
+				</Link>
+				<span>Docs</span>
+			</div>
+			<DocsNav charts={chartDocs} label="Documentation" />
+			<div className={styles.sidebarFooter()}>{githubLink}</div>
+		</aside>
+		{children}
+	</div>
+);
 
 export const DocsPage = ({
 	page = "introduction",
@@ -1726,13 +1647,15 @@ export function Price() {
 }`}</CodeBlock>
 
 					<h3 id="native-ios-extensions">iOS-only charts</h3>
+					{/*
+					 * No import instructions here. The section opens with the one this
+					 * page needs, and why these two are off the shared namespace at all
+					 * is the platform-files part of the native overview — said a third
+					 * time next to the badge that already says "iOS", it stopped being
+					 * information.
+					 */}
 					<div className={styles.chartTitleRow()}>
-						<p>
-							Two marks Swift Charts provides that neither the web nor the
-							Compose renderer has a counterpart for. They are absent from the
-							shared <code>@hzblj/zyplot</code> namespace, so TypeScript rejects
-							them unless the file imports <code>@hzblj/zyplot/ios</code>.
-						</p>
+						<p>Two marks Swift Charts has that neither other renderer does.</p>
 						<PlatformBadges platforms={["ios"]} />
 					</div>
 					<PropsTable
@@ -1750,41 +1673,6 @@ export function Price() {
 								name: "Chart.Rule",
 								required: true,
 								type: "ChartRulePropsIos",
-							},
-						]}
-					/>
-
-					<h3 id="native-ios-source">The Swift renderer</h3>
-					<p>
-						All of it is readable — the module is a few hundred lines of SwiftUI
-						over Swift Charts, and every documented form links to the exact file
-						that draws it from its own page.
-					</p>
-					<PropsTable
-						rows={[
-							{
-								description:
-									"The Expo module: the ExpoView, its single prop, and the SwiftUI hosting controller.",
-								name: "ios/Bridge/ZyplotModule.swift",
-								type: "bridge",
-							},
-							{
-								description:
-									"Codable models the JSON configuration decodes into. Adding a prop starts here.",
-								name: "ios/Core/ZyplotModels.swift",
-								type: "model",
-							},
-							{
-								description:
-									"Every Swift Charts mark — line, bar, pie, scatter, boxplot, rule, range.",
-								name: "ios/Charts/Marks/ZyplotMarksChart.swift",
-								type: "marks",
-							},
-							{
-								description:
-									"The forms Swift Charts has no mark for, drawn on a SwiftUI Canvas.",
-								name: "ios/Charts/Specialized/ZyplotSpecializedCharts.swift",
-								type: "canvas",
 							},
 						]}
 					/>
@@ -1852,12 +1740,11 @@ export function Spend() {
 }`}</CodeBlock>
 
 					<h3 id="native-android-extensions">Android-only charts</h3>
+					{/* Same reason as the iOS pair above: the import is said once, up there. */}
 					<div className={styles.chartTitleRow()}>
 						<p>
-							Two forms the Compose Canvas draws that Swift Charts has no
-							equivalent for. They are absent from the shared{" "}
-							<code>@hzblj/zyplot</code> namespace, so TypeScript rejects them
-							unless the file imports <code>@hzblj/zyplot/android</code>.
+							Two forms the Compose Canvas draws that neither other renderer
+							does.
 						</p>
 						<PlatformBadges platforms={["android"]} />
 					</div>
@@ -1876,42 +1763,6 @@ export function Spend() {
 								name: "Chart.Lollipop",
 								required: true,
 								type: "ChartLollipopPropsAndroid",
-							},
-						]}
-					/>
-
-					<h3 id="native-android-source">The Compose renderer</h3>
-					<p>
-						One <code>Canvas</code> draws the whole chart — marks, axis text,
-						grid, annotations and the tooltip — so a chart is a single view
-						rather than a tree of them. Every documented form links to the draw
-						function behind it from its own page.
-					</p>
-					<PropsTable
-						rows={[
-							{
-								description:
-									"The Expo module: the ExpoComposeView, its single prop, and the composable root.",
-								name: "android/.../bridge/ZyplotModule.kt",
-								type: "bridge",
-							},
-							{
-								description:
-									"Parses the JSON configuration and resolves the palette, axes and theme.",
-								name: "android/.../core/ChartConfiguration.kt",
-								type: "model",
-							},
-							{
-								description:
-									"Animation, gestures, the surface container and dispatch to the draw functions.",
-								name: "android/.../charts/ZyplotChart.kt",
-								type: "host",
-							},
-							{
-								description:
-									"The draw functions themselves, split into cartesian, radial and specialized.",
-								name: "android/.../charts/{cartesian,radial,specialized}",
-								type: "canvas",
 							},
 						]}
 					/>

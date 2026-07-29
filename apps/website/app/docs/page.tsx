@@ -1,5 +1,6 @@
 import {
 	DocsPage,
+	docsRouteFor,
 	PLATFORM_COOKIE,
 	readDocsPreferences,
 	VIEW_COOKIE,
@@ -7,10 +8,18 @@ import {
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 
+/** Same list the sitemap and the nested routes read, so the three cannot disagree. */
+const route = docsRouteFor("/docs");
+
 export const metadata: Metadata = {
-	description:
-		"Complete Zyplot web chart documentation, theming guide, live examples and API reference.",
-	title: "Web chart documentation · Zyplot",
+	alternates: { canonical: "/docs" },
+	description: route?.description,
+	openGraph: {
+		description: route?.description,
+		title: route?.title,
+		url: "/docs",
+	},
+	title: route?.title,
 };
 
 export default async function DocumentationIndex() {

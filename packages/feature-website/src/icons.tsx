@@ -1,5 +1,5 @@
 /**
- * The two UI glyphs the site draws, in the same hairline style as the theme
+ * The UI glyphs the site draws, in the same hairline style as the theme
  * toggle: a 16px box, no fill, `currentColor` stroke. Inline for the same reason
  * the GitHub mark is — one path each is cheaper than an icon dependency.
  */
@@ -33,6 +33,28 @@ export const CheckIcon = ({ className }: IconProps) => (
 			stroke="currentColor"
 			strokeLinecap="round"
 			strokeLinejoin="round"
+			strokeWidth={1.5}
+		/>
+	</svg>
+);
+
+export const MenuIcon = ({ className }: IconProps) => (
+	<svg aria-hidden="true" className={className} fill="none" viewBox="0 0 16 16">
+		<path
+			d="M2.25 4.5h11.5M2.25 8h11.5M2.25 11.5h11.5"
+			stroke="currentColor"
+			strokeLinecap="round"
+			strokeWidth={1.5}
+		/>
+	</svg>
+);
+
+export const CloseIcon = ({ className }: IconProps) => (
+	<svg aria-hidden="true" className={className} fill="none" viewBox="0 0 16 16">
+		<path
+			d="M4 4l8 8M12 4l-8 8"
+			stroke="currentColor"
+			strokeLinecap="round"
 			strokeWidth={1.5}
 		/>
 	</svg>

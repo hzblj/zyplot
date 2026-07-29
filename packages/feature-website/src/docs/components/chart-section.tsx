@@ -33,7 +33,7 @@ export const ChartSection = ({
 		>
 			{chart.preview}
 		</Example>
-		<div className={styles.callout()}>
+		<div className={styles.note()}>
 			<strong>When to use</strong>
 			<p>{chart.when}</p>
 		</div>
