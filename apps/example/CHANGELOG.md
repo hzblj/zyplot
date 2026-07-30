@@ -1,5 +1,12 @@
 # @zyplot/example
 
+## 0.0.3
+
+### Patch Changes
+
+- Updated dependencies [[`54b15f6`](https://github.com/hzblj/zyplot/commit/54b15f6eba0dd38b7539fc5be1fdf3fcc90f31ba), [`54b15f6`](https://github.com/hzblj/zyplot/commit/54b15f6eba0dd38b7539fc5be1fdf3fcc90f31ba), [`54b15f6`](https://github.com/hzblj/zyplot/commit/54b15f6eba0dd38b7539fc5be1fdf3fcc90f31ba), [`54b15f6`](https://github.com/hzblj/zyplot/commit/54b15f6eba0dd38b7539fc5be1fdf3fcc90f31ba), [`54b15f6`](https://github.com/hzblj/zyplot/commit/54b15f6eba0dd38b7539fc5be1fdf3fcc90f31ba), [`54b15f6`](https://github.com/hzblj/zyplot/commit/54b15f6eba0dd38b7539fc5be1fdf3fcc90f31ba), [`54b15f6`](https://github.com/hzblj/zyplot/commit/54b15f6eba0dd38b7539fc5be1fdf3fcc90f31ba), [`54b15f6`](https://github.com/hzblj/zyplot/commit/54b15f6eba0dd38b7539fc5be1fdf3fcc90f31ba), [`54b15f6`](https://github.com/hzblj/zyplot/commit/54b15f6eba0dd38b7539fc5be1fdf3fcc90f31ba), [`54b15f6`](https://github.com/hzblj/zyplot/commit/54b15f6eba0dd38b7539fc5be1fdf3fcc90f31ba), [`54b15f6`](https://github.com/hzblj/zyplot/commit/54b15f6eba0dd38b7539fc5be1fdf3fcc90f31ba), [`54b15f6`](https://github.com/hzblj/zyplot/commit/54b15f6eba0dd38b7539fc5be1fdf3fcc90f31ba), [`54b15f6`](https://github.com/hzblj/zyplot/commit/54b15f6eba0dd38b7539fc5be1fdf3fcc90f31ba), [`54b15f6`](https://github.com/hzblj/zyplot/commit/54b15f6eba0dd38b7539fc5be1fdf3fcc90f31ba), [`54b15f6`](https://github.com/hzblj/zyplot/commit/54b15f6eba0dd38b7539fc5be1fdf3fcc90f31ba), [`54b15f6`](https://github.com/hzblj/zyplot/commit/54b15f6eba0dd38b7539fc5be1fdf3fcc90f31ba), [`54b15f6`](https://github.com/hzblj/zyplot/commit/54b15f6eba0dd38b7539fc5be1fdf3fcc90f31ba), [`54b15f6`](https://github.com/hzblj/zyplot/commit/54b15f6eba0dd38b7539fc5be1fdf3fcc90f31ba), [`54b15f6`](https://github.com/hzblj/zyplot/commit/54b15f6eba0dd38b7539fc5be1fdf3fcc90f31ba)]:
+  - @hzblj/zyplot@0.2.0
+
 ## 0.0.2
 
 ### Patch Changes
