@@ -1,5 +1,14 @@
 # @zyplot/website
 
+## 0.0.4
+
+### Patch Changes
+
+- Updated dependencies [[`66541ab`](https://github.com/hzblj/zyplot/commit/66541ab9ef4d67cc3fa7c6300daec52c43ffad44), [`66541ab`](https://github.com/hzblj/zyplot/commit/66541ab9ef4d67cc3fa7c6300daec52c43ffad44), [`66541ab`](https://github.com/hzblj/zyplot/commit/66541ab9ef4d67cc3fa7c6300daec52c43ffad44), [`66541ab`](https://github.com/hzblj/zyplot/commit/66541ab9ef4d67cc3fa7c6300daec52c43ffad44), [`66541ab`](https://github.com/hzblj/zyplot/commit/66541ab9ef4d67cc3fa7c6300daec52c43ffad44), [`66541ab`](https://github.com/hzblj/zyplot/commit/66541ab9ef4d67cc3fa7c6300daec52c43ffad44), [`66541ab`](https://github.com/hzblj/zyplot/commit/66541ab9ef4d67cc3fa7c6300daec52c43ffad44), [`66541ab`](https://github.com/hzblj/zyplot/commit/66541ab9ef4d67cc3fa7c6300daec52c43ffad44), [`66541ab`](https://github.com/hzblj/zyplot/commit/66541ab9ef4d67cc3fa7c6300daec52c43ffad44), [`66541ab`](https://github.com/hzblj/zyplot/commit/66541ab9ef4d67cc3fa7c6300daec52c43ffad44), [`66541ab`](https://github.com/hzblj/zyplot/commit/66541ab9ef4d67cc3fa7c6300daec52c43ffad44), [`66541ab`](https://github.com/hzblj/zyplot/commit/66541ab9ef4d67cc3fa7c6300daec52c43ffad44), [`66541ab`](https://github.com/hzblj/zyplot/commit/66541ab9ef4d67cc3fa7c6300daec52c43ffad44), [`66541ab`](https://github.com/hzblj/zyplot/commit/66541ab9ef4d67cc3fa7c6300daec52c43ffad44), [`66541ab`](https://github.com/hzblj/zyplot/commit/66541ab9ef4d67cc3fa7c6300daec52c43ffad44), [`66541ab`](https://github.com/hzblj/zyplot/commit/66541ab9ef4d67cc3fa7c6300daec52c43ffad44), [`66541ab`](https://github.com/hzblj/zyplot/commit/66541ab9ef4d67cc3fa7c6300daec52c43ffad44), [`66541ab`](https://github.com/hzblj/zyplot/commit/66541ab9ef4d67cc3fa7c6300daec52c43ffad44), [`66541ab`](https://github.com/hzblj/zyplot/commit/66541ab9ef4d67cc3fa7c6300daec52c43ffad44), [`66541ab`](https://github.com/hzblj/zyplot/commit/66541ab9ef4d67cc3fa7c6300daec52c43ffad44), [`66541ab`](https://github.com/hzblj/zyplot/commit/66541ab9ef4d67cc3fa7c6300daec52c43ffad44), [`66541ab`](https://github.com/hzblj/zyplot/commit/66541ab9ef4d67cc3fa7c6300daec52c43ffad44), [`66541ab`](https://github.com/hzblj/zyplot/commit/66541ab9ef4d67cc3fa7c6300daec52c43ffad44), [`66541ab`](https://github.com/hzblj/zyplot/commit/66541ab9ef4d67cc3fa7c6300daec52c43ffad44), [`66541ab`](https://github.com/hzblj/zyplot/commit/66541ab9ef4d67cc3fa7c6300daec52c43ffad44)]:
+  - @hzblj/zyplot@0.3.0
+  - @zyplot/feature-charts@0.0.1
+  - @zyplot/feature-website@0.0.4
+
 ## 0.0.3
 
 ### Patch Changes
