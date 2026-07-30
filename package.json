@@ -11,20 +11,30 @@
 		"packages/*"
 	],
 	"scripts": {
+		"android:example": "turbo build --filter=@hzblj/zyplot && yarn workspace @zyplot/example android",
 		"build": "turbo build",
 		"changeset": "changeset",
 		"changeset:version": "changeset version",
 		"dev": "turbo dev",
-		"dev:example": "yarn workspace @zyplot/example start",
+		"dev:example": "turbo build --filter=@hzblj/zyplot && yarn workspace @zyplot/example start",
+		"dev:example:android": "turbo build --filter=@hzblj/zyplot && yarn workspace @zyplot/example dev:android",
+		"dev:example:ios": "turbo build --filter=@hzblj/zyplot && yarn workspace @zyplot/example dev:ios",
 		"dev:website": "yarn workspace @zyplot/website dev",
+		"format": "biome check --write .",
+		"ios:example": "turbo build --filter=@hzblj/zyplot && yarn workspace @zyplot/example ios",
 		"lint": "turbo lint",
+		"lint:all": "biome check .",
 		"lint:fix": "turbo lint:fix",
-		"release": "turbo build lint && changeset publish"
+		"prebuild:example": "yarn workspace @zyplot/example prebuild",
+		"release": "turbo build lint && changeset publish",
+		"start:example": "yarn workspace @zyplot/example start",
+		"web": "turbo build --filter=@hzblj/zyplot && yarn workspace @zyplot/example web"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.5.4",
 		"@changesets/changelog-github": "0.7.0",
 		"@changesets/cli": "2.31.1",
+		"@hzblj/biome-config": "^0.2.0",
 		"@types/node": "^25.0.0",
 		"turbo": "2.10.7",
 		"typescript": "^5.9.3"

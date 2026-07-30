@@ -1,0 +1,20 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.5.4/schema.json",
+	"root": false,
+	"extends": ["@hzblj/biome-config", "@hzblj/biome-config/react-native"],
+	"files": {
+		"includes": ["**", "!android", "!ios", "!**/.expo", "!**/.turbo", "!**/build", "!**/expo-env.d.ts"]
+	},
+	"overrides": [
+		{
+			"includes": ["metro.config.js"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noCommonJs": "off"
+					}
+				}
+			}
+		}
+	]
+}

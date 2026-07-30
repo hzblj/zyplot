@@ -15,3 +15,6 @@ node_modules
 # Expo prebuild (CNG) output — regenerate with `expo prebuild`
 /apps/example/android/
 /apps/example/ios/
+
+# Screen recordings — regenerate with `scripts/record-revolut-demo.sh`
+/apps/example/recordings/

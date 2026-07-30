@@ -1,6 +1,11 @@
 {
 	"$schema": "https://biomejs.dev/schemas/2.5.4/schema.json",
-	"extends": ["@hzblj/biome-config/react"],
+	"extends": ["@hzblj/biome-config", "@hzblj/biome-config/react"],
+	"vcs": {
+		"clientKind": "git",
+		"enabled": true,
+		"useIgnoreFile": true
+	},
 	"css": {
 		"parser": {
 			"tailwindDirectives": true
@@ -9,13 +14,16 @@
 	"files": {
 		"includes": [
 			"**",
-			"!!**/build",
-			"!!**/dist",
-			"!!**/.expo",
-			"!!**/.next",
-			"!!apps/example/android",
-			"!!apps/example/ios",
-			"!!**/expo-env.d.ts"
+			"!**/build",
+			"!**/dist",
+			"!**/.expo",
+			"!**/.next",
+			"!**/.turbo",
+			"!apps/example/android",
+			"!apps/example/ios",
+			"!**/expo-env.d.ts",
+			"!**/next-env.d.ts",
+			"!**/*.generated.ts"
 		]
 	},
 	"overrides": [
