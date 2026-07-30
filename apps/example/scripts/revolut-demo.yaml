@@ -1,0 +1,108 @@
+# What the Stock detail recording shows, in order. Run it through
+# record-revolut-demo.sh, not `maestro test`: the placeholders below are filled
+# in from the running device, where the script measures the chart, its event
+# annotation and its controls.
+#
+# Every coordinate is absolute, in the device's own units — points on iOS, pixels
+# on Android — which is the space both the view hierarchy and Maestro's taps use.
+# Percentages would be too coarse: a slot on the weekly plot is a few points
+# wide, and the event beat has to land on one exactly.
+appId: com.hzblj.zyplot.example
+---
+# The script launches the app itself, so the boot overlaps Maestro's start-up
+# rather than following it and leaving a still screen at the head of the video.
+- extendedWaitUntil:
+    visible: 'Stock detail'
+    timeout: 300000
+- waitForAnimationToEnd:
+    timeout: 2000
+
+- tapOn: 'Stock detail'
+- extendedWaitUntil:
+    visible: 'TSLA · Tesla'
+    timeout: 60000
+# The trace draws itself in over 560ms behind a 160ms delay, and the flash glow
+# holds a beat past that. Let all of it land before a finger touches the plot.
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Intraday, scrubbed right to left. One gesture carries the whole readout: the
+# price and the time, the crosshair, the marker's glow, the dimmed trace behind
+# it — and the pulsing dot at the live end stays put through it.
+- swipe:
+    start: '${SCRUB_RIGHT}, ${CHART_MID_Y}'
+    end: '${SCRUB_LEFT}, ${CHART_MID_Y}'
+    duration: 3400
+- waitForAnimationToEnd:
+    timeout: 1200
+
+# Past week: the range that carries the dividend event. Switching crossfades the
+# old trace out and draws the new one in.
+- tapOn: '1W'
+- waitForAnimationToEnd:
+    timeout: 2500
+- swipe:
+    start: '${SCRUB_RIGHT}, ${CHART_MID_Y}'
+    end: '${SCRUB_LEFT}, ${CHART_MID_Y}'
+    duration: 3000
+
+# Sit on the event so its card stays up. A reading is picked by the finger's x
+# alone, so dragging straight down the annotation holds one datum for as long as
+# the gesture lasts — and unlike a long press, it is a real drag, which is what
+# Compose waits for before it starts reporting one.
+- swipe:
+    start: '${EVENT_X}, ${HOLD_TOP}'
+    end: '${EVENT_X}, ${HOLD_BOTTOM}'
+    duration: 4000
+- waitForAnimationToEnd:
+    timeout: 1000
+
+# The rest of the ranges, each one redrawing itself from its own domain.
+- tapOn: '1M'
+- waitForAnimationToEnd:
+    timeout: 1800
+- tapOn: '6M'
+- waitForAnimationToEnd:
+    timeout: 1800
+- tapOn: '1Y'
+- waitForAnimationToEnd:
+    timeout: 1800
+- tapOn: '5Y'
+- waitForAnimationToEnd:
+    timeout: 1800
+- tapOn: 'Max'
+- waitForAnimationToEnd:
+    timeout: 2200
+
+# Candlesticks, back on a range short enough for the bodies to read. The toggle
+# is tapped by position: its glyph changes with the mode, its place does not.
+- tapOn: '1M'
+- waitForAnimationToEnd:
+    timeout: 1800
+- tapOn:
+    point: '${TOGGLE_X}, ${TOGGLE_Y}'
+- waitForAnimationToEnd:
+    timeout: 2500
+
+# Scrubbing candles reads differently: an OHLC card, the candle under the finger
+# lifted towards white, the rest of them dimmed.
+- swipe:
+    start: '${SCRUB_RIGHT}, ${CHART_MID_Y}'
+    end: '${SCRUB_LEFT}, ${CHART_MID_Y}'
+    duration: 3000
+- swipe:
+    start: '${CANDLE_X}, ${HOLD_TOP}'
+    end: '${CANDLE_X}, ${HOLD_BOTTOM}'
+    duration: 3500
+- waitForAnimationToEnd:
+    timeout: 1000
+
+# Back to the line, then out to the gallery the demo came from.
+- tapOn:
+    point: '${TOGGLE_X}, ${TOGGLE_Y}'
+- waitForAnimationToEnd:
+    timeout: 2500
+- tapOn:
+    point: '${BACK_X}, ${BACK_Y}'
+- waitForAnimationToEnd:
+    timeout: 2000
