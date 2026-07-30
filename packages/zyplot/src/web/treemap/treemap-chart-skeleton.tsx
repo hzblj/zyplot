@@ -1,26 +1,17 @@
-import type { FC } from "react";
+import type {FC} from 'react'
 
-import { ChartSkeletonFrame, SkeletonBlocks } from "../shared/skeleton";
-import type { ChartSkeletonProps } from "../shared/types";
+import {ChartSkeletonFrame, SkeletonBlocks} from '../shared/skeleton'
+import type {ChartSkeletonProps} from '../shared/types'
+
+/** Props for `Chart.Treemap.Skeleton`. */
+export type TreemapChartSkeletonProps = ChartSkeletonProps
 
 /**
- * The TreemapChart's placeholder — the shape it is about to be, at the height it
- * will occupy, so nothing reflows when the data lands.
+ * The placeholder for `Chart.Treemap`: the same shape at the same height, so nothing
+ * moves when the data lands.
  */
-export type TreemapChartSkeletonProps = ChartSkeletonProps;
-
-export const TreemapChartSkeleton: FC<TreemapChartSkeletonProps> = ({
-	className,
-	height,
-	legendCount = 0,
-}) => (
-	<ChartSkeletonFrame
-		className={className}
-		xAxis={false}
-		yAxis={false}
-		height={height}
-		legendCount={legendCount}
-	>
-		<SkeletonBlocks count={6} />
-	</ChartSkeletonFrame>
-);
+export const TreemapChartSkeleton: FC<TreemapChartSkeletonProps> = ({className, height, legendCount = 0}) => (
+  <ChartSkeletonFrame className={className} xAxis={false} yAxis={false} height={height} legendCount={legendCount}>
+    <SkeletonBlocks count={6} />
+  </ChartSkeletonFrame>
+)

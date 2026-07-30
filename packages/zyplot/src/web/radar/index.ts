@@ -1,10 +1,10 @@
-import { RadarChart as RadarChartRoot } from "./radar-chart";
-import { RadarChartSkeleton } from "./radar-chart-skeleton";
+import {RadarChart as RadarChartRoot} from './radar-chart'
+import {RadarChartSkeleton} from './radar-chart-skeleton'
 
-export type { RadarChartProps } from "./radar-chart";
-export type { RadarChartSkeletonProps } from "./radar-chart-skeleton";
+export type {RadarChartProps} from './radar-chart'
+export type {RadarChartSkeletonProps} from './radar-chart-skeleton'
 
-/** `Chart.Radar` — the chart, with its placeholder hanging off it as `.Skeleton`. */
+/** `Chart.Radar`, with its loading placeholder at `Chart.Radar.Skeleton`. */
 export const RadarChart = Object.assign(RadarChartRoot, {
-	Skeleton: RadarChartSkeleton,
-});
+  Skeleton: RadarChartSkeleton,
+})

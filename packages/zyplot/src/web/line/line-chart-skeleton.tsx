@@ -1,28 +1,23 @@
-import type { FC } from "react";
+import type {FC} from 'react'
 
-import { ChartSkeletonFrame, SkeletonLine } from "../shared/skeleton";
-import type { ChartSkeletonProps } from "../shared/types";
+import {ChartSkeletonFrame, SkeletonLine} from '../shared/skeleton'
+import type {ChartSkeletonProps} from '../shared/types'
+
+/** Props for `Chart.Line.Skeleton`. */
+export type LineChartSkeletonProps = ChartSkeletonProps
 
 /**
- * The LineChart's placeholder — the shape it is about to be, at the height it
- * will occupy, so nothing reflows when the data lands.
+ * The placeholder for `Chart.Line`: the same shape at the same height, so nothing
+ * moves when the data lands.
  */
-export type LineChartSkeletonProps = ChartSkeletonProps;
-
 export const LineChartSkeleton: FC<LineChartSkeletonProps> = ({
-	className,
-	height,
-	legendCount = 0,
-	xAxis = true,
-	yAxis = true,
+  className,
+  height,
+  legendCount = 0,
+  xAxis = true,
+  yAxis = true,
 }) => (
-	<ChartSkeletonFrame
-		className={className}
-		height={height}
-		legendCount={legendCount}
-		xAxis={xAxis}
-		yAxis={yAxis}
-	>
-		<SkeletonLine />
-	</ChartSkeletonFrame>
-);
+  <ChartSkeletonFrame className={className} height={height} legendCount={legendCount} xAxis={xAxis} yAxis={yAxis}>
+    <SkeletonLine />
+  </ChartSkeletonFrame>
+)

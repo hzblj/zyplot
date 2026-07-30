@@ -1,1 +1,1 @@
-export * from "./chart-provider";
+export * from './chart-provider'

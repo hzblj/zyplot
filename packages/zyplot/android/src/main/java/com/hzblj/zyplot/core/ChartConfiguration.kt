@@ -1,8 +1,16 @@
 package com.hzblj.zyplot.core
 
-import android.graphics.Color as AndroidColor
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.TextUnit
 import com.hzblj.zyplot.core.finance.CandlestickStyle
+import com.hzblj.zyplot.core.json.doubles
+import com.hzblj.zyplot.core.json.nullableDouble
+import com.hzblj.zyplot.core.json.nullableString
+import com.hzblj.zyplot.core.json.objects
+import com.hzblj.zyplot.core.json.strings
 import com.hzblj.zyplot.core.presentation.AnimationOptions
 import com.hzblj.zyplot.core.presentation.AxisOptions
 import com.hzblj.zyplot.core.presentation.ChartAnnotation
@@ -10,40 +18,7 @@ import com.hzblj.zyplot.core.presentation.InteractionOptions
 import com.hzblj.zyplot.core.presentation.NumberFormat
 import com.hzblj.zyplot.core.presentation.PlotStyle
 import com.hzblj.zyplot.core.presentation.SeriesStyle
-import com.hzblj.zyplot.core.presentation.nullableDouble
-import org.json.JSONArray
 import org.json.JSONObject
-
-data class ChartSeries(
-  val color: String?,
-  val id: String,
-  val label: String,
-  val slot: Int?,
-  val values: List<Double?>,
-)
-
-data class ChartDatum(
-  val color: String?,
-  val id: String,
-  val label: String,
-  val slot: Int?,
-  val value: Double,
-)
-
-data class ScatterPoint(
-  val label: String?,
-  val size: Double?,
-  val x: Double,
-  val y: Double,
-)
-
-data class ScatterSeries(
-  val color: String?,
-  val id: String,
-  val label: String,
-  val points: List<ScatterPoint>,
-  val slot: Int?,
-)
 
 class ChartConfiguration(raw: String, isSystemDark: Boolean = false) {
   private val json = runCatching { JSONObject(raw) }
@@ -61,9 +36,9 @@ class ChartConfiguration(raw: String, isSystemDark: Boolean = false) {
   val minimum: Double = json.optDouble("min", 0.0)
   val maximum: Double = json.optDouble("max", 100.0)
   val label: String? = json.optString("label").takeIf { it.isNotEmpty() }
-  val color: String? = json.optNullableString("color")
+  val color: String? = json.nullableString("color")
   val colorMode: String = json.optString("colorMode", "system")
-  val emphasisId: String? = json.optNullableString("emphasisId")
+  val emphasisId: String? = json.nullableString("emphasisId")
   val format = NumberFormat.from(json.optJSONObject("format"))
   val innerRadius: Double = json.optDouble("innerRadius", 0.0)
   val binCount: Int = json.optInt("binCount", 8)
@@ -73,111 +48,112 @@ class ChartConfiguration(raw: String, isSystemDark: Boolean = false) {
   val xAxis = AxisOptions.from(json.optJSONObject("xAxis"))
   val yAxis = AxisOptions.from(json.optJSONObject("yAxis"))
 
-  // Scatter names its axes with `xLabel`/`xFormat` instead of a full
-  // `ChartAxisOptions`, so the detailed form wins and these fill in behind it.
-  val xAxisLabel: String? = xAxis.label ?: json.optNullableString("xLabel")
-  val yAxisLabel: String? = yAxis.label ?: json.optNullableString("yLabel")
-  val xAxisFormat: NumberFormat =
-    if (json.optJSONObject("xAxis")?.has("format") == true) {
-      NumberFormat.from(json.optJSONObject("xAxis")?.optJSONObject("format"))
-    } else {
-      NumberFormat.from(json.optJSONObject("xFormat"))
-    }
-  val yAxisFormat: NumberFormat =
-    if (json.optJSONObject("yAxis")?.has("format") == true) {
-      NumberFormat.from(json.optJSONObject("yAxis")?.optJSONObject("format"))
-    } else {
-      NumberFormat.from(json.optJSONObject("yFormat"))
-    }
-  val xAxisVisible: Boolean =
-    xAxis.visible ?: json.optJSONObject("axis")?.optBoolean("x", true) ?: true
-  val yAxisVisible: Boolean =
-    yAxis.visible ?: json.optJSONObject("axis")?.optBoolean("y", true) ?: true
+  val xAxisLabel: String? = xAxis.label ?: json.nullableString("xLabel")
+  val yAxisLabel: String? = yAxis.label ?: json.nullableString("yLabel")
+  val xAxisFormat: NumberFormat = json.axisFormat("xAxis", "xFormat")
+  val yAxisFormat: NumberFormat = json.axisFormat("yAxis", "yFormat")
+  val xAxisVisible: Boolean = json.axisVisibility(xAxis, "x")
+  val yAxisVisible: Boolean = json.axisVisibility(yAxis, "y")
+
+  val yAxisAtEnd: Boolean = yAxis.position == "end" || yAxis.position == "overlay"
+
+  val overlaysYAxis: Boolean = yAxis.position == "overlay"
+
+  val overlayAxisGutter: Float =
+    overlayGutter(overlaysYAxis, yAxisVisible, yAxis.tickValues, yAxisFormat)
+
   val annotations: List<ChartAnnotation> =
     json.optJSONArray("annotations").objects().map(ChartAnnotation::from)
-  val seriesStyles: Map<String, SeriesStyle> =
-    json.optJSONObject("seriesStyles")?.let { styles ->
-      styles.keys().asSequence().mapNotNull { key ->
-        styles.optJSONObject(key)?.let { key to SeriesStyle.from(it) }
-      }.toMap()
-    } ?: emptyMap()
+  val seriesStyles: Map<String, SeriesStyle> = json.readSeriesStyles()
   val candlestickStyle = CandlestickStyle.from(json.optJSONObject("style"))
   val showVolume = json.optBoolean("showVolume", false)
 
-  val categories: List<String> =
-    json.optJSONArray("categories").strings().ifEmpty {
-      if (type == "candlestick") {
-        json.optJSONArray("candlesticks").objects().map { it.optString("category") }
-      } else {
-        emptyList()
-      }
-    }
+  val categories: List<String> = json.readCategories(type)
   val columns: List<String> = json.optJSONArray("columns").strings()
   val rowLabels: List<String> = json.optJSONArray("rowLabels").strings()
   val values: List<Double> = json.optJSONArray("values").doubles()
-  val series: List<ChartSeries> = json.optJSONArray("series").objects().map {
-    ChartSeries(
-      color = it.optNullableString("color"),
-      id = it.optString("id"),
-      label = it.optString("label"),
-      slot = it.optInt("slot").takeIf { value -> value > 0 },
-      values = it.optJSONArray("values").nullableDoubles(),
-    )
-  }
-  val data: List<ChartDatum> = json.optJSONArray("data").objects().map {
-    ChartDatum(
-      color = it.optNullableString("color"),
-      id = it.optString("id"),
-      label = it.optString("label"),
-      slot = it.optInt("slot").takeIf { value -> value > 0 },
-      value = it.optDouble("value"),
-    )
-  }
-  val scatterSeries: List<ScatterSeries> =
-    json.optJSONArray("scatterSeries").objects().map {
-      ScatterSeries(
-        color = it.optNullableString("color"),
-        id = it.optString("id"),
-        label = it.optString("label"),
-        points = it.optJSONArray("points").objects().map { point ->
-          ScatterPoint(
-            label = point.optNullableString("label"),
-            size = point.optDouble("size").takeIf { size -> size > 0 },
-            x = point.optDouble("x"),
-            y = point.optDouble("y"),
-          )
-        },
-        slot = it.optInt("slot").takeIf { value -> value > 0 },
-      )
-    }
+  val series: List<ChartSeries> = json.readSeries()
+  val data: List<ChartDatum> = json.readData()
+  val scatterSeries: List<ScatterSeries> = json.readScatterSeries()
 
-  fun array(name: String): List<JSONObject> = json.optJSONArray(name).objects()
+  private val arrays = HashMap<String, List<JSONObject>>()
+
+  fun array(name: String): List<JSONObject> =
+    arrays.getOrPut(name) { json.optJSONArray(name).objects() }
+
   fun objectValue(name: String): JSONObject? = json.optJSONObject(name)
 
-  val palette: List<Color> =
-    json.optJSONObject("theme")
-      ?.optJSONObject("colors")
-      ?.optJSONArray("categorical")
-      .strings()
-      .ifEmpty {
-        listOf("#6d28d9", "#0284c7", "#ea580c", "#16a34a", "#db2777", "#ca8a04")
-      }
-      .map(::parseColor)
+  val candlestickExtremes: List<Double> by lazy(LazyThreadSafetyMode.NONE) {
+    array("candlesticks").flatMap { listOf(it.optDouble("low"), it.optDouble("high")) }
+  }
 
-  val positiveColor: Color = themeColor("positive", "#16a34a")
-  val negativeColor: Color = themeColor("negative", "#dc2626")
-  val gridColor: Color = themeColor("grid", "#e4e4e7")
-  val trackColor: Color = themeColor("track", "#f4f4f5")
+  val markValues: List<Double> by lazy(LazyThreadSafetyMode.NONE) {
+    series.flatMap(ChartSeries::knownValues) + candlestickExtremes
+  }
 
-  /** The container around the plot, already merged with the provider in JS. */
+  val annotatedValues: List<Double> by lazy(LazyThreadSafetyMode.NONE) {
+    markValues + data.map(ChartDatum::value)
+  }
+
+  val markExtent: Pair<Double, Double> by lazy(LazyThreadSafetyMode.NONE) {
+    valueExtent(markValues)
+  }
+
+  val annotatedExtent: Pair<Double, Double> by lazy(LazyThreadSafetyMode.NONE) {
+    valueExtent(annotatedValues)
+  }
+
+  val lastReadableIndex: Int? by lazy(LazyThreadSafetyMode.NONE) {
+    val candles = array("candlesticks")
+    if (candles.isNotEmpty()) return@lazy candles.lastIndex
+    series.firstOrNull()?.values?.indexOfLast { it != null }?.takeIf { it >= 0 }
+  }
+
+  val seriesValues: List<Double> by lazy(LazyThreadSafetyMode.NONE) {
+    series.flatMap(ChartSeries::knownValues)
+  }
+
+  val seriesExtent: Pair<Double, Double> by lazy(LazyThreadSafetyMode.NONE) {
+    valueExtent(seriesValues)
+  }
+
+  val candlestickExtent: Pair<Double, Double> by lazy(LazyThreadSafetyMode.NONE) {
+    valueExtent(candlestickExtremes)
+  }
+
+  val datasetKey: String by lazy(LazyThreadSafetyMode.NONE) {
+    listOf(
+      type,
+      categories.size.toString(),
+      categories.firstOrNull() ?: "",
+      categories.lastOrNull() ?: "",
+      series.joinToString(",") { it.id },
+      String.format("%.4f", markValues.minOrNull() ?: 0.0),
+      String.format("%.4f", markValues.maxOrNull() ?: 0.0),
+    ).joinToString("|")
+  }
+
+  val palette: List<Color> = json.themePalette()
+  val positiveColor: Color = json.themeColor("positive", "#16a34a")
+  val negativeColor: Color = json.themeColor("negative", "#dc2626")
+  val gridColor: Color = json.themeColor("grid", "#e4e4e7")
+  val trackColor: Color = json.themeColor("track", "#f4f4f5")
+
+  /** The chart's own fill, behind the plot. Null leaves whatever is under the view. */
+  val backgroundColor: Color? = json.themeColorOrNull("background")
+
+  /**
+   * The family named by `theme.typography.fontFamily`, resolved to a [FontFamily] the
+   * first time a chart is drawn. Resolution needs an `AssetManager`, which only the
+   * composable has, so [ChartCanvas] sets it — see `fontFamilyName`.
+   */
+  val fontFamilyName: String? = json.themeFontFamily()
+
+  var fontFamily: FontFamily? = null
+
   val surface: ChartSurfaceStyle? =
     json.optJSONObject("surface")?.let(ChartSurfaceStyle::from)
 
-  /**
-   * Tick labels on the value axis, for the forms whose y axis is categorical.
-   * A word like "Android" needs far more room than "1,234", so the gutter has
-   * to be measured rather than assumed.
-   */
   val yCategoryLabels: List<String> = when (type) {
     "diverging-bar" -> data.map(ChartDatum::label)
     "dumbbell" -> array("rows").map { it.optString("label") }
@@ -185,28 +161,41 @@ class ChartConfiguration(raw: String, isSystemDark: Boolean = false) {
     else -> emptyList()
   }
 
-  /**
-   * Width reserved for [yCategoryLabels], measured once per draw and shared.
-   * Hit-testing runs outside a `DrawScope` and cannot measure text; reading the
-   * same number is what keeps tap targets aligned with the marks.
-   */
   var measuredYGutter: Float? = null
 
-  /** `colorMode: "system"` cannot be answered from the payload alone. */
   val isDark: Boolean = when (colorMode) {
     "dark" -> true
     "light" -> false
     else -> isSystemDark
   }
 
-  /**
-   * An explicit `theme.colors.label` always wins — a caller that named a colour
-   * meant it in both modes.
-   */
-  val labelColor: Color = themeColorOrNull("label")
+  val labelColor: Color = json.themeColorOrNull("label")
     ?: if (isDark) Color(0xFFA1A1AA) else Color(0xFF71717A)
 
+  /** Tick marks. Compose draws no domain line, so the ticks are what `axis` colours. */
+  val axisColor: Color = json.themeColorOrNull("axis")
+    ?: if (isDark) Color(0xFF52525B) else Color(0xFFA1A1AA)
+
+  /** The tooltip card's fill. */
+  val surfaceColor: Color = json.themeColorOrNull("surface")
+    ?: if (isDark) Color(0xE6222222) else Color(0xF2FFFFFF)
+
   val contentColor: Color = if (isDark) Color(0xFFFAFAFA) else Color(0xFF18181B)
+
+  /**
+   * Every piece of text a chart draws goes through here, so naming a family in the
+   * theme reaches all of it — axis labels, titles, the gauge reading, annotations.
+   */
+  fun textStyle(
+    fontSize: TextUnit,
+    color: Color = labelColor,
+    fontWeight: FontWeight? = null,
+  ): TextStyle = TextStyle(
+    color = color,
+    fontFamily = fontFamily,
+    fontSize = fontSize,
+    fontWeight = fontWeight,
+  )
 
   fun colorFor(index: Int, color: String? = null, slot: Int? = null): Color {
     color?.let { return parseColor(it) }
@@ -220,10 +209,6 @@ class ChartConfiguration(raw: String, isSystemDark: Boolean = false) {
         ?: colorFor(index, series.color, series.slot)
       ).copy(alpha = dimming(series.id))
 
-  /**
-   * `1f` unless some *other* series is emphasized — the emphasized one keeps full
-   * opacity, so only its peers get dimmed.
-   */
   fun dimming(id: String): Float =
     if (emphasisId.isNullOrEmpty() || emphasisId == id) 1f else interaction.dimOpacity
 
@@ -231,39 +216,8 @@ class ChartConfiguration(raw: String, isSystemDark: Boolean = false) {
     val minimum = values.minOrNull() ?: 0.0
     val maximum = values.maxOrNull() ?: 1.0
     val inferred = if (minimum == maximum) minimum to (maximum + 1) else minimum to maximum
-    return (yAxis.domain.minimum ?: inferred.first) to
-      (yAxis.domain.maximum ?: inferred.second)
+    val inset = (inferred.second - inferred.first) * yAxis.domain.padding
+    return (yAxis.domain.minimum ?: (inferred.first - inset)) to
+      (yAxis.domain.maximum ?: (inferred.second + inset))
   }
-
-  private fun themeColor(name: String, fallback: String): Color =
-    themeColorOrNull(name) ?: parseColor(fallback)
-
-  private fun themeColorOrNull(name: String): Color? =
-    json.optJSONObject("theme")
-      ?.optJSONObject("colors")
-      ?.optString(name)
-      ?.takeIf { it.isNotEmpty() && it != "null" }
-      ?.let(::parseColor)
 }
-
-fun parseColor(value: String): Color =
-  runCatching { Color(AndroidColor.parseColor(value)) }.getOrElse { Color.Magenta }
-
-private fun JSONObject.optNullableString(name: String): String? =
-  optString(name).takeIf { it.isNotEmpty() && it != "null" }
-
-private fun JSONArray?.objects(): List<JSONObject> =
-  if (this == null) emptyList() else (0 until length()).mapNotNull(::optJSONObject)
-
-private fun JSONArray?.strings(): List<String> =
-  if (this == null) emptyList() else (0 until length()).mapNotNull {
-    optString(it).takeIf(String::isNotEmpty)
-  }
-
-private fun JSONArray?.doubles(): List<Double> =
-  if (this == null) emptyList() else (0 until length()).map { optDouble(it) }
-
-private fun JSONArray?.nullableDoubles(): List<Double?> =
-  if (this == null) emptyList() else (0 until length()).map {
-    if (isNull(it)) null else optDouble(it)
-  }

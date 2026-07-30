@@ -6,7 +6,10 @@ final class ZyplotChartView: ExpoView {
   private var hostingController: UIHostingController<ZyplotNativeChart>?
 
   var configuration = "" {
-    didSet { render() }
+    didSet {
+      guard configuration != oldValue else { return }
+      render()
+    }
   }
 
   required init(appContext: AppContext? = nil) {
@@ -22,13 +25,10 @@ final class ZyplotChartView: ExpoView {
     let rootView = ZyplotNativeChart(
       configuration: decoded,
       onInteraction: { [weak self] payload in
-        self?.onInteraction(payload)
+        self?.onInteraction(payload.compactMapValues { $0 })
       }
     )
 
-    // Reassigning `rootView` preserves the SwiftUI view identity across prop
-    // updates, so transient chart state and transitions survive a re-render.
-    // Only the first pass builds and installs a hosting controller.
     if let hostingController {
       hostingController.rootView = rootView
       return

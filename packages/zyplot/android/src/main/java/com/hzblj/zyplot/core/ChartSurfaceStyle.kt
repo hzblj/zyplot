@@ -10,12 +10,6 @@ data class SurfacePadding(
   val top: Float = 0f,
 )
 
-/**
- * The container the chart is drawn in, decoded from the `surface` payload.
- *
- * JS has already merged the provider's value with the chart's own, so this only
- * has to read one object.
- */
 data class ChartSurfaceStyle(
   val background: Color?,
   val borderColor: Color?,
@@ -39,11 +33,6 @@ data class ChartSurfaceStyle(
       )
     }
 
-    /**
-     * `padding` is either one number for every side or an object naming them.
-     * The named sides win over the `horizontal`/`vertical` pair, which wins over
-     * the single number — most specific first, as in CSS.
-     */
     private fun readPadding(json: JSONObject): SurfacePadding {
       val all = json.optDouble("padding", Double.NaN)
       if (!all.isNaN()) {

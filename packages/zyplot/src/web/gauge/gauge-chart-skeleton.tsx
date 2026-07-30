@@ -1,26 +1,17 @@
-import type { FC } from "react";
+import type {FC} from 'react'
 
-import { ChartSkeletonFrame, SkeletonArc } from "../shared/skeleton";
-import type { ChartSkeletonProps } from "../shared/types";
+import {ChartSkeletonFrame, SkeletonArc} from '../shared/skeleton'
+import type {ChartSkeletonProps} from '../shared/types'
+
+/** Props for `Chart.Gauge.Skeleton`. */
+export type GaugeChartSkeletonProps = ChartSkeletonProps
 
 /**
- * The GaugeChart's placeholder — the shape it is about to be, at the height it
- * will occupy, so nothing reflows when the data lands.
+ * The placeholder for `Chart.Gauge`: the same shape at the same height, so nothing
+ * moves when the data lands.
  */
-export type GaugeChartSkeletonProps = ChartSkeletonProps;
-
-export const GaugeChartSkeleton: FC<GaugeChartSkeletonProps> = ({
-	className,
-	height,
-	legendCount = 0,
-}) => (
-	<ChartSkeletonFrame
-		className={className}
-		xAxis={false}
-		yAxis={false}
-		height={height}
-		legendCount={legendCount}
-	>
-		<SkeletonArc />
-	</ChartSkeletonFrame>
-);
+export const GaugeChartSkeleton: FC<GaugeChartSkeletonProps> = ({className, height, legendCount = 0}) => (
+  <ChartSkeletonFrame className={className} xAxis={false} yAxis={false} height={height} legendCount={legendCount}>
+    <SkeletonArc />
+  </ChartSkeletonFrame>
+)

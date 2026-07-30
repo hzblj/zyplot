@@ -5,22 +5,35 @@ struct ZyplotNativeChart: View {
   var onInteraction: ([String: Any?]) -> Void = { _ in }
 
   var body: some View {
-    chart
+    content
       .zyplotSurface(configuration.surface)
-      // `system` leaves the environment untouched so the chart keeps following
-      // the device; only an explicit light/dark pin overrides it.
       .environment(\.colorScheme, configuration.preferredColorScheme ?? colorScheme)
   }
 
   @Environment(\.colorScheme) private var colorScheme
 
   @ViewBuilder
-  private var chart: some View {
+  private var content: some View {
     if configuration.isLoading == true {
-      ZyplotLoadingChart()
-    } else if configuration.type == "candlestick" {
+      ZyplotLoadingChart(configuration: configuration)
+    } else {
+      ZyplotChartCrossfade(configuration: configuration) { current in
+        ZyplotChartReveal(configuration: current) { revealed, reveal in
+          chart(revealed, reveal: reveal)
+        }
+      }
+    }
+  }
+
+  @ViewBuilder
+  private func chart(
+    _ configuration: ZyplotConfiguration,
+    reveal: ZyplotRevealState
+  ) -> some View {
+    if configuration.type == "candlestick" {
       ZyplotCandlestickChart(
         configuration: configuration,
+        reveal: reveal,
         onInteraction: onInteraction
       )
     } else {
@@ -30,6 +43,7 @@ struct ZyplotNativeChart: View {
       default:
         ZyplotMarksChart(
           configuration: configuration,
+          reveal: reveal,
           onInteraction: onInteraction
         )
       }

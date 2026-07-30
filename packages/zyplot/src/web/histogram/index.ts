@@ -1,10 +1,10 @@
-import { HistogramChart as HistogramChartRoot } from "./histogram-chart";
-import { HistogramChartSkeleton } from "./histogram-chart-skeleton";
+import {HistogramChart as HistogramChartRoot} from './histogram-chart'
+import {HistogramChartSkeleton} from './histogram-chart-skeleton'
 
-export type { HistogramChartProps } from "./histogram-chart";
-export type { HistogramChartSkeletonProps } from "./histogram-chart-skeleton";
+export type {HistogramChartProps} from './histogram-chart'
+export type {HistogramChartSkeletonProps} from './histogram-chart-skeleton'
 
-/** `Chart.Histogram` — the chart, with its placeholder hanging off it as `.Skeleton`. */
+/** `Chart.Histogram`, with its loading placeholder at `Chart.Histogram.Skeleton`. */
 export const HistogramChart = Object.assign(HistogramChartRoot, {
-	Skeleton: HistogramChartSkeleton,
-});
+  Skeleton: HistogramChartSkeleton,
+})

@@ -1,9 +1,10 @@
 package com.hzblj.zyplot.core.finance
 
-import com.hzblj.zyplot.core.presentation.nullableString
+import com.hzblj.zyplot.core.json.nullableString
 import org.json.JSONObject
 
 data class CandlestickStyle(
+  val candleRadius: Float,
   val candleWidth: Float,
   val downColor: String?,
   val hollowUp: Boolean,
@@ -16,6 +17,7 @@ data class CandlestickStyle(
 ) {
   companion object {
     fun from(json: JSONObject?): CandlestickStyle = CandlestickStyle(
+      candleRadius = json?.optDouble("candleRadius", 0.0)?.toFloat() ?: 0f,
       candleWidth = json?.optDouble("candleWidth", 0.52)?.toFloat() ?: 0.52f,
       downColor = json?.nullableString("downColor"),
       hollowUp = json?.optBoolean("hollowUp", false) ?: false,

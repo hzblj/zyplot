@@ -1,35 +1,25 @@
-import type { ChartSurface, ChartTheme } from "@hzblj/zyplot-core";
-import { createContext, type ReactNode, useContext, useMemo } from "react";
+import type {ChartSurface, NativeChartTheme} from '@hzblj/zyplot-core'
+import {createContext, type ReactNode, useContext, useMemo} from 'react'
 
 type ChartContextValue = {
-	surface?: ChartSurface;
-	theme?: ChartTheme;
-};
+  surface?: ChartSurface
+  theme?: NativeChartTheme
+}
 
-const ChartContext = createContext<ChartContextValue>({});
+const ChartContext = createContext<ChartContextValue>({})
 
-export const useChartContext = () => useContext(ChartContext);
+export const useChartContext = () => useContext(ChartContext)
 
+/** Props for `Chart.Provider`. */
 export type ChartProviderProps = ChartContextValue & {
-	children: ReactNode;
-};
+  children: ReactNode
+}
 
 /**
- * Scopes surface and theme defaults to a subtree.
- *
- * Purely a React context: the values are folded into each chart's
- * configuration before it crosses the bridge, so this costs no native code and
- * behaves the same on both platforms. Anything a chart sets itself wins, key by
- * key, so a dashboard can set one card treatment and still let a single chart
- * round its own corners.
+ * Sets the default `surface` and `theme` for every chart below it. Anything a
+ * chart passes itself wins, key by key.
  */
-export const ChartProvider = ({
-	children,
-	surface,
-	theme,
-}: ChartProviderProps) => {
-	const value = useMemo(() => ({ surface, theme }), [surface, theme]);
-	return (
-		<ChartContext.Provider value={value}>{children}</ChartContext.Provider>
-	);
-};
+export const ChartProvider = ({children, surface, theme}: ChartProviderProps) => {
+  const value = useMemo(() => ({surface, theme}), [surface, theme])
+  return <ChartContext.Provider value={value}>{children}</ChartContext.Provider>
+}

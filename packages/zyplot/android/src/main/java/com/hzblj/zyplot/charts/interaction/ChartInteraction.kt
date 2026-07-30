@@ -9,19 +9,20 @@ internal data class ChartSelection(
   val category: String?,
   val seriesId: String?,
   val value: Double?,
-  /** Pre-formatted extra rows, e.g. a boxplot's five-number summary. */
+  val index: Int? = null,
   val detail: List<String> = emptyList(),
+  val rows: List<Pair<String, String>> = emptyList(),
 )
 
 internal fun chartSelection(
   config: ChartConfiguration,
   pointer: Offset,
   width: Float,
+  density: Float = 1f,
 ): ChartSelection {
-  // Derived from the same helpers the renderer draws with, so the tap target and
-  // the marks cannot drift apart.
-  val left = plotLeft(config)
-  val right = plotRight(config, width)
+  // The pointer arrives in pixels, so the plot box has to be measured in pixels too.
+  val left = plotLeft(config, density)
+  val right = plotRight(config, width, density)
   val plotWidth = (right - left).coerceAtLeast(1f)
   val ratio = ((pointer.x - left) / plotWidth).coerceIn(0f, 0.9999f)
 
@@ -32,19 +33,49 @@ internal fun chartSelection(
   val index = (ratio * config.categories.size).toInt()
     .coerceIn(0, (config.categories.size - 1).coerceAtLeast(0))
   val category = config.categories.getOrNull(index)
+  if (config.type == "candlestick") {
+    return candlestickSelection(config, index, category)
+  }
   val series = config.series.firstOrNull()
   return ChartSelection(
     category = category,
     seriesId = series?.id,
     value = series?.values?.getOrNull(index),
+    index = index,
   )
 }
 
-/**
- * A boxplot has no single value to report, so the selection carries the whole
- * five-number summary using the caller's own `labels` — the terminology is
- * translated by the app, not by this module.
- */
+private fun candlestickSelection(
+  config: ChartConfiguration,
+  index: Int,
+  category: String?,
+): ChartSelection {
+  val candles = config.array("candlesticks")
+  val candle = candles.getOrNull(index)
+    ?: return ChartSelection(category, null, null, index)
+  val labels = config.objectValue("labels")
+  val open = candle.optDouble("open")
+  val close = candle.optDouble("close")
+  val change = if (open == 0.0) 0.0 else (close - open) / open * 100
+  val rows = buildList {
+    fun row(key: String, value: String) {
+      labels?.optString(key)?.takeIf { it.isNotEmpty() }?.let { add(it to value) }
+    }
+    row("open", config.format.format(open))
+    row("close", config.format.format(close))
+    row("high", config.format.format(candle.optDouble("high")))
+    row("low", config.format.format(candle.optDouble("low")))
+    row("change", String.format("%+.2f %%", change))
+  }
+  return ChartSelection(
+    category = category,
+    seriesId = candle.optString("id"),
+    value = close,
+    index = index,
+    rows = rows,
+  )
+}
+
 private fun boxplotSelection(
   config: ChartConfiguration,
   ratio: Float,
@@ -62,6 +93,7 @@ private fun boxplotSelection(
     category = group.optString("label"),
     seriesId = group.optString("id"),
     value = group.optDouble("median"),
+    index = index,
     detail = listOf(
       row("max", "Max"),
       row("q3", "Q3"),
@@ -74,11 +106,18 @@ private fun boxplotSelection(
 
 internal fun interactionPayload(
   selection: ChartSelection,
-  pointer: Offset,
+  pointer: Offset?,
+  phase: String,
+  density: Float = 1f,
 ): Map<String, Any> = buildMap {
   selection.category?.let { put("category", it) }
+  selection.index?.let { put("index", it) }
   selection.seriesId?.let { put("seriesId", it) }
   selection.value?.let { put("value", it) }
-  put("nativeX", pointer.x)
-  put("nativeY", pointer.y)
+  put("phase", phase)
+  pointer?.let {
+    // In dp, like the geometry and like iOS: the app positions its own views with these.
+    put("nativeX", it.x / density)
+    put("nativeY", it.y / density)
+  }
 }

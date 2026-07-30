@@ -1,98 +1,58 @@
-"use client";
+'use client'
 
-import { type FC, type ReactNode, useEffect, useRef, useState } from "react";
+import {type FC, type ReactNode, useEffect, useRef, useState} from 'react'
 
-import { cn } from "../utils";
-
-/**
- * The skeleton → data transition, shared by both rendering engines.
- *
- * **A cross-fade, never a swap.** Placeholder and plot occupy the same grid cell,
- * so the box never changes size and the page never flinches as charts resolve at
- * different moments. The plot fades in while the engine plays its own enter
- * animation underneath, which reads as one arrival rather than two.
- *
- * `motion-safe:` carries the whole transition, so `prefers-reduced-motion` gets
- * an instant, honest swap rather than a slower version of the same motion.
- */
+import {cn} from '../utils'
 
 type ChartRevealProps = {
-	children: ReactNode;
-	className?: string;
-	isPending: boolean;
-	skeleton?: ReactNode;
-};
+  children: ReactNode
+  className?: string
+  isPending: boolean
+  skeleton?: ReactNode
+}
 
-/**
- * Holds the plot hidden for one frame after the data settles.
- *
- * Without it the canvas is already opaque on the frame the engine begins its
- * enter animation, so the marks grow out of nothing on a solid surface instead
- * of arriving with the fade.
- */
 const useSettledReveal = (isPending: boolean): boolean => {
-	const [hasSettled, setHasSettled] = useState(false);
-	const frameRef = useRef<number | null>(null);
+  const [hasSettled, setHasSettled] = useState(false)
+  const frameRef = useRef<number | null>(null)
 
-	useEffect(() => {
-		if (isPending) {
-			setHasSettled(false);
+  useEffect(() => {
+    if (isPending) {
+      setHasSettled(false)
 
-			return;
-		}
+      return
+    }
 
-		frameRef.current = requestAnimationFrame(() => setHasSettled(true));
+    frameRef.current = requestAnimationFrame(() => setHasSettled(true))
 
-		return () => {
-			if (frameRef.current !== null) {
-				cancelAnimationFrame(frameRef.current);
-			}
-		};
-	}, [isPending]);
+    return () => {
+      if (frameRef.current !== null) {
+        cancelAnimationFrame(frameRef.current)
+      }
+    }
+  }, [isPending])
 
-	return hasSettled;
-};
+  return hasSettled
+}
 
-const FADE =
-	"motion-safe:transition-opacity motion-safe:duration-300 motion-safe:ease-out";
+const FADE = 'motion-safe:transition-opacity motion-safe:duration-300 motion-safe:ease-out'
 
-export const ChartReveal: FC<ChartRevealProps> = ({
-	children,
-	className,
-	isPending,
-	skeleton,
-}) => {
-	const hasSettled = useSettledReveal(isPending);
+export const ChartReveal: FC<ChartRevealProps> = ({children, className, isPending, skeleton}) => {
+  const hasSettled = useSettledReveal(isPending)
 
-	let skeletonState = "pointer-events-none opacity-0";
-	if (isPending) {
-		skeletonState = "opacity-100";
-	}
+  let skeletonState = 'pointer-events-none opacity-0'
+  if (isPending) {
+    skeletonState = 'opacity-100'
+  }
 
-	let plotState = "opacity-0";
-	if (hasSettled) {
-		plotState = "opacity-100";
-	}
+  let plotState = 'opacity-0'
+  if (hasSettled) {
+    plotState = 'opacity-100'
+  }
 
-	return (
-		<div
-			aria-busy={isPending}
-			className={cn("grid w-full grid-cols-1 grid-rows-1", className)}
-		>
-			{skeleton && (
-				<div className={cn("col-start-1 row-start-1", FADE, skeletonState)}>
-					{skeleton}
-				</div>
-			)}
-			<div
-				className={cn(
-					"col-start-1 row-start-1 flex w-full flex-col gap-3",
-					FADE,
-					plotState,
-				)}
-			>
-				{children}
-			</div>
-		</div>
-	);
-};
+  return (
+    <div aria-busy={isPending} className={cn('grid w-full grid-cols-1 grid-rows-1', className)} data-zyplot-chart="">
+      {skeleton && <div className={cn('col-start-1 row-start-1', FADE, skeletonState)}>{skeleton}</div>}
+      <div className={cn('col-start-1 row-start-1 flex w-full flex-col gap-3', FADE, plotState)}>{children}</div>
+    </div>
+  )
+}

@@ -1,1 +1,1 @@
-export * from "./chart-color";
+export * from './chart-color'

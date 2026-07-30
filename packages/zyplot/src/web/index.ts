@@ -1,65 +1,86 @@
 /**
- * The web chart namespace: every form, rendered by ECharts and uPlot in the DOM.
+ * Every chart for the DOM, rendered by ECharts and uPlot. `Chart` is the only
+ * value exported: reach a form through it, as `Chart.Bar` or `Chart.Sankey`.
  *
- * The individual components are deliberately **not** re-exported. `Chart.Bar` is
- * the only way to reach a bar chart, which keeps the twenty-odd forms from
- * flooding the barrel and makes the family obvious at the call site. Everything
- * under `shared/` is internal — a feature reaching for `ChartShell` or
- * `useChartTokens` is building a chart that should live here instead.
- *
- * This is also what a plain `@hzblj/zyplot` import resolves to outside React
- * Native, so importing the subpath only matters when a file must be web even in
- * a project that has both.
+ * A plain `@hzblj/zyplot` import already resolves here outside React Native, so
+ * use this subpath only when a file must be web in a project that has both.
  */
 
-import "../../style.css";
+// The built stylesheets themselves, rather than the `style.css` that gathers them: its
+// `@import`s are not followed by every bundler in development — Metro leaves them out — and
+// a chart with no styles at all loses the layer its skeleton and its plot share, so the two
+// stack up and everything an app draws over the plot is measured from the wrong place.
+import 'uplot/dist/uPlot.min.css'
+import '../charts.css'
 
-export type { AreaChartProps, AreaChartSkeletonProps } from "./area";
-export type { BarChartProps, BarChartSkeletonProps } from "./bar";
-export type { BoxplotChartProps, BoxplotChartSkeletonProps } from "./boxplot";
+export {
+  animation,
+  annotation,
+  axis,
+  format,
+  glow,
+  halo,
+  interaction,
+  marker,
+  plot,
+  reveal,
+  series,
+  seriesProps,
+  seriesStyle,
+  surface,
+  theme,
+} from '@hzblj/zyplot-core'
+export type {ChartAnnotationViews} from '../shared/annotation-views'
+export type {ChartScrub, ChartScrubSelection} from '../shared/use-chart-scrub'
+export {useChartScrub} from '../shared/use-chart-scrub'
+export type {ChartReading} from '../shared/use-last-reading'
+export {useLastReading} from '../shared/use-last-reading'
+export type {AreaChartProps, AreaChartSkeletonProps} from './area'
+export type {BarChartProps, BarChartSkeletonProps} from './bar'
+export type {BoxplotChartProps, BoxplotChartSkeletonProps} from './boxplot'
 export type {
-	CandlestickChartProps,
-	CandlestickChartSkeletonProps,
-} from "./candlestick";
-export { Chart } from "./chart";
+  CandlestickChartProps,
+  CandlestickChartSkeletonProps,
+} from './candlestick'
+export {Chart} from './chart'
 export type {
-	DivergingBarChartProps,
-	DivergingBarChartSkeletonProps,
-} from "./diverging-bar";
+  DivergingBarChartProps,
+  DivergingBarChartSkeletonProps,
+} from './diverging-bar'
 export type {
-	DumbbellChartProps,
-	DumbbellChartSkeletonProps,
-} from "./dumbbell";
-export type { FunnelChartProps, FunnelChartSkeletonProps } from "./funnel";
-export type { GaugeChartProps, GaugeChartSkeletonProps } from "./gauge";
-export type { HeatmapChartProps, HeatmapChartSkeletonProps } from "./heatmap";
+  DumbbellChartProps,
+  DumbbellChartSkeletonProps,
+} from './dumbbell'
+export type {FunnelChartProps, FunnelChartSkeletonProps} from './funnel'
+export type {GaugeChartProps, GaugeChartSkeletonProps} from './gauge'
+export type {HeatmapChartProps, HeatmapChartSkeletonProps} from './heatmap'
 export type {
-	HistogramChartProps,
-	HistogramChartSkeletonProps,
-} from "./histogram";
-export type { LineChartProps, LineChartSkeletonProps } from "./line";
-export type { MeterBarProps, MeterBarSkeletonProps } from "./meter";
-export type { PieChartProps, PieChartSkeletonProps } from "./pie";
-export type { RadarChartProps, RadarChartSkeletonProps } from "./radar";
-export type { SankeyChartProps, SankeyChartSkeletonProps } from "./sankey";
-export type { ScatterChartProps, ScatterChartSkeletonProps } from "./scatter";
+  HistogramChartProps,
+  HistogramChartSkeletonProps,
+} from './histogram'
+export type {LineChartProps, LineChartSkeletonProps} from './line'
+export type {MeterBarProps, MeterBarSkeletonProps} from './meter'
+export type {PieChartProps, PieChartSkeletonProps} from './pie'
+export type {RadarChartProps, RadarChartSkeletonProps} from './radar'
+export type {SankeyChartProps, SankeyChartSkeletonProps} from './sankey'
+export type {ScatterChartProps, ScatterChartSkeletonProps} from './scatter'
 export type {
-	ChartColorMode,
-	ChartProviderProps,
-	ChartTheme,
-} from "./shared/theme";
-export type * from "./shared/types";
-export type { SparklineProps, SparklineSkeletonProps } from "./sparkline";
+  ChartColorMode,
+  ChartProviderProps,
+  ChartProviderTheme,
+} from './shared/theme'
+export type * from './shared/types'
+export type {SparklineProps, SparklineSkeletonProps} from './sparkline'
 export type {
-	StackedBarChartProps,
-	StackedBarChartSkeletonProps,
-} from "./stacked-bar";
+  StackedBarChartProps,
+  StackedBarChartSkeletonProps,
+} from './stacked-bar'
 export type {
-	SunburstChartProps,
-	SunburstChartSkeletonProps,
-} from "./sunburst";
+  SunburstChartProps,
+  SunburstChartSkeletonProps,
+} from './sunburst'
 export type {
-	TimeSeriesChartProps,
-	TimeSeriesChartSkeletonProps,
-} from "./time-series";
-export type { TreemapChartProps, TreemapChartSkeletonProps } from "./treemap";
+  TimeSeriesChartProps,
+  TimeSeriesChartSkeletonProps,
+} from './time-series'
+export type {TreemapChartProps, TreemapChartSkeletonProps} from './treemap'

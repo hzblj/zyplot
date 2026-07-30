@@ -1,194 +1,193 @@
-"use client";
+'use client'
 
-import { useContext, useEffect, useState } from "react";
+import type {ChartTheme} from '@hzblj/zyplot-core'
+import {useContext, useEffect, useMemo, useState} from 'react'
 
-import { toCanvasColor } from "../color";
-import { ChartThemeContext } from "../theme";
-
-/**
- * The bridge between the design tokens and the two rendering engines.
- *
- * A canvas takes colour as a JS string, so `chart/*` cannot be applied the way
- * every other surface in the product applies a token — as a Tailwind class that
- * resolves through the CSS cascade. Instead the resolved values are read off the
- * document once per theme and handed to ECharts and uPlot as plain strings.
- *
- * That makes dark mode an explicit subscription rather than something that just
- * happens: `.dark` lands on `<html>`, the observer fires, every mounted chart is
- * re-painted from the new values. Without it a chart keeps its light-mode series
- * colours on a dark canvas until it happens to re-mount.
- *
- * On a P3 display the primitives resolve to `color(display-p3 …)` rather than
- * hex. Canvas 2D accepts it in every browser that also accepts it in CSS, which
- * is what the `@supports` guard around those overrides already tests for — so
- * the value is passed through untouched rather than converted back to sRGB.
- */
+import {toCanvasColor} from '../color'
+import {ChartThemeContext} from '../theme'
 
 export type ChartDivergingTokens = {
-	negative: string;
-	negativeSoft: string;
-	neutral: string;
-	positive: string;
-	positiveSoft: string;
-};
+  negative: string
+  negativeSoft: string
+  neutral: string
+  positive: string
+  positiveSoft: string
+}
 
 export type ChartTokens = {
-	axis: string;
-	/**
-	 * The card hairline. Not a `chart/*` token: the tooltip *is* a card, so it
-	 * takes the same edge as every other card in the product.
-	 */
-	border: string;
-	/** Slot 1…7, in the fixed order the palette defines. */
-	categorical: string[];
-	diverging: ChartDivergingTokens;
-	/** The resolved stack — canvas cannot read `var(--font-inter)`, only a family name. */
-	fontFamily: string;
-	grid: string;
-	label: string;
-	/** The de-emphasis grey — every series that is context rather than subject. */
-	muted: string;
-	/** Low → high. Magnitude only. */
-	sequential: string[];
-	surface: string;
-	track: string;
-};
+  axis: string
+  border: string
+  categorical: string[]
+  diverging: ChartDivergingTokens
+  fontFamily: string
+  grid: string
+  label: string
+  muted: string
+  sequential: string[]
+  surface: string
+  track: string
+}
 
-const CATEGORICAL_SLOTS = [1, 2, 3, 4, 5, 6, 7];
-const SEQUENTIAL_STEPS = [1, 2, 3, 4, 5];
+const CATEGORICAL_SLOTS = [1, 2, 3, 4, 5, 6, 7]
+const SEQUENTIAL_STEPS = [1, 2, 3, 4, 5]
 
 /**
- * Reads one token and normalises it to sRGB. Every colour that leaves this file
- * goes through `toCanvasColor` — on a wide-gamut display the cascade resolves
- * these to `color(display-p3 …)`, which ECharts' own parser rejects outright.
+ * What a chart paints text in when the page has declared no font at all.
+ *
+ * It is the stack React Native Web resolves `fontFamily: 'System'` to, plus
+ * `system-ui` in front of it, so a chart in an Expo web app matches the `<Text>`
+ * beside it by construction.
  */
+const SYSTEM_FONT_STACK =
+  'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
+
 const readVariable = (styles: CSSStyleDeclaration, name: string): string =>
-	toCanvasColor(styles.getPropertyValue(name).trim());
+  toCanvasColor(styles.getPropertyValue(name).trim())
 
-/** Reads the current values off `<html>`. Browser-only — call it from an effect. */
-export const readChartTokens = (
-	element: Element = document.documentElement,
-): ChartTokens => {
-	const styles = getComputedStyle(element);
-
-	return {
-		axis: readVariable(styles, "--color-chart-axis"),
-		border: readVariable(styles, "--color-border-tertiary"),
-		categorical: CATEGORICAL_SLOTS.map((slot) =>
-			readVariable(styles, `--color-chart-${slot}`),
-		),
-		diverging: {
-			negative: readVariable(styles, "--color-chart-diverging-negative"),
-			negativeSoft: readVariable(
-				styles,
-				"--color-chart-diverging-negative-soft",
-			),
-			neutral: readVariable(styles, "--color-chart-diverging-neutral"),
-			positive: readVariable(styles, "--color-chart-diverging-positive"),
-			positiveSoft: readVariable(
-				styles,
-				"--color-chart-diverging-positive-soft",
-			),
-		},
-		fontFamily: styles.fontFamily,
-		grid: readVariable(styles, "--color-chart-grid"),
-		label: readVariable(styles, "--color-chart-label"),
-		muted: readVariable(styles, "--color-chart-muted"),
-		sequential: SEQUENTIAL_STEPS.map((step) =>
-			readVariable(styles, `--color-chart-sequential-${step}`),
-		),
-		surface: readVariable(styles, "--color-chart-surface"),
-		track: readVariable(styles, "--color-chart-track"),
-	};
-};
+let untouchedFontFamily: string | null = null
 
 /**
- * The tokens for the active theme, re-read whenever the theme class changes.
+ * What this browser resolves `font-family` to with no author styles in play — a
+ * serif on every engine that ships.
  *
- * `null` until the first effect runs — there is no server-side value to give,
- * and a guessed one would paint the wrong palette for a frame.
+ * `all: initial` puts every property back to its initial value, and `font-family`'s
+ * initial value is the user agent's own. Nothing an author wrote reaches the probe,
+ * inheritance included, so the answer is the same whatever the page has set. Read
+ * once and kept: it cannot change while the document lives.
  */
-export const useChartTokens = (): ChartTokens | null => {
-	const [tokens, setTokens] = useState<ChartTokens | null>(null);
-	const theme = useContext(ChartThemeContext);
+const uaFontFamily = (): string => {
+  if (untouchedFontFamily !== null) {
+    return untouchedFontFamily
+  }
 
-	useEffect(() => {
-		const sync = () =>
-			setTokens(
-				readChartTokens(
-					theme?.rootRef.current ?? document.body ?? document.documentElement,
-				),
-			);
-		sync();
+  const probe = document.createElement('div')
+  probe.style.setProperty('all', 'initial')
+  document.documentElement.append(probe)
+  untouchedFontFamily = getComputedStyle(probe).fontFamily
+  probe.remove()
 
-		const observer = new MutationObserver(sync);
-		const attributeFilter = [
-			"class",
-			"data-theme",
-			"data-zyplot-color-mode",
-			"style",
-		];
-		observer.observe(document.documentElement, {
-			attributeFilter,
-			attributes: true,
-		});
-
-		const themeRoot = theme?.rootRef.current;
-		if (themeRoot && themeRoot !== document.documentElement) {
-			observer.observe(themeRoot, {
-				attributeFilter,
-				attributes: true,
-			});
-		}
-		const media = window.matchMedia("(prefers-color-scheme: dark)");
-		media.addEventListener("change", sync);
-
-		return () => {
-			media.removeEventListener("change", sync);
-			observer.disconnect();
-		};
-	}, [theme]);
-
-	return tokens;
-};
+  return untouchedFontFamily
+}
 
 /**
- * The colour for a series. `slot` is 1-based and wraps at the palette's end —
- * but wrapping is a bug the caller should have prevented, not a feature: past
- * seven series the answer is an "other" bucket or small multiples.
- */
-export const seriesColor = (
-	tokens: ChartTokens,
-	entry: { color?: string; slot?: number },
-	index: number,
-): string => {
-	if (entry.color) {
-		return toCanvasColor(entry.color);
-	}
-
-	const resolved = entry.slot ?? index + 1;
-	const offset = (resolved - 1) % tokens.categorical.length;
-
-	return tokens.categorical[offset] ?? tokens.muted;
-};
-
-/**
- * The emphasis form: one series keeps its hue, every other one drops to the
- * de-emphasis grey.
+ * The font in effect where the chart sits, which is what its canvas should paint
+ * text in — a chart is page furniture, not a widget with a look of its own.
  *
- * It is the answer to "this chart is too busy" far more often than a better
- * palette is. Categorical colour asserts that the series are all equally the
- * subject; when only one of them is, saying so is the clearer chart.
+ * When the page declared no font anywhere, that resolves to the browser's serif,
+ * and a chart has no business painting Times beside text that is not. The one case
+ * this really bites is React Native Web: its reset sets no font on the document at
+ * all, and gives each `<Text>` the system stack through a class of its own, so
+ * there is nothing for a chart to inherit however deeply it looks.
  */
+const readFontFamily = (styles: CSSStyleDeclaration): string => {
+  const inherited = styles.fontFamily.trim()
+
+  return !inherited || inherited === uaFontFamily() ? SYSTEM_FONT_STACK : inherited
+}
+
+export const readChartTokens = (element: Element = document.documentElement): ChartTokens => {
+  const styles = getComputedStyle(element)
+
+  return {
+    axis: readVariable(styles, '--color-chart-axis'),
+    border: readVariable(styles, '--color-border-tertiary'),
+    categorical: CATEGORICAL_SLOTS.map(slot => readVariable(styles, `--color-chart-${slot}`)),
+    diverging: {
+      negative: readVariable(styles, '--color-chart-diverging-negative'),
+      negativeSoft: readVariable(styles, '--color-chart-diverging-negative-soft'),
+      neutral: readVariable(styles, '--color-chart-diverging-neutral'),
+      positive: readVariable(styles, '--color-chart-diverging-positive'),
+      positiveSoft: readVariable(styles, '--color-chart-diverging-positive-soft'),
+    },
+    fontFamily: readFontFamily(styles),
+    grid: readVariable(styles, '--color-chart-grid'),
+    label: readVariable(styles, '--color-chart-label'),
+    muted: readVariable(styles, '--color-chart-muted'),
+    sequential: SEQUENTIAL_STEPS.map(step => readVariable(styles, `--color-chart-sequential-${step}`)),
+    surface: readVariable(styles, '--color-chart-surface'),
+    track: readVariable(styles, '--color-chart-track'),
+  }
+}
+
+/**
+ * One chart's own theme, over the tokens the page already resolved. The provider sets
+ * CSS variables and every chart below reads them; a chart given a `theme` of its own
+ * has nowhere to put them, so its colours are folded in here instead.
+ */
+const withChartTheme = (tokens: ChartTokens, theme: ChartTheme): ChartTokens => {
+  const colors = theme.colors
+
+  return {
+    ...tokens,
+    axis: colors?.axis ? toCanvasColor(colors.axis) : tokens.axis,
+    categorical: colors?.categorical?.length ? colors.categorical.map(toCanvasColor) : tokens.categorical,
+    diverging: {
+      ...tokens.diverging,
+      negative: colors?.negative ? toCanvasColor(colors.negative) : tokens.diverging.negative,
+      positive: colors?.positive ? toCanvasColor(colors.positive) : tokens.diverging.positive,
+    },
+    fontFamily: theme.typography?.fontFamily ?? tokens.fontFamily,
+    grid: colors?.grid ? toCanvasColor(colors.grid) : tokens.grid,
+    label: colors?.label ? toCanvasColor(colors.label) : tokens.label,
+    surface: colors?.surface ? toCanvasColor(colors.surface) : tokens.surface,
+    track: colors?.track ? toCanvasColor(colors.track) : tokens.track,
+  }
+}
+
+export const useChartTokens = (chartTheme?: ChartTheme): ChartTokens | null => {
+  const [tokens, setTokens] = useState<ChartTokens | null>(null)
+  const theme = useContext(ChartThemeContext)
+
+  useEffect(() => {
+    const sync = () => setTokens(readChartTokens(theme?.rootRef.current ?? document.body ?? document.documentElement))
+    sync()
+
+    const observer = new MutationObserver(sync)
+    const attributeFilter = ['class', 'data-theme', 'data-zyplot-color-mode', 'style']
+    observer.observe(document.documentElement, {
+      attributeFilter,
+      attributes: true,
+    })
+
+    const themeRoot = theme?.rootRef.current
+    if (themeRoot && themeRoot !== document.documentElement) {
+      observer.observe(themeRoot, {
+        attributeFilter,
+        attributes: true,
+      })
+    }
+    const media = window.matchMedia('(prefers-color-scheme: dark)')
+    media.addEventListener('change', sync)
+
+    return () => {
+      media.removeEventListener('change', sync)
+      observer.disconnect()
+    }
+  }, [theme])
+
+  return useMemo(() => (tokens && chartTheme ? withChartTheme(tokens, chartTheme) : tokens), [chartTheme, tokens])
+}
+
+export const seriesColor = (tokens: ChartTokens, entry: {color?: string; slot?: number}, index: number): string => {
+  if (entry.color) {
+    return toCanvasColor(entry.color)
+  }
+
+  const resolved = entry.slot ?? index + 1
+  const offset = (resolved - 1) % tokens.categorical.length
+
+  return tokens.categorical[offset] ?? tokens.muted
+}
+
 export const emphasisSeriesColor = (
-	tokens: ChartTokens,
-	entry: { id: string; slot?: number },
-	index: number,
-	emphasisId?: string,
+  tokens: ChartTokens,
+  entry: {id: string; slot?: number},
+  index: number,
+  emphasisId?: string
 ): string => {
-	if (emphasisId && entry.id !== emphasisId) {
-		return tokens.muted;
-	}
+  if (emphasisId && entry.id !== emphasisId) {
+    return tokens.muted
+  }
 
-	return seriesColor(tokens, entry, index);
-};
+  return seriesColor(tokens, entry, index)
+}

@@ -1,57 +1,73 @@
-"use client";
+'use client'
 
-import type { EChartsCoreOption } from "echarts/core";
-import type { FC, ReactNode } from "react";
+import type {EChartsCoreOption} from 'echarts/core'
+import type {FC, ReactNode} from 'react'
 
-import { useECharts } from "../engine";
-import type { ChartInteractionEvent, ChartLegendItem } from "../types";
-import { ChartLegend } from "./chart-legend";
-import { ChartReveal } from "./chart-reveal";
+import {useChartHoverEvents, useECharts} from '../engine'
+import {type ChartRevealPlan, useChartReveal} from '../reveal'
+import {type ChartScrubConfig, useChartGeometryReport, useChartScrubLayer} from '../scrub'
+import type {ChartInteractionEvent, ChartLegendItem, NativeChartAnnotation} from '../types'
+import {ChartLegend} from './chart-legend'
+import {ChartReveal} from './chart-reveal'
 
-/**
- * The host every ECharts chart renders through: skeleton, legend, canvas.
- *
- * **The legend is not optional for two or more series.** A chart gets one whether
- * the caller asked or not, and a single series never does, because the title
- * already names it and a one-row legend is noise.
- *
- * **The skeleton also covers the pre-token frame.** `option` is null until the
- * design tokens have been read off the document, and painting a chart in
- * fallback colours only to repaint it a frame later is worse than waiting.
- */
-
-const DEFAULT_HEIGHT = 240;
+const DEFAULT_HEIGHT = 240
 
 type ChartShellProps = {
-	className?: string;
-	height?: number;
-	/** Held true by the caller while the data is in flight. */
-	isLoading?: boolean;
-	legend?: ChartLegendItem[];
-	onInteraction?: (event: ChartInteractionEvent) => void;
-	option: EChartsCoreOption | null;
-	skeleton?: ReactNode;
-};
+  /**
+   * What the chart drew on top of the data, so where each one landed can be reported
+   * with the plot's box. A form with a `scrub` layer leaves this out: that layer has
+   * measured the plot already and reports the geometry itself.
+   */
+  annotations?: readonly NativeChartAnnotation[]
+  className?: string
+  height?: number
+  isLoading?: boolean
+  legend?: ChartLegendItem[]
+  onInteraction?: (event: ChartInteractionEvent) => void
+  option: EChartsCoreOption | null
+  /** Called once a traced entrance has finished, so its flash is not built again. */
+  onRevealed?: () => void
+  /** The part of a traced entrance that runs after the marks have landed. */
+  reveal?: ChartRevealPlan | null
+  /**
+   * Turns the pointer into a scrub: phases and the read datum's index through
+   * `onInteraction`, the crosshair and marker over the plot. A chart form that has no
+   * continuous reading leaves it out and reports hovers instead.
+   */
+  scrub?: ChartScrubConfig
+  skeleton?: ReactNode
+}
 
 export const ChartShell: FC<ChartShellProps> = ({
-	className,
-	height = DEFAULT_HEIGHT,
-	isLoading = false,
-	legend = [],
-	onInteraction,
-	option,
-	skeleton,
+  annotations,
+  className,
+  height = DEFAULT_HEIGHT,
+  isLoading = false,
+  legend = [],
+  onInteraction,
+  onRevealed,
+  option,
+  reveal,
+  scrub,
+  skeleton,
 }) => {
-	const containerRef = useECharts(option, onInteraction);
+  /**
+   * The marks are not drawn while the placeholder is up. ECharts animates an entrance on the
+   * first option it is given, and behind a skeleton that is an entrance nobody sees — the
+   * plot would cross-fade in with the trace already part-drawn, or already finished.
+   */
+  const isPending = isLoading || option === null
+  const {containerRef, instance, layoutVersion} = useECharts(isPending ? null : option)
 
-	return (
-		<ChartReveal
-			className={className}
-			isPending={isLoading || option === null}
-			skeleton={skeleton}
-		>
-			{legend.length > 1 && <ChartLegend items={legend} />}
-			<div className="w-full" ref={containerRef} style={{ height }} />
-		</ChartReveal>
-	);
-};
+  useChartHoverEvents(instance, onInteraction, !scrub)
+  useChartScrubLayer(instance, layoutVersion, scrub, onInteraction)
+  useChartGeometryReport(instance, layoutVersion, scrub ? undefined : annotations, onInteraction)
+  useChartReveal(instance, reveal ?? null, !isPending, onRevealed)
+
+  return (
+    <ChartReveal className={className} isPending={isPending} skeleton={skeleton}>
+      {legend.length > 1 && <ChartLegend items={legend} />}
+      <div className="w-full" ref={containerRef} style={{height}} />
+    </ChartReveal>
+  )
+}

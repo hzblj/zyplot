@@ -1,1 +1,1 @@
-export * from "./chart-tokens";
+export * from './chart-tokens'

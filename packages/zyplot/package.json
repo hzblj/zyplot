@@ -90,7 +90,7 @@
 		"@zyplot/core-tailwind-config": "workspace:*",
 		"expo": "55.0.28",
 		"react": "19.2.0",
-		"react-native": "0.83.6",
+		"react-native": "0.83.10",
 		"typescript": "^5.9.3"
 	},
 	"publishConfig": {

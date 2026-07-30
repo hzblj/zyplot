@@ -1,96 +1,103 @@
-"use client";
+'use client'
 
-import type { EChartsCoreOption, EChartsType } from "echarts/core";
-import { type RefObject, useEffect, useRef } from "react";
-import type { ChartInteractionEvent } from "../types";
+import type {EChartsCoreOption, EChartsType} from 'echarts/core'
+import {type RefObject, useEffect, useRef, useState} from 'react'
+import type {ChartInteractionEvent} from '../types'
 
-import { echarts, ensureEchartsRuntime } from "./echarts-core";
+import {echarts, ensureEchartsRuntime} from './echarts-core'
+
+export type ChartEngine = {
+  containerRef: RefObject<HTMLDivElement | null>
+  instance: EChartsType | null
+  /**
+   * Bumped whenever the plot may have moved: a new option, a resize. Anything measuring
+   * the plot — an overlay, geometry an app is given — recomputes on it.
+   */
+  layoutVersion: number
+}
+
+export const useECharts = (option: EChartsCoreOption | null): ChartEngine => {
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const instanceRef = useRef<EChartsType | null>(null)
+  const [instance, setInstance] = useState<EChartsType | null>(null)
+  const [layoutVersion, setLayoutVersion] = useState(0)
+
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) {
+      return
+    }
+
+    ensureEchartsRuntime()
+    const created = echarts.init(container, undefined, {renderer: 'canvas'})
+    instanceRef.current = created
+    setInstance(created)
+
+    const observer = new ResizeObserver(entries => {
+      const entry = entries[0]
+      if (!entry || entry.contentRect.width === 0 || entry.contentRect.height === 0) {
+        return
+      }
+      created.resize()
+      setLayoutVersion(version => version + 1)
+    })
+    observer.observe(container)
+
+    return () => {
+      observer.disconnect()
+      created.dispose()
+      instanceRef.current = null
+      setInstance(null)
+    }
+  }, [])
+
+  useEffect(() => {
+    const current = instanceRef.current
+    if (!current || !option) {
+      return
+    }
+
+    current.setOption(option, {replaceMerge: ['series']})
+    setLayoutVersion(version => version + 1)
+  }, [option])
+
+  return {containerRef, instance, layoutVersion}
+}
 
 /**
- * One ECharts instance, tied to one element's lifetime.
- *
- * Three things here are load-bearing:
- *
- * - **Dirty-rectangle rendering is off.** `useDirtyRect: true` repaints only the
- *   region that changed, and it is tempting on a page holding twenty charts —
- *   but it mis-computes the damaged region for a moving axis pointer. The
- *   symptom is a hard vertical seam where a stale frame survives next to a fresh
- *   one, plus crosshair ghosts left at every previous pointer position. ECharts
- *   ships it opt-in for this reason. A correct full repaint beats a fast wrong
- *   one; the frame budget here is spent on `replaceMerge` and on uPlot instead.
- * - **The instance is never re-created for a new option.** `setOption` with
- *   `replaceMerge: ['series']` swaps the data and leaves the axes, grid and
- *   tooltip in place, which is both cheaper and what keeps the transition
- *   animation continuous. Disposing and re-initing on every render is the usual
- *   way React wrappers make ECharts feel slow.
- * - **Resize is observed, not listened for on `window`.** A sidebar collapsing
- *   changes a chart's width without the window ever resizing.
+ * The pointer events a chart form reports without tracking a scrub: which mark was
+ * clicked or hovered. Charts that read the pointer continuously report the fuller
+ * scrub instead, so they leave this off.
  */
-export const useECharts = (
-	option: EChartsCoreOption | null,
-	onInteraction?: (event: ChartInteractionEvent) => void,
-): RefObject<HTMLDivElement | null> => {
-	const containerRef = useRef<HTMLDivElement | null>(null);
-	const instanceRef = useRef<EChartsType | null>(null);
+export const useChartHoverEvents = (
+  instance: EChartsType | null,
+  onInteraction?: (event: ChartInteractionEvent) => void,
+  enabled = true
+) => {
+  const emitRef = useRef(onInteraction)
+  emitRef.current = onInteraction
 
-	useEffect(() => {
-		const container = containerRef.current;
-		if (!container) {
-			return;
-		}
+  useEffect(() => {
+    if (!instance || !enabled) {
+      return
+    }
 
-		// Idempotent, and on the path to `init` so no bundler can decide the
-		// registration was unreachable.
-		ensureEchartsRuntime();
-		const instance = echarts.init(container, undefined, { renderer: "canvas" });
-		instanceRef.current = instance;
+    const emit = (params: any) => {
+      emitRef.current?.({
+        category: typeof params?.name === 'string' ? params.name : undefined,
+        nativeX: params?.event?.offsetX,
+        nativeY: params?.event?.offsetY,
+        seriesId: params?.seriesId,
+        value: Array.isArray(params?.value) ? params.value.at(-1) : params?.value,
+      })
+    }
 
-		// A chart inside a collapsed panel measures 0×0; resizing to that throws
-		// ECharts' layout off, and it does not recover when the panel reopens.
-		const observer = new ResizeObserver((entries) => {
-			const entry = entries[0];
-			if (
-				!entry ||
-				entry.contentRect.width === 0 ||
-				entry.contentRect.height === 0
-			) {
-				return;
-			}
-			instance.resize();
-		});
-		observer.observe(container);
+    instance.on('click', emit)
+    instance.on('mouseover', emit)
 
-		const emit = (params: any) => {
-			onInteraction?.({
-				category: typeof params?.name === "string" ? params.name : undefined,
-				nativeX: params?.event?.offsetX,
-				nativeY: params?.event?.offsetY,
-				seriesId: params?.seriesId,
-				value: Array.isArray(params?.value)
-					? params.value.at(-1)
-					: params?.value,
-			});
-		};
-		instance.on("click", emit);
-		instance.on("mouseover", emit);
-
-		return () => {
-			instance.off("click", emit);
-			instance.off("mouseover", emit);
-			observer.disconnect();
-			instance.dispose();
-			instanceRef.current = null;
-		};
-	}, [onInteraction]);
-
-	useEffect(() => {
-		const instance = instanceRef.current;
-		if (!instance || !option) {
-			return;
-		}
-
-		instance.setOption(option, { replaceMerge: ["series"] });
-	}, [option]);
-
-	return containerRef;
-};
+    return () => {
+      instance.off('click', emit)
+      instance.off('mouseover', emit)
+    }
+  }, [enabled, instance])
+}
