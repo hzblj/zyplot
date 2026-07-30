@@ -1,3 +1,3 @@
-import { postcssConfig } from "@zyplot/core-tailwind-config/postcss";
+import {postcssConfig} from '@zyplot/core-tailwind-config/postcss'
 
-export default postcssConfig;
+export default postcssConfig
