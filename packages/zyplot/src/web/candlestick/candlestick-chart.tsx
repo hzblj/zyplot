@@ -4,23 +4,25 @@ import type {ChartCandlestickDatum, ChartCandlestickStyle} from '@hzblj/zyplot-c
 import {BarChart as EChartsBarChart, CandlestickChart as EChartsCandlestickChart} from 'echarts/charts'
 import {DataZoomComponent} from 'echarts/components'
 import {type FC, useMemo} from 'react'
-import {BarChartSkeleton} from '../bar/bar-chart-skeleton'
 import {blendChartColor} from '../shared/color'
 import {echarts} from '../shared/engine'
 import {formatChartNumber} from '../shared/format'
 import {ChartShell} from '../shared/frame'
 import {
+  axisLabelMargin,
   buildChartAnnotationOption,
   buildChartBaseOption,
   buildChartEmphasis,
   buildChartGrid,
   buildChartInteraction,
   buildValueAxis,
+  crosshairHeadroom,
   renderChartTooltip,
 } from '../shared/option'
 import type {ChartScrubConfig} from '../shared/scrub'
 import {useChartTokens} from '../shared/tokens'
-import type {ChartBaseProps, ChartNumberFormat, ChartSkeletonProps} from '../shared/types'
+import type {ChartBaseProps, ChartNumberFormat} from '../shared/types'
+import {CandlestickChartSkeleton} from './candlestick-chart-skeleton'
 
 echarts.use([DataZoomComponent, EChartsBarChart, EChartsCandlestickChart])
 
@@ -32,12 +34,9 @@ export type CandlestickChartProps = ChartBaseProps & {
   style?: ChartCandlestickStyle
 }
 
-/** Props for `Chart.Candlestick.Skeleton`. */
-export type CandlestickChartSkeletonProps = ChartSkeletonProps
-
 const PRICE_ID = 'price'
 const VOLUME_ID = 'volume'
-/** How long one candle takes to grow while a traced sweep passes over it. */
+
 const CANDLE_STEP = 220
 const DEFAULT_SWEEP = 520
 
@@ -67,10 +66,6 @@ export const CandlestickChart: FC<CandlestickChartProps> = ({
   const tokens = useChartTokens(theme)
   const isScrubbable = interaction?.hover !== 'none'
 
-  /**
-   * The annotation option is a function of whether a candle is being read, because
-   * `scrubOpacity` steps a reference line back while one is.
-   */
   const annotationOption = useMemo(
     () =>
       tokens
@@ -95,10 +90,6 @@ export const CandlestickChart: FC<CandlestickChartProps> = ({
     const hasCategoryAxis = (xAxis?.visible ?? axis?.x) !== false
     const categories = data.map(item => item.category)
 
-    /**
-     * The candle being read, lifted towards `highlightColor`. Per candle rather than once
-     * for the series: at a blend below 1 a falling candle still has to read as falling.
-     */
     const lit = (base: string) =>
       interaction?.highlightColor
         ? blendChartColor(base, interaction.highlightColor, interaction.highlightBlend ?? 1)
@@ -106,11 +97,11 @@ export const CandlestickChart: FC<CandlestickChartProps> = ({
 
     const categoryAxis = {
       axisLabel: {
+        ...axisLabelMargin(xAxis),
         color: tokens.label,
         fontFamily: tokens.fontFamily,
         fontSize: xAxis?.labelSize ?? 11,
         hideOverlap: true,
-        margin: xAxis?.position === 'overlay' ? (xAxis.labelInset ?? undefined) : undefined,
       },
       axisLine: {lineStyle: {color: tokens.grid}},
       axisTick: {show: xAxis?.ticks ?? false},
@@ -124,7 +115,6 @@ export const CandlestickChart: FC<CandlestickChartProps> = ({
       show: (yAxis?.visible ?? axis?.y) !== false,
     }
 
-    /** A `'draw'` entrance has no stroke to trace here, so it sweeps candle by candle. */
     const sweep = animation?.reveal?.style === 'draw' ? (animation.reveal.duration ?? DEFAULT_SWEEP) : 0
     const candleSeries = {
       ...annotationOption?.(false),
@@ -183,10 +173,10 @@ export const CandlestickChart: FC<CandlestickChartProps> = ({
       dataZoom: interaction?.zoom ? [{type: 'inside' as const, xAxisIndex: showVolume ? [0, 1] : [0]}] : undefined,
       grid: showVolume
         ? [
-            {...buildChartGrid(false, plot, xAxis), bottom: '28%'},
+            {...buildChartGrid(false, plot, xAxis, crosshairHeadroom(interaction)), bottom: '28%'},
             {...buildChartGrid(true), height: '16%', top: '76%'},
           ]
-        : buildChartGrid(hasCategoryAxis, plot, xAxis),
+        : buildChartGrid(hasCategoryAxis, plot, xAxis, crosshairHeadroom(interaction)),
       series,
       tooltip: {
         ...buildChartInteraction(tokens, interaction, isScrubbable),
@@ -255,6 +245,7 @@ export const CandlestickChart: FC<CandlestickChartProps> = ({
     }
 
     return {
+      animation,
       annotationOption,
       annotations,
       color: style?.downColor ?? tokens.diverging.negative,
@@ -265,7 +256,7 @@ export const CandlestickChart: FC<CandlestickChartProps> = ({
       strokeWidth: style?.wickWidth ?? 1,
       tokens: {axis: tokens.axis, surface: tokens.surface},
     }
-  }, [annotationOption, annotations, data, interaction, isScrubbable, style, tokens])
+  }, [animation, annotationOption, annotations, data, interaction, isScrubbable, style, tokens])
 
   return (
     <ChartShell
@@ -276,7 +267,7 @@ export const CandlestickChart: FC<CandlestickChartProps> = ({
       option={option}
       scrub={scrub}
       skeleton={
-        <BarChartSkeleton
+        <CandlestickChartSkeleton
           height={height}
           legendCount={0}
           xAxis={(xAxis?.visible ?? axis?.x) !== false}

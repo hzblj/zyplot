@@ -31,7 +31,6 @@ internal fun JSONObject.themeColorOrNull(name: String): Color? =
     ?.takeIf { it.isNotEmpty() && it != "null" }
     ?.let(::parseColor)
 
-/** The family named in `theme.typography.fontFamily`, if the chart named one at all. */
 internal fun JSONObject.themeFontFamily(): String? =
   optJSONObject("theme")
     ?.optJSONObject("typography")

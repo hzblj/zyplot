@@ -47,7 +47,16 @@ const toTreeData = (tokens: ChartTokens, nodes: readonly ChartHierarchyNode[], i
  * A hierarchy sized by value. Good for "these three dominate and the rest is a
  * long tail", bad for exact shares, so put the numbers in a table underneath.
  */
-export const TreemapChart: FC<TreemapChartProps> = ({className, format, height, isLoading, nodes, texture, theme}) => {
+export const TreemapChart: FC<TreemapChartProps> = ({
+  animation,
+  className,
+  format,
+  height,
+  isLoading,
+  nodes,
+  texture,
+  theme,
+}) => {
   const tokens = useChartTokens(theme)
 
   const option = useMemo(() => {
@@ -56,7 +65,7 @@ export const TreemapChart: FC<TreemapChartProps> = ({className, format, height, 
     }
 
     return {
-      ...buildChartBaseOption(tokens, texture),
+      ...buildChartBaseOption(tokens, texture, animation),
       series: [
         {
           breadcrumb: {show: false},
@@ -109,7 +118,7 @@ export const TreemapChart: FC<TreemapChartProps> = ({className, format, height, 
         trigger: 'item',
       },
     }
-  }, [format, nodes, texture, tokens])
+  }, [animation, format, nodes, texture, tokens])
 
   return (
     <ChartShell

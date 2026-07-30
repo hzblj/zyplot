@@ -68,5 +68,5 @@ internal class ChartScrub {
 }
 
 @Composable
-internal fun rememberChartScrub(configuration: String): ChartScrub =
-  remember(configuration) { ChartScrub() }
+internal fun rememberChartScrub(datasetKey: String): ChartScrub =
+  remember(datasetKey) { ChartScrub() }

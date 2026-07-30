@@ -1,6 +1,7 @@
 import type {
   ChartGlow,
   ChartHalo,
+  ChartSeriesFill,
   NativeChartAnimation,
   NativeChartInteraction,
   NativeChartSeriesStyle,
@@ -37,3 +38,5 @@ export const format = (options: ChartNumberFormat): ChartNumberFormat => options
 export const glow = (options: ChartGlow): ChartGlow => options
 
 export const halo = (options: ChartHalo): ChartHalo => options
+
+export const fill = (options: ChartSeriesFill): ChartSeriesFill => options

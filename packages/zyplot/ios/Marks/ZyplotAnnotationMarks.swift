@@ -5,19 +5,11 @@ struct ZyplotAnnotationMarks: ChartContent {
   let annotations: [ZyplotAnnotation]
   var isScrubbing = false
   var categorySpan: (first: String, last: String)?
-  /// What a badge paints behind itself to mask the rule it caps. Transparent when the
-  /// chart has no plot or theme background to borrow, in which case the badge stays
-  /// translucent and the rule shows through it.
   var plotBackground: Color = .clear
-  /// `theme.typography.fontFamily`, already resolved by the chart that draws these.
   var fontFamily: String?
   var strength: Double = 1
-  /// The value range the plot covers, so `labelPosition: 'auto'` can tell a rule sitting
-  /// low in the plot from one sitting high.
   var valueDomain: ClosedRange<Double>?
 
-  /// The ones the chart still draws. A hidden annotation keeps its place in the geometry
-  /// the app is given; it is only its pixels that the app has taken over.
   private var drawn: [ZyplotAnnotation] {
     annotations.filter { $0.hidden != true }
   }
@@ -222,8 +214,6 @@ struct ZyplotAnnotationMarks: ChartContent {
     }
   }
 
-  /// Whether the rule runs through the lower half of the plot, in which case an `'auto'`
-  /// label belongs above it — below would push the digits towards the plot's floor.
   private func sitsLow(_ annotation: ZyplotAnnotation) -> Bool {
     guard let domain = valueDomain,
           case .number(let value) = annotation.value,
@@ -234,8 +224,6 @@ struct ZyplotAnnotationMarks: ChartContent {
     return (value - domain.lowerBound) / (domain.upperBound - domain.lowerBound) < 0.5
   }
 
-  /// A badge caps its rule, so it sits flush against the plot edge instead of the default
-  /// annotation gap away from it — which left a stub of rule sticking out above the badge.
   private func spacing(_ annotation: ZyplotAnnotation) -> CGFloat? {
     annotation.badge != nil ? 0 : nil
   }

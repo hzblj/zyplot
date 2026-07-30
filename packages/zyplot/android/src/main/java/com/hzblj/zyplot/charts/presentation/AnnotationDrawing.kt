@@ -20,13 +20,9 @@ import com.hzblj.zyplot.core.presentation.ChartAnnotation
 import kotlin.math.abs
 
 private const val DEFAULT_ANNOTATION_COLOR = "#71717a"
-
 private const val BADGE_RADIUS = 13f
-
 private const val BADGE_GAP = 4f
-
 private const val LABEL_PADDING = 4f
-
 private const val LABEL_RADIUS = 4f
 
 internal fun DrawScope.drawAnnotations(
@@ -41,13 +37,11 @@ internal fun DrawScope.drawAnnotations(
   val extent = config.annotatedExtent
 
   config.annotations.forEach { annotation ->
-    // Hidden ones are measured and reported like the rest; their pixels are the app's.
     if (annotation.hidden) return@forEach
     val fade = (if (isScrubbing) annotation.scrubOpacity else 1f) * strength
     if (fade <= 0f) return@forEach
     val color = parseColor(annotation.color ?: DEFAULT_ANNOTATION_COLOR)
       .let { it.copy(alpha = it.alpha * fade) }
-    // Dash lengths and rule widths are given in dp, like everything else on a chart.
     val effect = annotation.dashPattern
       ?.let { pattern -> PathEffect.dashPathEffect(pattern.map { it * density }.toFloatArray()) }
     when (annotation.type) {
@@ -70,7 +64,6 @@ private fun DrawScope.drawAnnotationLine(
 ) {
   if (annotation.axis == "x") {
     xPosition(annotation.value, config, plot.left, plot.width)?.let { x ->
-      // A badge caps the rule, so the rule starts below it instead of running through it.
       val top = if (annotation.badge != null) {
         plot.top + (BADGE_RADIUS * 2f + BADGE_GAP) * density
       } else {
@@ -144,12 +137,9 @@ private fun DrawScope.drawAnnotationPoint(
   val x = xPosition(annotation.x, config, plot.left, plot.width) ?: return
   val yValue = annotation.y ?: return
   val y = normalizedY(yValue, extent.first, extent.second, plot)
-  // Every size here is authored in dp; the canvas draws in pixels.
   val radius = (annotation.size ?: 10f) / 2f * density
   val outer = maxOf(radius, (annotation.halo?.size ?: 0f) / 2f * density)
   annotation.pulse?.let { bloom ->
-    // A ring that blooms and then rests, so the cycle reads as a heartbeat rather than as
-    // a glow that is faint for most of it.
     val hue = (bloom.color ?: annotation.glow?.color)?.let(::parseColor) ?: color
     val ringColor = hue.copy(alpha = bloom.opacity * fade * (1f - pulse))
     drawCircle(ringColor, radius = outer * (1f + (bloom.scale - 1f) * pulse), center = Offset(x, y))
@@ -210,7 +200,6 @@ private fun DrawScope.drawAnnotationLabel(
     return
   }
   val side = if (annotation.labelPosition == "auto") {
-    // A rule in the lower half gets its label above, so the digits stay off the plot's floor.
     if (y > plot.center.y) "top" else "bottom"
   } else {
     annotation.labelPosition

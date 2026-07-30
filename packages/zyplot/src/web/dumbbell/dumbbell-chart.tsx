@@ -36,6 +36,7 @@ export type DumbbellChartProps = ChartBaseProps & {
  * change itself, which two bars leave the reader to subtract. Always horizontal.
  */
 export const DumbbellChart: FC<DumbbellChartProps> = ({
+  animation,
   afterLabel,
   axis,
   beforeLabel,
@@ -58,7 +59,7 @@ export const DumbbellChart: FC<DumbbellChartProps> = ({
     const afterColor = tokens.categorical[0] ?? tokens.muted
 
     return {
-      ...buildChartBaseOption(tokens, texture),
+      ...buildChartBaseOption(tokens, texture, animation),
       grid: buildChartGrid(false),
       series: [
         {
@@ -134,7 +135,7 @@ export const DumbbellChart: FC<DumbbellChartProps> = ({
         show: axis?.y !== false,
       },
     }
-  }, [afterLabel, axis, beforeLabel, format, rows, texture, tokens])
+  }, [animation, afterLabel, axis, beforeLabel, format, rows, texture, tokens])
 
   const legend = useMemo(() => {
     if (!tokens) {

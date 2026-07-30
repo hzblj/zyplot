@@ -13,13 +13,6 @@ export type QuotePageScrollProps = {
   pages: readonly QuotePage[]
 }
 
-/**
- * The web's stand-in for `QuotePageView`: a scroll-snapping row rather than
- * `UIPageViewController` or `ViewPager2`, which have no web side to bridge to.
- *
- * Scrolling is locked while the chart is being read, for the same reason the native pagers
- * turn swiping off — a drag across the plot belongs to the chart, not to the pager.
- */
 export const QuotePageScroll = ({index, isScrubbing, onIndexChange, pages}: QuotePageScrollProps) => {
   const scroller = useRef<ScrollView>(null)
   const [width, setWidth] = useState(0)

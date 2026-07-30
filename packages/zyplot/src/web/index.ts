@@ -1,22 +1,14 @@
 /**
- * Every chart for the DOM, rendered by ECharts and uPlot. `Chart` is the only
- * value exported: reach a form through it, as `Chart.Bar` or `Chart.Sankey`.
- *
- * A plain `@hzblj/zyplot` import already resolves here outside React Native, so
- * use this subpath only when a file must be web in a project that has both.
+ * Every chart for the DOM, rendered by ECharts and uPlot. `Chart` is the only value exported:
+ * reach a form through it, as `Chart.Bar` or `Chart.Sankey`. A plain `@hzblj/zyplot` import
+ * already resolves here outside React Native.
  */
-
-// The built stylesheets themselves, rather than the `style.css` that gathers them: its
-// `@import`s are not followed by every bundler in development — Metro leaves them out — and
-// a chart with no styles at all loses the layer its skeleton and its plot share, so the two
-// stack up and everything an app draws over the plot is measured from the wrong place.
-import 'uplot/dist/uPlot.min.css'
-import '../charts.css'
 
 export {
   animation,
   annotation,
   axis,
+  fill,
   format,
   glow,
   halo,

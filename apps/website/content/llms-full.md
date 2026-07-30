@@ -25,8 +25,11 @@ npm install @hzblj/zyplot
 One package covers every platform. There is nothing else to add for iOS or Android — the
 native modules ship inside it.
 
-**No stylesheet import.** Zyplot includes its compiled styles through the JavaScript entry
-point. Your application does not need Tailwind CSS.
+**No stylesheet import.** Zyplot includes its compiled styles through the same import that reaches
+a chart, so there is no CSS path to remember and nothing a tree shake can drop. Your application
+does not need Tailwind CSS — and if it has its own, ours arrives in the `base` cascade layer, where
+it loses to everything the app writes. Two builds of the same utility names would otherwise collide,
+with the one a chart pulled in coming second.
 
 For iOS and Android, autolinking picks the native code up; rebuild the native project after
 adding it. These are native modules, so Expo Go cannot load them — use a development build.
@@ -307,12 +310,14 @@ annotate a value. The other forms take the visibility switch only.
 
 ```ts
 type ChartAxisOptions = {
+  /** Draws the axis at all. Switching one off takes its grid with it — the rules belong to the scale. */
   visible?: boolean
   label?: string
   /** "auto" | "category" | "linear" | "log" | "time" */
   scale?: ChartAxisScale
   domain?: ChartAxisDomain
   format?: ChartNumberFormat
+  /** The rules across the plot. Turn them off on their own for an axis you still want labelled. */
   grid?: boolean
   gridDash?: number[]
   labelRotation?: number
@@ -420,7 +425,11 @@ type ChartInteraction = {
   zoom?: boolean
   /** How far a hovered mark grows. */
   highlightScale?: number
-  /** How far the rest fades while one mark is hovered. */
+  /**
+   * How far the rest fades while one mark is hovered. It reaches the strokes and the marks,
+   * never the area fill under a trace: that is the ground the trace is drawn on, not one of
+   * the things being compared, and greying it dims the page rather than pointing at anything.
+   */
   dimOpacity?: number
   /** A colour the read mark is lifted towards, so it reads as lit rather than as undimmed. */
   highlightColor?: string
@@ -486,6 +495,24 @@ type ChartSeriesStyle = {
   symbolSize?: number
 }
 
+/** On NativeChartSeriesStyle, so every entry point takes it — the web one included. */
+type ChartSeriesFill = {
+  /** The value the fill closes against instead of the plot's floor, filling either side of it. */
+  baseline?: number
+  /** One dot's diameter, in points. Default 1. */
+  dotSize?: number
+  /**
+   * How much of its strength the fill still has at the plot's floor, 0–1. Default 1, an even
+   * fill. On the web it needs an explicit height — the ramp is baked into a tile before the
+   * chart is measured, and one that has not said how tall it is keeps an even fill.
+   */
+  fadeTo?: number
+  /** "dots" | "solid" */
+  pattern?: ChartFillPattern
+  /** Centre-to-centre distance between dots, in points. Default 4. */
+  spacing?: number
+}
+
 type ChartAnimation = {
   enabled?: boolean
   /** The entrance. Turn it off for a chart that re-renders on every keystroke. */
@@ -499,6 +526,13 @@ type ChartAnimation = {
   easing?: ChartAnimationEasing
 }
 ```
+
+**A fill is drawn by the forms that have an area to fill.** `Chart.Line` and `Chart.Area`, on all
+three renderers — a clipped dot grid on the SwiftUI and Compose canvases, a repeating canvas
+pattern on ECharts. Giving a `Chart.Line` a `fill` is what paints an area under it, where the fill
+is decoration; `Chart.Area` fills by default because there it is the quantity, and a `fill` only
+changes its pattern and its baseline. Opacity stays `fillOpacity` for both, and a dot grid usually
+wants more of it than a wash, since most of what it covers stays bare.
 
 ## Theming
 
@@ -783,6 +817,7 @@ import {
   seriesProps,
   // Typed passthroughs for the groups with nothing to get wrong.
   animation,
+  fill,
   format,
   glow,
   halo,
@@ -795,7 +830,7 @@ import {
 ```
 
 They are on every entry point, and every renderer draws what they describe: `glow`, `halo`,
-`badge`, `pulse` and `scrubOpacity` all land in the DOM as well as on a native canvas. That
+`badge`, `pulse`, `fill` and `scrubOpacity` all land in the DOM as well as on a native canvas. That
 includes the `axis` builders — `NativeChartAxisOptions` is what `xAxis` and `yAxis` take
 everywhere, so an overlaid axis works on a web chart too.
 
@@ -915,12 +950,13 @@ const arrival = animation({
 
 How the mark under the finger is picked out, passed as `interaction.marker`. `span` is how
 far a segment reaches along the line and means nothing to a dot; `size` is a dot's diameter
-and means nothing to a segment.
+and means nothing to a stretch of stroke.
 
 | Builder | Description |
 | --- | --- |
 | `marker.point` | A dot on the mark. Takes `size`; rejects `span`. |
 | `marker.segment` | Brightens the stretch of line around the mark and blooms behind it. Takes `span`; rejects `size`. |
+| `marker.trail` | Brightens everything up to the mark instead of a window around it, so the line reads as the story so far and the rest as yet to come. Takes neither `span` nor `size`. |
 
 ```tsx
 const scrubbing = interaction({
@@ -937,6 +973,10 @@ const scrubbing = interaction({
 })
 ```
 
+**Both stroke styles need a dim to read against.** `marker.segment` and `marker.trail` are drawn
+over the line rather than beside it, so without `dimOpacity` there is nothing for the lit stretch
+to stand out from.
+
 **A marker is not a tooltip.** It says only which mark is being read, never what it says —
 so use it when the value is shown outside the plot, and pair it with `useChartScrub`.
 
@@ -950,13 +990,20 @@ name to import and hold, so a preset can be declared away from the chart that co
 export const chartTheme = theme({ colors: { label: '#8a8a8a' } })
 export const priceFormat = format({ decimals: 2, locale: 'en-US' })
 export const card = surface({ background: '#0b0b0b', cornerRadius: 16, padding: 12 })
-export const priceLine = seriesStyle({ glow: glow({ opacity: 0.16, radius: 7 }), strokeWidth: 2.3 })
+export const priceLine = seriesStyle({
+  fill: fill({ fadeTo: 0.12, pattern: 'dots', spacing: 3.4 }),
+  fillOpacity: 0.32,
+  glow: glow({ opacity: 0.16, radius: 7 }),
+  strokeWidth: 2.3,
+})
 ```
 
 `animation`, `interaction`, `seriesStyle`, `plot`, `surface`, `theme` and `format` all take
 their own option group. `glow` is a bloom behind a mark, in the mark's own colour unless told
 otherwise; `halo` is a hard disc behind a point, so a small bright dot can sit in a larger
-ring. Both are drawn on every platform.
+ring; `fill` is the area under a trace — a wash or a grid of dots, thinning towards the plot
+floor or closed against a value — and goes on a series style beside `glow`. All three are drawn
+on every platform.
 
 **There is no builder for a pulse.** It is the one nested object that also takes a `boolean`:
 `pulse: true` is the whole of what most live points want, and `annotation.point` already types
@@ -980,6 +1027,15 @@ a line — you pick between them on point count, never on renderer.
 | uPlot | canvas | `Chart.TimeSeries` and `Chart.Sparkline`. Tens of thousands of points, or forty sparklines in a table. |
 | Plain DOM | no engine | `Chart.Meter` is a filled track — two elements, `role="meter"` and no engine, so it is the only form whose final markup is painted on the server instead of after a first read off the document. |
 
+**The engine is also what animates.** Every ECharts form reads `animation` — its `duration`,
+`delay`, `easing`, and `enabled: false` to turn the whole thing off — so one animation set on a
+page is one animation for every chart on it. The two uPlot forms and the meter draw their marks in
+one pass instead: `Chart.Sparkline` and `Chart.Meter` do not declare the prop, and
+`Chart.TimeSeries` accepts it with the rest of the base props and times nothing by it.
+`animation.transition` is not read here either: a data change moves the marks that are on both
+sides and fades the ones that are not, which is a better answer to a changed axis than dissolving
+the plot, so the web does it whichever name the prop is given.
+
 ### Text stays in the DOM
 
 Only marks and axis ticks are painted into the canvas. The legend is React: every chart with
@@ -994,8 +1050,10 @@ been a callback is expressed as data instead, which is what `ChartNumberFormat` 
 
 **Colors are read off the document.** A canvas takes color as a string, so each chart reads
 the resolved `--zyplot-*` values from the DOM after mounting and repaints when they change.
-Until that first read there is nothing honest to paint, so a chart shows its skeleton for a
-frame even with `isLoading` false.
+Until that first read there is nothing honest to paint, so a chart that says nothing about
+`isLoading` covers that frame with its placeholder — which is what a server-rendered page
+wants, markup to paint before hydration. A chart mounted with its data already in hand can
+say `isLoading={false}` and have the plot fade in instead.
 
 ## Frame and legend
 
@@ -1096,15 +1154,16 @@ glow, a traced entrance, a selection marker and a pulsing point are all drawn in
 
 | Prop | Type | What it adds |
 | --- | --- | --- |
-| `seriesStyles` | `NativeChartSeriesStyle` | `glow` — a bloom behind the stroke, in the series colour unless told otherwise. |
+| `seriesStyles` | `NativeChartSeriesStyle` | `glow` — a bloom behind the stroke, in the series colour unless told otherwise — and `fill`, the area under a trace: a wash or a grid of dots, closed against the plot floor or against a value. |
 | `animation` | `NativeChartAnimation` | `reveal`, the first-render entrance, and `transition`, how marks move when data changes. |
-| `interaction` | `NativeChartInteraction` | `crosshairStyle` and `marker` — how the reading under the finger is picked out. |
+| `interaction` | `NativeChartInteraction` | `marker` — how the reading under the finger is picked out — and `crosshairStyle`, including the `labels` the crosshair carries above the plot. |
 | `annotations` | `NativeChartAnnotation[]` | `badge`, `glow`, `halo`, `pulse`, `hidden`, `labelBackground`, `labelPosition` and `scrubOpacity`. |
 | `xAxis` · `yAxis` | `NativeChartAxisOptions` | The `overlay` position, `labelInset`, `labelSize`, `ticks` and the two plot-dimension paddings. |
 
 **The names are historical.** The vocabulary was built for the platform graphics stacks and
-landed on the web renderer afterwards, so the types still read `Native*`. Four fields are still
-native alone: `interaction.haptics`, which the web has no honest equivalent for,
+landed on the web renderer afterwards, so the types still read `Native*`. Five fields are still
+native alone: `animation.transition`, which the web renderer answers its own way — mark by mark,
+whichever name it is given — `interaction.haptics`, which the web has no honest equivalent for,
 `style.candleRadius`, which the web candlestick engine cannot round, and `style.neutralColor`
 and `style.volumeHeightRatio` — the web candlestick colours a flat session as a rising one and
 gives the volume histogram a fixed share of the plot.
@@ -1130,6 +1189,16 @@ type ChartHalo = {
   color?: string
   opacity?: number
   size?: number
+}
+
+/** The area under a trace. See "Plot, series style and animation" for the fields. */
+type ChartSeriesFill = {
+  baseline?: number
+  dotSize?: number
+  fadeTo?: number
+  /** "dots" | "solid" */
+  pattern?: ChartFillPattern
+  spacing?: number
 }
 
 type ChartPulse = {
@@ -1174,7 +1243,19 @@ type ChartTransition = 'crossfade' | 'morph'
 
 **`crossfade` is the honest one when the axis changed.** `morph` interpolates between the two
 datasets, which reads as the data moving. If the categories underneath are not the same
-categories, nothing moved — dissolve instead.
+categories, nothing moved — dissolve instead. It is a choice iOS and Android give you: on the
+web the renderer transitions a data change mark by mark on its own, moving the ones that are on
+both sides and fading the ones that are not, so neither name changes what you get.
+
+**A morph needs the two sides to correspond.** Both platforms blend the readings, the pinned domain
+and the value a rule or a point sits at, and match annotations by `id` — one that exists on both
+sides slides, one that does not simply arrives. Where the series count or the reading count differs
+there is nothing to interpolate, so the new dataset is shown as it is: a screen switching between a
+day and a year has to sample both into the same number of slots to be morphed between.
+`animation.duration` and `animation.easing` time it — 320 ms and `ease-in-out` by default, and
+`'spring'` resolves to that curve, since a transition that overshot would carry the marks past their
+new values and back. A morph cut short sets off from what is on screen rather than from the dataset
+the last one was heading for.
 
 ### Scrubbing
 
@@ -1208,7 +1289,7 @@ type ChartGeometry = {
 
 /** How the mark under the finger is picked out. */
 type ChartSelectionMarker = {
-  /** "point" | "segment" */
+  /** "point" | "segment" | "trail" */
   style?: ChartMarkerStyle
   color?: string
   glow?: ChartGlow
@@ -1221,19 +1302,28 @@ type ChartSelectionMarker = {
 type ChartCrosshairStyle = {
   color?: string
   dash?: number[]
+  /** What to write above the crosshair: one string per slot, in data order. */
+  labels?: string[]
+  /** Defaults to the theme's label colour. */
+  labelColor?: string
+  /** Point size of the label. Default 13. */
+  labelSize?: number
   width?: number
 }
 ```
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `marker.style` | `"point" \| "segment"` | `"point"` | A dot on the mark, or a lit stretch of the line around it. |
+| `marker.style` | `"point" \| "segment" \| "trail"` | `"point"` | A dot on the mark, a lit stretch of the line around it, or a lit stretch from the first reading up to it. |
 | `marker.size` | `number` | `9` | Dot diameter, in points. |
-| `marker.span` | `number` | `2` | Data steps either side of the touch. |
+| `marker.span` | `number` | `2` | Data steps either side of the touch. A trail reaches back to the first datum, so it reads neither this nor `size`. |
 | `glow.opacity` | `number` | `0.55` | Glow opacity at rest. |
 | `glow.radius` | `number` | `6` | Glow radius, in points. |
 | `halo.size` | `number` | `12` | Halo diameter, in points. |
 | `crosshairStyle.width` | `number` | `1` | Crosshair line width. |
+| `crosshairStyle.labels` | `string[]` | — | What the crosshair writes above the plot: one string per slot, in data order, and the chart draws the one for the mark being read. Your words — a time, a date, whatever the reading is called. |
+| `crosshairStyle.labelColor` | `string` | — | Colour of that label. Defaults to the theme's label colour on all three renderers. |
+| `crosshairStyle.labelSize` | `number` | `13` | Point size of the label. Also what the web plot gives up at the top to fit it. |
 | `annotation.pulse` | `boolean \| ChartPulse` | `false` | A ring blooming out of a point annotation and resting before it does it again. `true` takes 450 ms out, 1550 ms at rest, 2.2× the point's ring. |
 | `annotation.labelBackground` | `string` | — | Painted behind an annotation's label, so its value stays legible where the marks run through it. |
 | `annotation.labelPosition` | `"auto" \| "bottom" \| "leading" \| "top" \| "trailing"` | — | Which side of the rule its label sits on. `"auto"` keeps it inside the plot: above a rule sitting low, below one sitting high. Omit it and each renderer keeps its own default side, so name one when the three have to agree. |
@@ -1245,6 +1335,17 @@ type ChartCrosshairStyle = {
 | `interaction.highlightColor` | `string` | — | A colour the mark under the finger is lifted towards. |
 | `interaction.highlightBlend` | `number` | `1` | How far towards it. Below 1 the mark's own colour still reads through the lift. |
 | `style.candleRadius` | `number` | `0` | Corner radius on a candle body. Rounds the wick's caps with it. |
+
+**The one label the chart draws is the one pinned to the crosshair.** Everything else you put over a
+plot sits still long enough for `onInteraction` to place it — a card against a rule, a badge on an
+annotation. A label that has to move *with* the line cannot: a position that reaches JavaScript
+through a bridge and comes back as a re-render is a frame or two behind the line it belongs to, and
+read together the label visibly drags. So `crosshairStyle.labels` hands the words to whoever is
+drawing the line. All three renderers keep the label whole against both edges of the chart, so the
+first and last readings of a series are worth a full label rather than half of one, and on the web
+the plot gives up `labelSize` plus 8px at the top to draw it in — only when labels were given and a
+crosshair is drawn at all, and whether or not a pointer is over the plot: marks that changed height
+the moment one arrived would be worse than either.
 
 ### Native axis options
 
@@ -1273,14 +1374,15 @@ point, the web one included.
 | `format` | every native form | On the base props natively. On the web only the forms that write numbers take it, and a few take a second one — `valueFormat` on the histogram, `xFormat`/`yFormat` on the scatter. |
 | `height` | different default | 320 points on native, 240 px on the web — and 200 for the gauge, 300 for the sankey, 32 for the sparkline. |
 | `labels` | wider on native | Boxplot terminology is honoured natively too. `Chart.Candlestick` takes `labels` only here — pass your five words and the tooltip lists every reading instead of just the close. |
+| `animation.transition` | native only | `'morph'` interpolates the two datasets and `'crossfade'` dissolves between them, on iOS and Android. The web renderer transitions a data change mark by mark on its own — the ones on both sides move, the ones on one side fade — whichever name it is given. |
 | `interaction.haptics` | native only | The web has no honest equivalent. |
 | `style.candleRadius` | native only | The web candlestick engine cannot round a candle body. |
 | `style.neutralColor` | native only | The web candlestick colours a session that closed where it opened as a rising one. |
 | `style.volumeHeightRatio` | native only | The web volume histogram takes a fixed share of the plot height. |
 
 Nothing else in the presentation vocabulary is platform-specific: `glow`, `reveal`, `marker`,
-`badge`, `pulse`, `halo`, `annotationViews` and the overlaid axis all render in the DOM as
-well. Eleven forms do take different data props, though — see the table under "Chart coverage".
+`fill`, `badge`, `pulse`, `halo`, `crosshairStyle.labels`, `annotationViews` and the overlaid axis
+all render in the DOM as well. Eleven forms do take different data props, though — see the table under "Chart coverage".
 
 ```ts
 type ChartCandlestickLabels = {
@@ -1378,6 +1480,12 @@ pointer landed on instead, which carries no `index` and so leaves the selection 
 native a finger is read by its position along the category axis, so the forms that have one —
 the line, area, bar and candlestick families — are the forms a scrub means something on. The
 radial and flow ones have no ordered axis to walk, and nothing usable comes back from them.
+
+**Text that has to keep up with the line is the chart's job, not the hook's.** A readout above the
+plot sits still, so a re-render places it fine. A label pinned to the crosshair moves with the
+finger, and a position that comes back through this hook is a frame or two behind the line it
+belongs to — which reads as the label dragging. Pass those words as `crosshairStyle.labels` instead
+and whoever draws the line draws them.
 
 ```tsx
 'use client'
@@ -1560,18 +1668,27 @@ grid cell, same size, so nothing on the page moves when the marks land.
 ```
 
 The placeholder is derived from the props the chart already has: one legend row per series,
-and axis rows only where an axis is visible.
+and axis rows only where an axis is visible. Its marks are the form's own, not a generic
+block: on the web, bars grown off the baseline for the bar family, candles floating on their
+wicks for `Chart.Candlestick`, a ring for the radial forms, dots for the scatter, a curve for
+the lines. A placeholder shaped like something else moves every mark on the plot when it is
+swapped out, which is the layout shift the reserved height exists to prevent.
 
 **The first frame is a loading state too.** A chart has to read its colors off the document
-before it can paint, so the built-in placeholder also covers that frame — with `isLoading`
-false and data in hand. The wrapper carries `aria-busy` while either is true, and the
-placeholder itself is `aria-hidden`.
+before it can paint, so the built-in placeholder also covers that frame for a chart that says
+nothing about loading — which is what a server-rendered page wants. Pass `isLoading={false}`
+from the first render and it stays out of the way: the plot fades in on its own, which is what
+a chart holding its data already wants. One that starts `true` and later flips to `false`
+still cross-fades. The wrapper carries `aria-busy` while either is true, and the placeholder
+itself is `aria-hidden`.
 
 **Native draws one too, in its own way.** `isLoading` means the same thing on iOS and Android,
 and both draw a shimmering placeholder shaped like the form they stand in for — a ring for the
-radial ones, a row of columns for the bar family, a curve for everything else. What they do not
-have is a `skeleton` slot or a `.Skeleton` component to mount on its own: those are DOM
-composition, and the placeholder there is one view the renderer draws.
+radial ones, a row of columns for the bar family, a curve for everything else. They group a
+little more coarsely than the web does: the candlestick and the boxplot take that column row,
+where the DOM renderer draws candles and boxes. What they do not have is a `skeleton` slot or a
+`.Skeleton` component to mount on its own: those are DOM composition, and the placeholder there
+is one view the renderer draws.
 
 ### Skeleton props
 
@@ -1596,8 +1713,9 @@ chart is not mounted yet at all. Web only.
 
 `skeleton` takes a rendered element, not a component, and replaces the built-in one while
 `isLoading` is true. Keep its height equal to the chart's so the swap still costs no layout
-shift. It covers `isLoading` only — the frame before the first paint still uses the built-in
-placeholder.
+shift. It covers `isLoading` only — the frame before the first paint uses the built-in
+placeholder, since that one is derived from the chart's own props, and an explicit
+`isLoading={false}` skips that frame entirely.
 
 ## Charts
 
@@ -1609,7 +1727,7 @@ Every form takes these, so they are listed once rather than twenty-one times.
 | --- | --- | --- | --- |
 | `className` | `string` | — | CSS class applied to the chart root. Web only — a native chart has no DOM node. |
 | `height` | `number` | `240` | Plot height. A chart never measures its own content, so this is what reserves the space. Px on the web (240), points on native (320). |
-| `isLoading` | `boolean` | `false` | Held true while the data is in flight. Shows the matching skeleton, then cross-fades into the plot. |
+| `isLoading` | `boolean` | unset | Held true while the data is in flight. Shows the matching skeleton, then cross-fades into the plot. Passed `false` from the first render it also skips the placeholder the first frame would otherwise draw. |
 | `skeleton` | `ReactNode` | — | Replaces the built-in placeholder while `isLoading` is true. Web only. |
 | `surface` | `ChartSurface` | — | The container the plot sits in. Merges over `Chart.Provider`, key by key. |
 | `theme` | `ChartTheme` | — | Colours and fonts for this chart alone. The portable subset; native charts take `NativeChartTheme`, which adds `background`. Merges over `Chart.Provider` key by key on the web; replaces it outright on native. |
@@ -1631,9 +1749,15 @@ The cartesian forms — line, area, bar, stacked bar and candlestick — additio
 | `xAxis` | `NativeChartAxisOptions` | — | Scale, domain, ticks, grid, position and label for the horizontal axis. |
 | `yAxis` | `NativeChartAxisOptions` | — | The same for the vertical axis. |
 
+`animation` is the one plot control the rest of the forms take too: every form drawn through
+ECharts reads it, so the pie, gauge, histogram, boxplot, diverging bar, dumbbell, funnel, heatmap,
+radar, scatter, sankey, sunburst and treemap are all timed by the same object — without the traced
+`reveal`, which needs a line to draw along. `Chart.Sparkline` and `Chart.Meter` do not take it, and
+`Chart.TimeSeries` accepts it and times nothing by it.
+
 Forms that read `series` also take `emphasisId` (`string`) to keep one series colored and
 mute the others, and `seriesStyles` (`Record<string, NativeChartSeriesStyle>`) for per-series
-stroke, fill, dash, symbol and glow keyed by `ChartSeries.id`. A line draws no symbol per
+stroke, dash, symbol, glow and fill keyed by `ChartSeries.id`. A line draws no symbol per
 reading unless one is named there — a dot per datum is a mark the reader did not ask for, and
 the native renderers draw none. Forms that show numbers take `format` (`ChartNumberFormat`) —
 on native every form does.
@@ -1919,26 +2043,62 @@ shared props.
 
 ## Example app
 
-`apps/example` in the repository runs every chart on a device, plus a full Revolut-style stock
-quote screen: a headline price that follows the finger, a smoothed intraday line that stops
-where the session does, a range selector, a candlestick toggle, and native tabs and headers
-above it all. It is the reference for what the native renderers are for — everything on the
-screen except the plot itself is ordinary React Native.
+`apps/example` in the repository runs every chart on a device, plus two design studies.
 
-- `revolut-line-chart.tsx` — the intraday price: smoothed, glowing, with a dashed baseline
-  rule, an event badge, and a pulsing point at the last reading that `useLastReading` finds.
-- `revolut-candlestick-chart.tsx` — the same screen switched to OHLC, with the candle width
-  and radius measured off the design.
-- `use-quote-readout.ts` — turns the scrub into the price, the delta and the date above the
-  plot. No tooltip is drawn by either chart.
-- `quote-chart-overlay.tsx` — the reading card and the event badge are React Native views
-  placed over the plot from the `geometry` the `'layout'` phase reports.
-- `revolut.ios.tsx` / `revolut.android.tsx` — one screen per platform: SwiftUI through
+Both studies are split where the library's job ends. The charts, their styling, the theme and the
+generated data are a shared `packages/feature-charts` package, so the web, iOS and Android screens
+render the same chart component rather than three copies of it; everything around the plot lives in
+`apps/example`, one file per platform. The file lists below name which side each part is on.
+
+### Revolut
+
+A full stock quote screen: a headline price that follows the finger, a smoothed intraday line
+that stops where the session does, a range selector, a candlestick toggle, and native tabs and
+headers above it all. It is the reference for what the native renderers are for — everything on
+the screen except the plot itself is ordinary React Native.
+
+- `feature-charts/revolut-line-chart.tsx` — the intraday price: smoothed, glowing, with a dashed
+  baseline rule, an event badge, and a pulsing point at the last reading that `useLastReading` finds.
+- `feature-charts/revolut-candlestick-chart.tsx` — the same screen switched to OHLC, with the candle
+  width and radius measured off the design.
+- `feature-charts/revolut-chart.tsx` — one component that swaps the line for the candles, so the
+  toggle above the plot changes a prop rather than the screen.
+- `apps/example/use-quote-readout.ts` — turns the scrub into the price, the delta and the date above
+  the plot. No tooltip is drawn by either chart.
+- `apps/example/quote-chart-overlay.tsx` — the reading card and the event badge are React Native
+  views placed over the plot from the `geometry` the `'layout'` phase reports.
+- `apps/example/revolut.ios.tsx` / `revolut.android.tsx` — one screen per platform: SwiftUI through
   `@expo/ui` on iOS, Compose on Android, sharing the data, the theme and both charts.
 
-Source: https://github.com/hzblj/zyplot/tree/main/apps/example/src/revolut
+Source: https://github.com/hzblj/zyplot/tree/main/packages/feature-charts/src/revolut and
+https://github.com/hzblj/zyplot/tree/main/apps/example/src/revolut
 
 It is a design study on generated data, not affiliated with or endorsed by Revolut.
+
+### Kraken
+
+A crypto price screen. Where the Revolut study is about chrome around a plot, this one is about
+the plot itself: a trace that runs off both edges of the window with no axes at all, and the two
+things in the presentation vocabulary that exist because of it.
+
+- `feature-charts/kraken-chart.tsx` — the price trace: a dotted fill fading to the plot's floor, a
+  grey rule on that floor standing in for the axis, a dashed rule at the latest price, and a haloed
+  point on the last reading.
+- `feature-charts/kraken-chart-style.ts` — `fill({fadeTo, pattern: 'dots', spacing})` for the grid,
+  and `marker.trail` for a scrub that lights the trace up to the finger and dims the rest. The dot
+  opacity is resolved per scheme: ink on paper carries at a fraction of what light on black needs.
+  The times above the crosshair are handed over here too, as `crosshairStyle.labels` — one string
+  per slot, because a label pinned to a moving line has to be drawn by whoever draws the line or it
+  trails it by a frame.
+- `apps/example/use-kraken-readout.ts` — the change is measured from the window open, while the
+  dashed rule sits at the latest price. Two different questions, two different numbers.
+- `apps/example/kraken-coin.ios.tsx` / `kraken-coin.android.tsx` — one screen per platform: SwiftUI
+  through `@expo/ui` on iOS, Compose on Android, sharing the data, the theme and the chart.
+
+Source: https://github.com/hzblj/zyplot/tree/main/packages/feature-charts/src/kraken and
+https://github.com/hzblj/zyplot/tree/main/apps/example/src/kraken
+
+It is a design study on generated data, not affiliated with or endorsed by Kraken.
 
 ## Releases
 

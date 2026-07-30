@@ -35,6 +35,7 @@ export type HeatmapChartProps = ChartBaseProps & {
  * to dark, because a heatmap encodes size and never identity.
  */
 export const HeatmapChart: FC<HeatmapChartProps> = ({
+  animation,
   axis,
   cells,
   className,
@@ -59,7 +60,7 @@ export const HeatmapChart: FC<HeatmapChartProps> = ({
     const max = Math.max(...values)
 
     return {
-      ...buildChartBaseOption(tokens, texture),
+      ...buildChartBaseOption(tokens, texture, animation),
       grid: buildChartGrid(),
       series: [
         {
@@ -104,7 +105,7 @@ export const HeatmapChart: FC<HeatmapChartProps> = ({
         splitArea: {show: false},
       },
     }
-  }, [axis, cells, columns, format, rows, texture, tokens])
+  }, [animation, axis, cells, columns, format, rows, texture, tokens])
 
   return (
     <ChartShell

@@ -11,6 +11,9 @@ data class SelectionMarker(
   val style: String,
 ) {
   val isSegment: Boolean get() = style == "segment"
+  val isTrail: Boolean get() = style == "trail"
+
+  val lightsStroke: Boolean get() = isSegment || isTrail
 
   companion object {
     fun from(json: JSONObject?): SelectionMarker? = json?.let {

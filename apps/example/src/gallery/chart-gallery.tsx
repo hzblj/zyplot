@@ -10,8 +10,6 @@ export const ChartGallery = () => {
   return (
     <SectionList
       contentContainerStyle={styles.content}
-      // The list fills the window; the rows inside it stop at a column, the way the header
-      // above them does. A row stretched across a desktop window is a table, not a list.
       keyExtractor={item => item.id}
       renderItem={({item}) => (
         <Link asChild href={item.route ?? `/charts/${item.id}`}>

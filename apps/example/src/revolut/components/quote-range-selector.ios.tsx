@@ -9,7 +9,7 @@ import {
   pickerStyle,
   tag,
 } from '@expo/ui/swift-ui/modifiers'
-import {type QuoteRangeId, quoteRanges} from '../data/quote-data'
+import {type QuoteRangeId, quoteRanges} from '@zyplot/feature-charts/revolut'
 import {quoteLayout, useQuoteTheme} from '../data/quote-theme'
 
 export type QuoteRangeSelectorProps = {
@@ -32,9 +32,6 @@ export const QuoteRangeSelector = ({
       <Picker
         modifiers={[
           pickerStyle('segmented'),
-          // The picker draws its own track and its own selected pill, so it takes a mode
-          // rather than our colours. It is the one control on the screen we colour by
-          // naming the scheme instead of by passing values.
           environment({key: 'colorScheme', value: scheme}),
           frame({height: quoteLayout.controlHeight}),
         ]}
@@ -56,7 +53,7 @@ export const QuoteRangeSelector = ({
           onTapGesture(onToggleCandlestick),
         ]}
       >
-        {/* SF Symbols has no candlestick glyph; `slider.vertical.3` is the closest match. */}
+        {}
         <Image color={color.text} size={16} systemName={isCandlestick ? 'chart.xyaxis.line' : 'slider.vertical.3'} />
       </HStack>
     </HStack>

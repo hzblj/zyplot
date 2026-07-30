@@ -6,7 +6,6 @@ const MAX_AGE = 60 * 60 * 24 * 365
 
 export const usePreference = <T extends string>(initial: T, name: string, allowed: readonly T[]) => {
   const [value, setValue] = useState<T>(initial)
-
   const isAllowed = (allowed as readonly string[]).includes(value)
   const resolved = isAllowed ? value : (allowed[0] ?? initial)
 

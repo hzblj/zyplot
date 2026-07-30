@@ -38,6 +38,7 @@ export type BoxplotChartProps = ChartBaseProps & {
  * Outliers are drawn as individual points rather than folded into the whiskers.
  */
 export const BoxplotChart: FC<BoxplotChartProps> = ({
+  animation,
   axis,
   className,
   format,
@@ -69,7 +70,7 @@ export const BoxplotChart: FC<BoxplotChartProps> = ({
     )
 
     return {
-      ...buildChartBaseOption(tokens, texture),
+      ...buildChartBaseOption(tokens, texture, animation),
       ...buildCartesianAxes(tokens, categories, format, isHorizontal, axis),
       grid: buildChartGrid(!isHorizontal),
       series: [
@@ -122,7 +123,7 @@ export const BoxplotChart: FC<BoxplotChartProps> = ({
         trigger: 'item',
       },
     }
-  }, [axis, format, groups, labels, orientation, texture, tokens])
+  }, [animation, axis, format, groups, labels, orientation, texture, tokens])
 
   return (
     <ChartShell

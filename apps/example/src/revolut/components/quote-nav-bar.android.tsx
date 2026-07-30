@@ -1,17 +1,11 @@
 import {Column, Row, Spacer} from '@expo/ui/jetpack-compose'
 import {background, clickable, clip, size, weight} from '@expo/ui/jetpack-compose/modifiers'
+import {quote} from '@zyplot/feature-charts/revolut'
 import {setColorScheme} from '../../theme/color-scheme'
-import {quote} from '../data/quote-data'
 import {quoteLayout, useQuoteTheme} from '../data/quote-theme'
 import {QuoteText} from './quote-text.android'
 
-/**
- * The switch offers the scheme it moves to, so the glyph is the one you are not in. U+FE0E
- * asks for the text presentation: without it Android's emoji font paints the sun yellow, and
- * it stops taking the button's colour.
- */
 const schemeGlyph = {dark: '☾', light: '☀︎'} as const
-
 export const composeCircle = {type: 'circle'} as const
 export const composeRounded = {radius: 18, type: 'roundedCorner'} as const
 
@@ -42,10 +36,6 @@ export const QuoteCircleButton = ({
   )
 }
 
-/**
- * The star the app this is modelled on puts here is a switch between light and dark instead:
- * the screen is what the two schemes are being shown on, so the control belongs on it.
- */
 export const QuoteNavBar = ({onBack}: {onBack: () => void}) => {
   const {scheme} = useQuoteTheme()
   const next = scheme === 'dark' ? 'light' : 'dark'

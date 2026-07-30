@@ -21,7 +21,6 @@ struct ZyplotScatterPoint: Codable, Identifiable {
   var size: Double?
   var x: Double
   var y: Double
-
   var id: String { "\(x):\(y):\(label ?? "")" }
 }
 

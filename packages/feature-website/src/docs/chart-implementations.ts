@@ -10,7 +10,6 @@ export type ChartImplementation = {
 export type ChartImplementations = Partial<Record<ChartPlatform, ChartImplementation>>
 
 export const sourceUrl = (path: string) => `${REPO}/${path}`
-
 const WEB = 'packages/zyplot/src/web'
 const IOS = 'packages/zyplot/ios/Charts'
 const ANDROID = 'packages/zyplot/android/src/main/java/com/hzblj/zyplot/charts'

@@ -5,12 +5,6 @@ import com.hzblj.zyplot.charts.plotRect
 import com.hzblj.zyplot.charts.presentation.xPosition
 import com.hzblj.zyplot.core.ChartConfiguration
 
-/**
- * Where the plot and its annotations ended up, so the app can lay its own views over the
- * chart — its own badge on an annotation, its own card at a reading — instead of taking
- * the ones the chart draws. Reported in dp: the canvas measures in pixels, but the app
- * positions its views in dp, and iOS reports points.
- */
 internal fun geometryPayload(
   config: ChartConfiguration,
   width: Float,

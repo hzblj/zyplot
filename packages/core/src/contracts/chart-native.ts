@@ -21,8 +21,42 @@ export type ChartGlow = {
   radius?: number
 }
 
-/** `ChartSeriesStyle` plus the glow only a native surface can draw. */
+/**
+ * How the paint under a line is laid down. `'solid'` is one flat wash; `'dots'`
+ * lays a grid of them instead, which carries a fill across a pale background
+ * without the wash the eye reads as a second, fainter chart behind the first.
+ */
+export type ChartFillPattern = 'dots' | 'solid'
+
+/**
+ * The area under a line, for the forms that draw one. Opacity is still
+ * `fillOpacity`, so there is only ever one place to set it — a dot grid usually
+ * wants more of it than a wash, because most of what it covers stays bare.
+ */
+export type ChartSeriesFill = {
+  /**
+   * The value the fill closes against, instead of the plot's floor. A price
+   * chart's opening price belongs here: the fill then reads as distance from
+   * where the period started, above the line and below it, rather than as volume.
+   */
+  baseline?: number
+  /** One dot's diameter, in points. Default 1. */
+  dotSize?: number
+  /**
+   * How much of its strength the fill still has at the plot's floor, 0–1. Default 1, which
+   * is an even fill. Below that it thins downwards, so the paint gathers under the trace —
+   * where the reader is looking — and lets go of the plot's bottom edge instead of stopping
+   * dead against it.
+   */
+  fadeTo?: number
+  pattern?: ChartFillPattern
+  /** Centre-to-centre distance between dots, in points. Default 4. */
+  spacing?: number
+}
+
+/** `ChartSeriesStyle` plus the glow and the patterned fill a native surface can draw. */
 export type NativeChartSeriesStyle = ChartSeriesStyle & {
+  fill?: ChartSeriesFill
   glow?: ChartGlow
 }
 
@@ -79,9 +113,9 @@ export type ChartRevealAnimation = {
 }
 
 /**
- * How the marks move when the data changes. `'morph'` interpolates between the
- * two datasets; `'crossfade'` dissolves one out and the other in, which is the
- * honest choice when the axis itself changed.
+ * How the marks move when the data changes. `'morph'` interpolates between the two datasets;
+ * `'crossfade'` dissolves one out and the other in. Read on iOS and Android; the web renderer
+ * transitions mark by mark on its own either way.
  */
 export type ChartTransition = 'crossfade' | 'morph'
 
@@ -95,26 +129,40 @@ export type NativeChartAnimation = ChartAnimation & {
 export type ChartCrosshairStyle = {
   color?: string
   dash?: readonly number[]
+  /**
+   * What to write above the crosshair, one entry per slot in data order — a time, a date,
+   * whatever the reading is called. The app writes the words; the chart places them, because
+   * it is the one that knows where the finger is.
+   */
+  labels?: readonly string[]
+  labelColor?: string
+  /** Point size of the label. Default 13. */
+  labelSize?: number
   width?: number
 }
 
 /**
- * How the mark under the finger is picked out. `'point'` puts a dot on it.
- * `'segment'` brightens the stretch of the line around it instead and blooms
- * behind that, which reads as light moving along the data rather than as one
- * more mark on it — the right choice when the rest of the line is dimmed.
+ * How the mark under the finger is picked out. `'point'` puts a dot on it; `'segment'`
+ * brightens the stretch of line around it and blooms behind that; `'trail'` brightens
+ * everything up to the reading, so the line reads as the story so far.
  */
-export type ChartMarkerStyle = 'point' | 'segment'
+export type ChartMarkerStyle = 'point' | 'segment' | 'trail'
 
 /**
  * How the data under the finger is picked out. Unlike a tooltip it says only
  * which mark is being read, so use it when the value is shown outside the plot.
+ *
+ * `'segment'` and `'trail'` are drawn over the line rather than beside it, so
+ * they only read once the rest of it has stepped back: give `dimOpacity` too.
  */
 export type ChartSelectionMarker = {
   color?: string
   glow?: ChartGlow
   size?: number
-  /** How many data steps either side of the touch the `'segment'` style covers. Default 2. */
+  /**
+   * How many data steps either side of the touch the `'segment'` style covers.
+   * Default 2. `'trail'` reaches back to the first datum, so it ignores this.
+   */
   span?: number
   style?: ChartMarkerStyle
 }

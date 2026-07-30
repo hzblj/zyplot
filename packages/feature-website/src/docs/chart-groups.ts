@@ -1,11 +1,3 @@
-/**
- * How the twenty-one chart forms are split in the sidebar.
- *
- * The three names are the ones the native page already uses for its coverage
- * table, so a reader meets the same vocabulary in the nav and in the prose.
- * Twenty-one links under one heading is a wall — grouped, the reader scans four
- * short lists and stops at the one that matches what they are plotting.
- */
 const CHART_GROUPS: {ids: readonly string[]; label: string}[] = [
   {
     ids: ['line', 'area', 'bar', 'stacked-bar', 'histogram', 'scatter', 'time-series', 'sparkline'],
@@ -28,14 +20,6 @@ export type ChartGroup<TChart> = {
   label: string
 }
 
-/**
- * Splits charts into the sidebar groups, keeping the order they were declared in
- * within each one.
- *
- * The trailing group is the safety net: a chart added to the docs and not to a
- * group above still reaches the nav under "More charts" rather than vanishing
- * from it, which is the failure a plain lookup would produce silently.
- */
 export const groupCharts = <TChart extends {id: string}>(charts: TChart[]): ChartGroup<TChart>[] =>
   [
     ...CHART_GROUPS.map(group => ({

@@ -21,7 +21,6 @@ import androidx.compose.ui.unit.sp
 import com.hzblj.zyplot.core.ChartConfiguration
 import kotlin.math.roundToInt
 
-
 @Composable
 internal fun ChartTooltip(
   config: ChartConfiguration,

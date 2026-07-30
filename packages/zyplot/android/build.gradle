@@ -16,10 +16,6 @@ plugins {
 apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 
 dependencies {
-  // For ReactFontManager alone: it is how a `theme.typography.fontFamily` resolves to
-  // the same font a `<Text>` in the host app would get, including the ones expo-font
-  // registers at runtime. Every Expo module that touches React Native declares it the
-  // same way; expo-modules-core keeps it off its own API surface.
   implementation 'com.facebook.react:react-android'
   implementation "androidx.compose.animation:animation:1.7.6"
   implementation "androidx.compose.foundation:foundation:1.7.6"

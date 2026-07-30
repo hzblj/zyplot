@@ -17,8 +17,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      # Must precede setup-node: its `cache: yarn` probe shells out to `yarn`,
-      # which is global yarn 1.x until corepack installs the 4.x shim.
       - run: corepack enable
       - uses: actions/setup-node@v4
         with:

@@ -6,9 +6,7 @@ struct ZyplotGlowPass {
 }
 
 private let glowPassCount = 16
-
 private let glowPassWeights = (1...glowPassCount).map { 1 / Double($0) }
-
 private let glowPassWeightTotal = glowPassWeights.reduce(0, +)
 
 extension ZyplotMarkContext {

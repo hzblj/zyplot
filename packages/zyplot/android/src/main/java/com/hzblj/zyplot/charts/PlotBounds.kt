@@ -9,19 +9,10 @@ import com.hzblj.zyplot.core.ChartConfiguration
 
 private const val Y_LABEL_GUTTER = 44f
 private const val X_LABEL_GUTTER = 20f
-
 internal const val Y_CATEGORY_LABEL_GAP = 14f
-
 private const val AXIS_TITLE_GUTTER = 18f
 
-/**
- * The gutters and paddings below are written in dp, the way the props that feed them are,
- * while the canvas measures in pixels — so every one of them is scaled on the way in.
- * `measuredYGutter` is the exception: it comes from a text measurement and is already pixels.
- */
 internal fun plotLeft(config: ChartConfiguration, density: Float = 1f): Float {
-  // An overlaid axis writes its labels inside the plot, so it needs no gutter of its own —
-  // reserving one pushed the trace a label's width off the left edge.
   val axis = if (config.yAxisVisible && !config.yAxisAtEnd && !config.overlaysYAxis) {
     config.measuredYGutter ?: (Y_LABEL_GUTTER * density)
   } else {
@@ -36,10 +27,6 @@ internal fun plotLeft(config: ChartConfiguration, density: Float = 1f): Float {
 }
 
 internal fun plotRight(config: ChartConfiguration, width: Float, density: Float = 1f): Float {
-  // An overlaid label is drawn against the view's trailing edge rather than this one, so
-  // what the plot gives up here is the band that label needs — the same width iOS hands to
-  // `plotDimension(endPadding:)`, on top of `plotDimensionEndPadding`. Without it the marks
-  // run under the numbers.
   val axis = if (config.yAxisVisible && config.yAxisAtEnd && !config.overlaysYAxis) {
     config.measuredYGutter ?: (Y_LABEL_GUTTER * density)
   } else {
@@ -60,7 +47,6 @@ internal fun scrubLimit(config: ChartConfiguration, width: Float, density: Float
 internal fun DrawScope.plotRect(config: ChartConfiguration): Rect =
   plotRect(config, size.width, size.height, density)
 
-/** The same box outside a draw pass, for reporting geometry to the app. */
 internal fun plotRect(
   config: ChartConfiguration,
   width: Float,

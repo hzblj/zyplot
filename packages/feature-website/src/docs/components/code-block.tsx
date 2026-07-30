@@ -6,14 +6,6 @@ import {HIGHLIGHTED_SAMPLES} from '../highlighted-samples.generated'
 
 const styles = docsStyles()
 
-/**
- * A code sample, coloured at build time.
- *
- * The markup comes from `scripts/highlight-samples.mjs`, which tokenises every
- * sample with Shiki ahead of the build and keys the result by the sample's own
- * text — so nothing here has to be labelled, and Shiki never reaches the browser.
- * A sample with no entry renders as plain text rather than not rendering.
- */
 export const CodeBlock = ({children, language = 'tsx'}: {children: string; language?: string}) => {
   const [copied, setCopied] = useState(false)
   const highlighted = HIGHLIGHTED_SAMPLES[children]
@@ -33,7 +25,6 @@ export const CodeBlock = ({children, language = 'tsx'}: {children: string; langu
         </button>
       </div>
       {highlighted ? (
-        /* Shiki output, generated at build time from source strings in this repo. */
         <div className={styles.codeBlockBody()} dangerouslySetInnerHTML={{__html: highlighted}} />
       ) : (
         <pre className={styles.codeBlockBody()}>

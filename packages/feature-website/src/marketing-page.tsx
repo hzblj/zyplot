@@ -33,6 +33,25 @@ const platforms = [
   ],
 ]
 
+const examples = [
+  {
+    alt: 'The stock quote example screen running on the web, on Android and on iOS, side by side',
+    copy: 'A headline price that tracks the scrub, a smoothed intraday line that stops where the session does, a range selector and a candlestick toggle — with native tabs and headers around all of it.',
+    href: '/docs/apps/revolut',
+    kicker: 'Stocks',
+    slug: 'revolut',
+    title: 'A quote screen that follows your finger',
+  },
+  {
+    alt: 'The crypto price example screen running on the web, on Android and on iOS, side by side',
+    copy: "Price history that runs off both edges of the window, a dotted fill closed against the latest reading, the day's extremes underneath, and a scrub that lights the line up to the finger.",
+    href: '/docs/apps/kraken',
+    kicker: 'Crypto',
+    slug: 'kraken',
+    title: 'A price trace with no axes at all',
+  },
+]
+
 export const MarketingPage = () => (
   <main>
     <nav className={styles.nav()}>
@@ -120,6 +139,48 @@ export const MarketingPage = () => (
           <p>{copy}</p>
         </article>
       ))}
+    </section>
+    <section className={styles.examples()} id="examples">
+      <header className={styles.examplesHeader()}>
+        <p className={styles.status()}>Examples</p>
+        <h2>The same chart, in a whole screen</h2>
+        <p className={styles.lede()}>Two studies from the example app, on all three platforms.</p>
+      </header>
+      <div className={styles.examplesList()}>
+        {examples.map(example => (
+          <article className={styles.example()} key={example.slug}>
+            <div className={styles.exampleCopy()}>
+              <p className={styles.status()}>{example.kicker}</p>
+              <h3>{example.title}</h3>
+              <p>{example.copy}</p>
+              <a
+                className={styles.exampleLink()}
+                data-analytics="docs_click"
+                data-analytics-example={example.slug}
+                data-analytics-placement="examples"
+                href={example.href}
+              >
+                See how it is built
+                <span aria-hidden="true" className={styles.exampleArrow()}>
+                  →
+                </span>
+              </a>
+            </div>
+            {/* Two images rather than one served by a media query: the appearance
+                follows the site's own toggle, which a `prefers-color-scheme`
+                source would ignore. */}
+            <div className={styles.exampleShot()}>
+              <img
+                alt={example.alt}
+                className={styles.exampleShotLight()}
+                loading="lazy"
+                src={`/apps/${example.slug}/light.png`}
+              />
+              <img alt="" className={styles.exampleShotDark()} loading="lazy" src={`/apps/${example.slug}/dark.png`} />
+            </div>
+          </article>
+        ))}
+      </div>
     </section>
   </main>
 )

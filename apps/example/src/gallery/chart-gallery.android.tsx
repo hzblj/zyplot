@@ -10,13 +10,9 @@ export const ChartGallery = () => {
   const {color, scheme} = useTheme()
 
   return (
-    // `colorScheme` is what the Compose theme inside the host reads; the style paints the
-    // view the host sits in, which is the page behind the list.
     <Host colorScheme={scheme} style={[styles.host, {backgroundColor: color.surface.base}]}>
       <LazyColumn>
         {chartSections.flatMap(section => [
-          // A section header is a bare child of the column, so it inherits no content colour
-          // from a list item or a surface and would otherwise draw in Compose's default ink.
           <Text
             color={color.content.tertiary}
             key={`${section.title}-header`}

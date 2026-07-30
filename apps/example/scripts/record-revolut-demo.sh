@@ -1,21 +1,4 @@
 #!/usr/bin/env bash
-#
-# Records the Stock detail example being driven through every feature its chart
-# has: the traced reveal on arrival, the scrub readout, a switch of range, the
-# card the event annotation opens, and the same again on candlesticks.
-#
-# The choreography is revolut-demo.yaml. This script does the parts a flow file
-# cannot: it launches the app, reads back where the chart, its event annotation
-# and its controls actually landed on this device, fills those coordinates into
-# the flow, and records the screen while Maestro replays it. The measurement
-# matters — Maestro taps absolute points, and a slot on the weekly plot is a few
-# points wide, so the beat that opens the event card has to be aimed rather than
-# guessed at a percentage.
-#
-# Usage: scripts/record-revolut-demo.sh <ios|android> [out.mp4]
-#
-# Requires a booted simulator/emulator with the example app installed, the Metro
-# dev server running (`yarn dev:example`), and Maestro on PATH.
 set -euo pipefail
 
 PLATFORM="${1:?usage: record-revolut-demo.sh <ios|android> [out.mp4]}"
@@ -29,8 +12,6 @@ WORK="$(mktemp -d)"
 RECORDER=""
 
 cleanup() {
-	# A recorder left running holds the output file open and keeps writing to it.
-	# On Android it runs on the device, where killing the adb client leaves it be.
 	if [ -n "$RECORDER" ]; then
 		kill -INT "$RECORDER" 2> /dev/null || true
 		if [ "$PLATFORM" = android ]; then
@@ -54,8 +35,6 @@ command -v maestro > /dev/null || {
 	exit 1
 }
 
-# The example runs from a dev client, so without Metro the recording would be a
-# red box. Fail here rather than film it.
 curl -s -m 5 http://localhost:8081/status 2> /dev/null | grep -q running || {
 	echo "Metro is not running — start it with 'yarn dev:example'" >&2
 	exit 1
@@ -74,8 +53,6 @@ else
 		echo "no attached device — boot an emulator or 'yarn android:example'" >&2
 		exit 1
 	}
-	# The dev client reaches Metro through this, the emulator stays awake for the
-	# length of the run, and the gallery it opens on is themed to match the demo.
 	adb -s "$DEVICE" reverse tcp:8081 tcp:8081 > /dev/null
 	adb -s "$DEVICE" shell svc power stayon true
 	adb -s "$DEVICE" shell input keyevent KEYCODE_WAKEUP
@@ -99,12 +76,6 @@ stop_app() {
 	fi
 }
 
-# ---------------------------------------------------------------------------
-# Measure, and fill the flow in. This pass also warms the bundle, so the launch
-# that gets filmed is a fast one rather than half a minute of Metro building the
-# app.
-# ---------------------------------------------------------------------------
-
 cat > "$WORK/measure.yaml" <<-'MEASURE_EOF'
 	appId: com.hzblj.zyplot.example
 	---
@@ -115,7 +86,6 @@ cat > "$WORK/measure.yaml" <<-'MEASURE_EOF'
 	- extendedWaitUntil:
 	    visible: 'TSLA · Tesla'
 	    timeout: 60000
-	# The weekly range is the one carrying the event annotation to measure.
 	- tapOn: '1W'
 	- waitForAnimationToEnd:
 	    timeout: 4000
@@ -131,9 +101,6 @@ maestro --device "$DEVICE" test "$WORK/measure.yaml" > "$WORK/measure.log" 2>&1 
 }
 maestro --device "$DEVICE" hierarchy > "$WORK/hierarchy.json" 2> /dev/null
 
-# Maestro checks a coordinate looks like a coordinate while it parses the flow,
-# before it would expand any `--env` value, so the numbers are written into a
-# copy of the flow here instead.
 python3 - "$WORK/hierarchy.json" "$FLOW" "$WORK/demo.yaml" <<-'PY'
 	import json
 	import re
@@ -142,7 +109,6 @@ python3 - "$WORK/hierarchy.json" "$FLOW" "$WORK/demo.yaml" <<-'PY'
 
 	hierarchy, template, rendered = sys.argv[1:4]
 	nodes = []
-
 
 	def collect(node):
 	    attributes = node.get("attributes", {})
@@ -159,29 +125,21 @@ python3 - "$WORK/hierarchy.json" "$FLOW" "$WORK/demo.yaml" <<-'PY'
 	    for child in node.get("children") or []:
 	        collect(child)
 
-
 	with open(hierarchy) as stream:
 	    collect(json.load(stream))
-
 
 	def width(node):
 	    return node["box"][2] - node["box"][0]
 
-
 	def height(node):
 	    return node["box"][3] - node["box"][1]
-
 
 	def centre(node):
 	    return (node["box"][0] + node["box"][2]) / 2, (node["box"][1] + node["box"][3]) / 2
 
-
 	def first(predicate):
 	    return next((node for node in nodes if predicate(node)), None)
 
-
-	# The plot itself. Swift Charts labels its axis marks "Chart" as well, so take
-	# the largest of them rather than the first.
 	charts = [node for node in nodes if node["label"] == "Chart"]
 	chart = max(charts, key=lambda node: width(node) * height(node), default=None)
 	if chart is None:
@@ -190,9 +148,6 @@ python3 - "$WORK/hierarchy.json" "$FLOW" "$WORK/demo.yaml" <<-'PY'
 	left, top, right, bottom = chart["box"]
 	span = right - left
 
-	# Where the event landed. Android exposes the app's own badge, a text view
-	# reading "P"; iOS does not, but Swift Charts exposes the annotation rule that
-	# badge caps — a hairline as tall as the plot, labelled with its category.
 	badge = first(lambda node: "P" in (node["text"], node["label"]))
 	if badge is None:
 	    badge = first(
@@ -220,10 +175,6 @@ python3 - "$WORK/hierarchy.json" "$FLOW" "$WORK/demo.yaml" <<-'PY'
 	toggle_x, toggle_y = centre(toggle)
 	back_x, back_y = centre(back)
 
-	# A scrub starts and ends inside the plot's own edges, where there is a datum
-	# under the finger; the y-axis writes its labels over the last tenth of it. The
-	# hold runs down the middle of the plot rather than the whole of it: iOS ignores
-	# a drag that leaves the plot frame.
 	values = {
 	    "CHART_MID_Y": (top + bottom) / 2,
 	    "HOLD_TOP": top + (bottom - top) * 0.34,
@@ -241,23 +192,15 @@ python3 - "$WORK/hierarchy.json" "$FLOW" "$WORK/demo.yaml" <<-'PY'
 	with open(template) as stream:
 	    flow = string.Template(stream.read())
 	with open(rendered, "w") as stream:
-	    # substitute() rather than safe_substitute(): a placeholder the flow adds and
-	    # this script does not measure should stop the run, not reach Maestro.
 	    stream.write(flow.substitute({name: round(value) for name, value in values.items()}))
 
 	print(f"  event at x={round(event_x)}, plot centre y={round((top + bottom) / 2)}")
 PY
 
-# ---------------------------------------------------------------------------
-# Record.
-# ---------------------------------------------------------------------------
-
 mkdir -p "$(dirname "$OUT")"
 stop_app
 
 if [ "$PLATFORM" = ios ]; then
-	# h264 rather than the default HEVC: it plays everywhere a README or a docs
-	# page would embed it.
 	xcrun simctl io "$DEVICE" recordVideo --codec h264 --force "$OUT" > /dev/null 2>&1 &
 else
 	adb -s "$DEVICE" shell rm -f "$REMOTE_VIDEO"
@@ -273,8 +216,6 @@ if [ "$PLATFORM" = ios ]; then
 	kill -INT "$RECORDER" 2> /dev/null || true
 	wait "$RECORDER" 2> /dev/null || true
 else
-	# screenrecord only writes its moov atom on SIGINT, and it needs the signal on
-	# the device: killing the adb client here would leave the file unplayable.
 	adb -s "$DEVICE" shell 'kill -2 $(pidof screenrecord)' || true
 	wait "$RECORDER" 2> /dev/null || true
 	sleep 2

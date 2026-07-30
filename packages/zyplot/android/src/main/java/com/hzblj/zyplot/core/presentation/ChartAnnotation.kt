@@ -14,7 +14,6 @@ data class ChartAnnotation(
   val end: Any?,
   val glow: Glow?,
   val halo: Halo?,
-  /** Measured and reported like any other, but drawn by the app rather than the chart. */
   val hidden: Boolean,
   val id: String,
   val label: String?,

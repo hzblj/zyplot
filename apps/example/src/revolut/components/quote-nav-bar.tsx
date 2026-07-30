@@ -1,20 +1,11 @@
+import {quote} from '@zyplot/feature-charts/revolut'
 import {Pressable, StyleSheet, View} from 'react-native'
 import {setColorScheme} from '../../theme/color-scheme'
-import {quote} from '../data/quote-data'
 import {quoteLayout, useQuoteTheme} from '../data/quote-theme'
 import {QuoteText} from './quote-text'
 
-/**
- * The switch offers the scheme it moves to, so the glyph is the one you are not in. U+FE0E
- * asks for the text presentation: without it the emoji font paints the sun yellow, and it
- * stops taking the button's colour.
- */
 const schemeGlyph = {dark: '☾', light: '☀︎'} as const
 
-/**
- * The glyphs stand in for SF Symbols, the way the Android screen's do — the web has no
- * icon set of its own to reach for either.
- */
 export const QuoteCircleButton = ({
   diameter = quoteLayout.navButton,
   glyph,
@@ -44,10 +35,6 @@ export const QuoteCircleButton = ({
   )
 }
 
-/**
- * The star the app this is modelled on puts here is a switch between light and dark instead:
- * the screen is what the two schemes are being shown on, so the control belongs on it.
- */
 export const QuoteNavBar = ({onBack}: {onBack: () => void}) => {
   const {scheme} = useQuoteTheme()
   const next = scheme === 'dark' ? 'light' : 'dark'

@@ -35,6 +35,7 @@ export type RadarChartProps = ChartBaseProps & {
  * answer "how much" — for that use a grouped bar chart.
  */
 export const RadarChart: FC<RadarChartProps> = ({
+  animation,
   axes,
   className,
   format,
@@ -53,7 +54,7 @@ export const RadarChart: FC<RadarChartProps> = ({
     }
 
     return {
-      ...buildChartBaseOption(tokens, texture),
+      ...buildChartBaseOption(tokens, texture, animation),
       radar: {
         axisLine: {lineStyle: {color: tokens.grid}},
         axisName: {...buildChartTextStyle(tokens), fontSize: 11},
@@ -96,7 +97,7 @@ export const RadarChart: FC<RadarChartProps> = ({
         trigger: 'item',
       },
     }
-  }, [axes, format, plotted, texture, tokens])
+  }, [animation, axes, format, plotted, texture, tokens])
 
   const legend = useMemo(() => {
     if (!tokens) {

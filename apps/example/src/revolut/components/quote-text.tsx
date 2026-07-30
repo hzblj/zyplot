@@ -10,10 +10,6 @@ export type QuoteTextProps = {
   weight?: 'normal' | '500' | '600' | 'bold'
 }
 
-/**
- * The web's `QuoteText`. Same call shape as the iOS and Android ones, so the screens read
- * alike; here it is a plain `Text`, because the DOM needs no bridge to draw one.
- */
 export const QuoteText = ({children, color, size = 15, style, tabular = false, weight = 'normal'}: QuoteTextProps) => {
   const theme = useQuoteTheme()
 

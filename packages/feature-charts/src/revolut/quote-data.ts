@@ -284,7 +284,6 @@ const ranges: QuoteRange[] = [
 ]
 
 export const quoteRanges = ranges
-
 export const quoteRange = (id: QuoteRangeId) => ranges.find(range => range.id === id) ?? ranges[0]
 
 export const quote = {

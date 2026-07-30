@@ -1,5 +1,5 @@
+import {type QuoteRangeId, quoteRanges} from '@zyplot/feature-charts/revolut'
 import {Pressable, StyleSheet, View} from 'react-native'
-import {type QuoteRangeId, quoteRanges} from '../data/quote-data'
 import {quoteLayout, useQuoteTheme} from '../data/quote-theme'
 import {QuoteCircleButton} from './quote-nav-bar'
 import {QuoteText} from './quote-text'
@@ -11,7 +11,6 @@ export type QuoteRangeSelectorProps = {
   selected: QuoteRangeId
 }
 
-/** The same pill track the iOS segmented picker draws, and the Android screen hand-builds. */
 export const QuoteRangeSelector = ({
   isCandlestick,
   onSelect,

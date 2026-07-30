@@ -2,6 +2,7 @@ import Foundation
 
 struct ZyplotSeriesStyle: Codable {
   var color: String?
+  var fill: ZyplotSeriesFill?
   var fillOpacity: Double?
   var glow: ZyplotGlow?
   var opacity: Double?

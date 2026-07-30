@@ -41,5 +41,5 @@ internal fun DrawScope.drawChart(
     isScrubbing = selection != null,
     strength = reveal.strokeOpacity,
   )
-  drawCrosshair(config, pointer)
+  drawCrosshair(config, pointer, measurer, selection?.index)
 }

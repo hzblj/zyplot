@@ -1,14 +1,8 @@
 import type {ChartRevealEasing, ChartRevealStyle, NativeChartAnimation} from '../types'
 
-/** The stroke drawn under a trace, so the shape reads from the first frame. */
 export const REVEAL_TRACK_ID = 'zyplot-reveal-track'
-
-/** The brightening that lands with the trace and then leaves. */
 export const REVEAL_FLASH_ID = 'zyplot-reveal-flash'
-
 const REVEAL_IDS = new Set<string>([REVEAL_TRACK_ID, REVEAL_FLASH_ID])
-
-/** Whether a series is one the reveal added, rather than one of the reader's. */
 export const isRevealSeriesId = (id: unknown): boolean => typeof id === 'string' && REVEAL_IDS.has(id)
 
 const DEFAULTS = {
@@ -21,7 +15,6 @@ const DEFAULTS = {
   trackOpacity: 0.35,
 }
 
-/** How the stroke's own style moves once the marks have landed. */
 export type ChartRevealPlan = {
   delay: number
   duration: number
@@ -31,28 +24,19 @@ export type ChartRevealPlan = {
     easing?: ChartRevealEasing
     hold: number
     opacity: number
-    /** Glow radius at the peak of the flash, and the radius it decays back to. */
     peak: number
     rest: number
   }
   mainId: string
-  /** How dim the stroke is held while it is being traced. */
   startOpacity?: number
   style: ChartRevealStyle
 }
 
 export type ChartRevealInput = {
   animation?: NativeChartAnimation
-  /** Clipped to the plot, the way the stroke it rides with is. */
   clip?: boolean
-  /** The series' own colour, for a flash that names none. */
   color: string
-  /** The resting radius of the series' glow, which is what `flashGlow` multiplies. */
   glowRadius?: number
-  /**
-   * True once the entrance has been and gone. The flash is then left out rather than built
-   * at full strength again — new data does not re-trace, so nothing would put it out.
-   */
   hasPlayed?: boolean
   isSmooth?: boolean
   seriesId: string
@@ -61,9 +45,7 @@ export type ChartRevealInput = {
 }
 
 export type ChartRevealBuild = {
-  /** Extra series the reveal draws with, in the order they are painted. */
   extraSeries: Record<string, unknown>[]
-  /** What the entrance does to the main series. */
   main: {animationDelay: number; animationDuration: number; animationEasing: string; opacity?: number}
   plan: ChartRevealPlan | null
 }
@@ -91,14 +73,6 @@ const strokeSeries = (id: string, input: ChartRevealInput, style: Record<string,
   z,
 })
 
-/**
- * A traced entrance, as the series it takes to draw one.
- *
- * ECharts already reveals a line by clipping it open from the left, which is the trace
- * itself. What it has no option for is what rides along: the pale track underneath, and
- * the brightening that lands with the frontier and then leaves. Both are strokes of their
- * own, animated in step with the real one, and `plan` is how they are put out afterwards.
- */
 export const buildChartReveal = (input: ChartRevealInput): ChartRevealBuild => {
   const reveal = input.animation?.reveal
   const style: ChartRevealStyle = reveal?.style ?? 'fade'
@@ -121,8 +95,13 @@ export const buildChartReveal = (input: ChartRevealInput): ChartRevealBuild => {
   if (style === 'fade') {
     return {
       extraSeries: [],
-      main: {animationDelay: delay, animationDuration: 0, animationEasing: ECHARTS_EASING[easing], opacity: 0},
-      plan: {delay, duration, easing, mainId: input.seriesId, style},
+      main: {
+        animationDelay: delay,
+        animationDuration: 0,
+        animationEasing: ECHARTS_EASING[easing],
+        opacity: input.hasPlayed ? undefined : 0,
+      },
+      plan: input.hasPlayed ? null : {delay, duration, easing, mainId: input.seriesId, style},
     }
   }
 

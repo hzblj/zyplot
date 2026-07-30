@@ -1,7 +1,6 @@
 import type {ChartPlatform} from './types'
 
 export const CHARTS_VERSION = '4'
-
 export const VIEW_COOKIE = 'zyplot-docs-view'
 export const PLATFORM_COOKIE = 'zyplot-docs-platform'
 

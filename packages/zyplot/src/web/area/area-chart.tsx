@@ -3,6 +3,7 @@
 import {LineChart as EChartsLineChart} from 'echarts/charts'
 import {type FC, useMemo} from 'react'
 import {echarts} from '../shared/engine'
+import {buildSeriesAreaStyle} from '../shared/fill'
 import {ChartShell} from '../shared/frame'
 import {
   buildAxisTooltipFormatter,
@@ -13,6 +14,7 @@ import {
   buildChartInteraction,
   buildChartLegendItems,
   buildValueAxis,
+  plotInnerHeight,
 } from '../shared/option'
 import {emphasisSeriesColor, useChartTokens} from '../shared/tokens'
 import type {ChartBaseProps, ChartNumberFormat, ChartSeries} from '../shared/types'
@@ -78,32 +80,40 @@ export const AreaChart: FC<AreaChartProps> = ({
     return {
       ...buildChartBaseOption(tokens, texture, animation),
       grid: buildChartGrid(true, plot),
-      series: series.map((item, index) => ({
-        ...(index === 0 ? buildChartAnnotationOption(annotations) : {}),
-        areaStyle: {
-          opacity: seriesStyles?.[item.id]?.fillOpacity ?? fillOpacity,
-        },
-        clip: plot?.clip ?? true,
-        connectNulls: false,
-        data: item.values,
-        emphasis: interaction?.hover === 'none' ? {disabled: true} : {focus: 'series'},
-        id: item.id,
-        itemStyle: {
-          color: seriesStyles?.[item.id]?.color ?? emphasisSeriesColor(tokens, item, index, emphasisId),
-          opacity: seriesStyles?.[item.id]?.opacity,
-        },
-        lineStyle: {
-          type: seriesStyles?.[item.id]?.strokeDash?.length ? seriesStyles[item.id]?.strokeDash : undefined,
-          width: seriesStyles?.[item.id]?.strokeWidth ?? 2,
-        },
-        name: item.label,
-        showSymbol: seriesStyles?.[item.id]?.symbol !== 'none',
-        smooth: isSmooth,
-        stack,
-        symbol: seriesStyles?.[item.id]?.symbol,
-        symbolSize: seriesStyles?.[item.id]?.symbolSize ?? 8,
-        type: 'line' as const,
-      })),
+      series: series.map((item, index) => {
+        const style = seriesStyles?.[item.id]
+        const color = style?.color ?? emphasisSeriesColor(tokens, item, index, emphasisId)
+
+        return {
+          ...(index === 0 ? buildChartAnnotationOption(annotations) : {}),
+          areaStyle: buildSeriesAreaStyle(
+            style?.fill,
+            color,
+            style?.fillOpacity ?? fillOpacity,
+            plotInnerHeight(height, true, plot)
+          ) ?? {opacity: style?.fillOpacity ?? fillOpacity},
+          clip: plot?.clip ?? true,
+          connectNulls: false,
+          data: item.values,
+          emphasis: interaction?.hover === 'none' ? {disabled: true} : {focus: 'series'},
+          id: item.id,
+          itemStyle: {
+            color,
+            opacity: style?.opacity,
+          },
+          lineStyle: {
+            type: style?.strokeDash?.length ? style.strokeDash : undefined,
+            width: style?.strokeWidth ?? 2,
+          },
+          name: item.label,
+          showSymbol: style?.symbol !== 'none',
+          smooth: isSmooth,
+          stack,
+          symbol: style?.symbol,
+          symbolSize: style?.symbolSize ?? 8,
+          type: 'line' as const,
+        }
+      }),
       tooltip: {
         ...buildChartInteraction(tokens, interaction),
         formatter: buildAxisTooltipFormatter(format),
@@ -125,6 +135,7 @@ export const AreaChart: FC<AreaChartProps> = ({
     categories,
     emphasisId,
     format,
+    height,
     interaction,
     isSmooth,
     isStacked,

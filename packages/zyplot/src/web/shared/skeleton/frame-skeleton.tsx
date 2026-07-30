@@ -4,9 +4,7 @@ import {cn} from '../utils'
 
 const LABEL_WIDTHS = ['w-5', 'w-6', 'w-4', 'w-6', 'w-5', 'w-6']
 const LEGEND_WIDTHS = ['w-14', 'w-11', 'w-16', 'w-12', 'w-14', 'w-10', 'w-13']
-
 const labelWidthAt = (index: number): string => LABEL_WIDTHS[index % LABEL_WIDTHS.length] ?? 'w-5'
-
 const legendWidthAt = (index: number): string => LEGEND_WIDTHS[index % LEGEND_WIDTHS.length] ?? 'w-14'
 
 type ChartSkeletonFrameProps = {

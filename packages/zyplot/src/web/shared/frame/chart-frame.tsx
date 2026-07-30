@@ -11,10 +11,6 @@ type ChartFrameProps = {
   title?: string
 }
 
-/**
- * The optional card around a chart: a title, a description, an actions slot for
- * the filter row, and a caption below for the source or the caveat.
- */
 export const ChartFrame: FC<ChartFrameProps> = ({actions, caption, children, className, description, title}) => (
   <section
     className={cn(

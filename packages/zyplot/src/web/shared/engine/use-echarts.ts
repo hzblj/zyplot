@@ -9,10 +9,6 @@ import {echarts, ensureEchartsRuntime} from './echarts-core'
 export type ChartEngine = {
   containerRef: RefObject<HTMLDivElement | null>
   instance: EChartsType | null
-  /**
-   * Bumped whenever the plot may have moved: a new option, a resize. Anything measuring
-   * the plot — an overlay, geometry an app is given — recomputes on it.
-   */
   layoutVersion: number
 }
 
@@ -64,11 +60,6 @@ export const useECharts = (option: EChartsCoreOption | null): ChartEngine => {
   return {containerRef, instance, layoutVersion}
 }
 
-/**
- * The pointer events a chart form reports without tracking a scrub: which mark was
- * clicked or hovered. Charts that read the pointer continuously report the fuller
- * scrub instead, so they leave this off.
- */
 export const useChartHoverEvents = (
   instance: EChartsType | null,
   onInteraction?: (event: ChartInteractionEvent) => void,

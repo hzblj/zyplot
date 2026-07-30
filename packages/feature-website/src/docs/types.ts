@@ -11,7 +11,6 @@ export type PropRow = {
 export type ChartPlatform = 'web' | 'ios' | 'android'
 
 export type ChangelogEntry = {
-  /** The commit changesets linked the note to, when the note has one. */
   commit?: {href: string; sha: string}
   paragraphs: string[]
 }

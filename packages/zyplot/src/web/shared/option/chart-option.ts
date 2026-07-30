@@ -11,12 +11,26 @@ import type {
   ChartPlotStyle,
   NativeChartAnnotation,
   NativeChartAxisOptions,
+  NativeChartInteraction,
 } from '../types'
 
 const AXIS_GUTTER = 26
 const AXIS_GUTTER_BARE = 6
 const OVERLAY_LABEL_INSET = 8
 const ANNOTATION_LABEL_SIZE = 11
+const PLOT_TOP = 8
+const UPDATE_DURATION = 320
+export const CROSSHAIR_LABEL_SIZE = 13
+export const CROSSHAIR_LABEL_LIFT = 8
+
+export const crosshairHeadroom = (interaction?: NativeChartInteraction): number => {
+  const labels = interaction?.crosshairStyle?.labels
+  if (!labels?.length || interaction?.crosshair === 'none' || interaction?.hover === 'none') {
+    return 0
+  }
+
+  return (interaction?.crosshairStyle?.labelSize ?? CROSSHAIR_LABEL_SIZE) + CROSSHAIR_LABEL_LIFT
+}
 
 export type ChartAxisPointerKind = 'line' | 'none' | 'shadow'
 
@@ -82,15 +96,11 @@ export const buildChartTooltip = (tokens: ChartTokens, pointer: ChartAxisPointer
   transitionDuration: 0.15,
 })
 
-/**
- * Room kept around the marks. `plotDimensionStartPadding` and `plotDimensionEndPadding`
- * are free space along the category axis — what stops a trace from running into an
- * overlaid label, which `labelInset` cannot do because it only moves the label inwards.
- */
 export const buildChartGrid = (
   hasCategoryGutter = true,
   plot?: ChartPlotStyle,
-  dimension?: Pick<NativeChartAxisOptions, 'plotDimensionEndPadding' | 'plotDimensionStartPadding'>
+  dimension?: Pick<NativeChartAxisOptions, 'plotDimensionEndPadding' | 'plotDimensionStartPadding'>,
+  headroom = 0
 ) => {
   let bottom = AXIS_GUTTER_BARE
   if (hasCategoryGutter) {
@@ -117,13 +127,25 @@ export const buildChartGrid = (
     outerBoundsMode: 'same' as const,
     right: 8 + (padding?.right ?? 0) + (dimension?.plotDimensionEndPadding ?? 0),
     show: Boolean(plot?.backgroundColor || plot?.borderColor || (plot?.borderWidth ?? 0) > 0),
-    top: 8 + (padding?.top ?? 0),
+    top: PLOT_TOP + (padding?.top ?? 0) + headroom,
   }
 }
 
-/** Exact ticks, when the reader is looking for specific values rather than a scale. */
+export const plotInnerHeight = (height?: number, hasCategoryGutter = true, plot?: ChartPlotStyle, headroom = 0) => {
+  if (!height) {
+    return 0
+  }
+
+  const padding = typeof plot?.padding === 'number' ? {bottom: plot.padding, top: plot.padding} : plot?.padding
+  const bottom = (hasCategoryGutter ? AXIS_GUTTER : AXIS_GUTTER_BARE) + (padding?.bottom ?? 0)
+  return Math.max(0, height - bottom - PLOT_TOP - (padding?.top ?? 0) - headroom)
+}
+
 const customValues = (options?: NativeChartAxisOptions) =>
   options?.tickValues?.length ? [...options.tickValues] : undefined
+
+export const axisLabelMargin = (options?: NativeChartAxisOptions) =>
+  options?.position === 'overlay' ? {margin: options.labelInset ?? OVERLAY_LABEL_INSET} : undefined
 
 export const buildCategoryAxis = (
   tokens: ChartTokens,
@@ -136,16 +158,14 @@ export const buildCategoryAxis = (
     rotate = 40
   }
 
-  const isOverlaid = options?.position === 'overlay'
-
   return {
     axisLabel: {
+      ...axisLabelMargin(options),
       color: tokens.label,
       customValues: customValues(options),
       fontFamily: tokens.fontFamily,
       fontSize: options?.labelSize ?? 11,
       hideOverlap: true,
-      margin: isOverlaid ? (options?.labelInset ?? OVERLAY_LABEL_INSET) : undefined,
       rotate,
     },
     axisLine: {lineStyle: {color: tokens.grid}},
@@ -165,11 +185,6 @@ export const buildCategoryAxis = (
   }
 }
 
-/**
- * One end of a value axis. A pinned end is passed through; an end that is computed
- * becomes a function, which is how ECharts hands back the data extent so `padding`
- * can be taken as a fraction of it.
- */
 const axisBound = (domain: NativeChartAxisOptions['domain'], end: 'max' | 'min') => {
   const pinned = domain?.[end]
   if (pinned !== undefined) {
@@ -183,23 +198,17 @@ const axisBound = (domain: NativeChartAxisOptions['domain'], end: 'max' | 'min')
     end === 'max' ? max + (max - min) * padding : min - (max - min) * padding
 }
 
-/**
- * `'overlay'` sets its labels against the plot's trailing edge, `labelInset` away from it,
- * in a band the marks stop short of — the same treatment the native renderers give it. They
- * are not drawn over the marks: a reading hanging in the middle of the plot reads as a
- * value on the data rather than as the scale it belongs to.
- */
 export const buildValueAxis = (tokens: ChartTokens, format?: ChartNumberFormat, options?: NativeChartAxisOptions) => {
   const isOverlaid = options?.position === 'overlay'
 
   return {
     axisLabel: {
+      ...axisLabelMargin(options),
       color: tokens.label,
       customValues: customValues(options),
       fontFamily: tokens.fontFamily,
       fontSize: options?.labelSize ?? 11,
       formatter: (value: number) => formatChartNumber(value, format),
-      margin: isOverlaid ? (options?.labelInset ?? OVERLAY_LABEL_INSET) : undefined,
     },
     axisLine: {show: false},
     axisTick: {customValues: customValues(options), show: options?.ticks ?? false},
@@ -245,17 +254,22 @@ export const buildCartesianAxes = (
   return {xAxis: categoryAxis, yAxis: valueAxis}
 }
 
+export const chartUpdateAnimation = (animation?: ChartAnimation) => ({
+  animationDurationUpdate: animation?.updates === false ? 0 : (animation?.duration ?? UPDATE_DURATION),
+  animationEasingUpdate: chartEasing(animation?.easing),
+})
+
 export const buildChartBaseOption = (tokens: ChartTokens, texture = false, animation?: ChartAnimation) => ({
   animation: animation?.enabled ?? true,
   animationDelay: animation?.delay ?? 0,
-  animationDuration: animation?.duration ?? 320,
-  animationDurationUpdate: animation?.updates === false ? 0 : (animation?.duration ?? 320),
+  animationDuration: animation?.duration ?? UPDATE_DURATION,
   animationEasing: chartEasing(animation?.easing),
+  ...chartUpdateAnimation(animation),
   aria: {decal: {show: texture}, enabled: texture},
   textStyle: buildChartTextStyle(tokens),
 })
 
-const chartEasing = (easing: ChartAnimation['easing'] | undefined) => {
+export const chartEasing = (easing: ChartAnimation['easing'] | undefined) => {
   switch (easing) {
     case 'linear':
       return 'linear' as const
@@ -270,10 +284,6 @@ const chartEasing = (easing: ChartAnimation['easing'] | undefined) => {
   }
 }
 
-/**
- * `drawsCrosshair` is for a chart that tracks the pointer itself: it draws the crosshair
- * over the plot, styled the way it was asked to, so ECharts must not draw a second one.
- */
 export const buildChartInteraction = (tokens: ChartTokens, interaction?: ChartInteraction, drawsCrosshair = false) => {
   let pointer: ChartAxisPointerKind = 'line'
   if (drawsCrosshair || interaction?.crosshair === 'none' || interaction?.hover === 'none') {
@@ -290,13 +300,6 @@ export const buildChartInteraction = (tokens: ChartTokens, interaction?: ChartIn
   }
 }
 
-/**
- * How the mark being read is picked out, as the states ECharts already has: `emphasis`
- * for the one under the pointer, `blur` for everything else.
- *
- * `highlightBlend` is why the emphasis colour is computed per mark rather than set once —
- * at anything below 1 the mark's own colour still has to read through.
- */
 export const buildChartEmphasis = (interaction?: ChartInteraction) => ({
   blur: {itemStyle: {opacity: interaction?.dimOpacity}, lineStyle: {opacity: interaction?.dimOpacity}},
   emphasis: {
@@ -306,27 +309,12 @@ export const buildChartEmphasis = (interaction?: ChartInteraction) => ({
 })
 
 export type ChartAnnotationContext = {
-  /**
-   * Where a `'point'` annotation is drawn. The overlay honours its glow, halo and pulse,
-   * so a chart that has one leaves points out of the option.
-   */
   drawsPoints?: boolean
-  /** The value axis' extent, for a label that places itself. */
   domain?: {max?: number; min?: number}
-  /** True while a mark is being read, which is when `scrubOpacity` applies. */
   isScrubbing?: boolean
-  /** The token colour an annotation that names none falls back to. */
   label: string
 }
 
-/**
- * Which side of its rule a label sits on. `'auto'` keeps it inside the plot: above a rule
- * sitting low, below one sitting high.
- *
- * It also keeps it at the rule's leading end, because the trailing end is where an
- * `'overlay'` axis draws its own labels — a rule on a round number would otherwise print
- * that number twice, one on top of the other.
- */
 const labelPosition = (
   item: Extract<NativeChartAnnotation, {type: 'line'}>,
   domain?: {max?: number; min?: number}
@@ -361,8 +349,6 @@ export const buildChartAnnotationOption = (
   annotations: readonly NativeChartAnnotation[] | undefined,
   context?: ChartAnnotationContext
 ) => {
-  // A hidden annotation is still measured and still reported; it is only the drawing that
-  // the app has taken over.
   const values = (annotations ?? []).filter(item => !isHiddenAnnotation(item))
   const lines = values.filter(item => item.type === 'line')
   const ranges = values.filter(item => item.type === 'range')
@@ -396,8 +382,6 @@ export const buildChartAnnotationOption = (
                 borderRadius: item.labelBackground ? 3 : 0,
                 color: item.color ?? labelColor,
                 fontSize: ANNOTATION_LABEL_SIZE,
-                // The label as it was written. Left to itself ECharts formats the value it
-                // sits on, which drops a trailing zero the reader asked for.
                 formatter: item.label,
                 opacity,
                 padding: item.labelBackground ? [2, 4] : 0,
@@ -407,10 +391,10 @@ export const buildChartAnnotationOption = (
               lineStyle: {
                 color: item.color ?? labelColor,
                 opacity,
-                type: item.dash?.length ? item.dash : undefined,
+                type: item.dash?.length ? item.dash : 'solid',
                 width: item.width,
               },
-              name: item.label,
+              name: item.id,
               ...(item.axis === 'x' ? {xAxis: item.value} : {yAxis: item.value}),
             }
           }),
@@ -459,12 +443,9 @@ const toParamList = (params: any): any[] => {
 }
 
 export const firstTooltipParam = (params: any): any => toParamList(params)[0]
-
 export const buildAxisTooltipFormatter =
   (format?: ChartNumberFormat) =>
   (params: any): string => {
-    // The strokes a traced entrance adds are the same data twice over, so they are the
-    // reader's series only in the option, never in a tooltip.
     const items = toParamList(params).filter(item => !isRevealSeriesId(item?.seriesId))
     const rows: ChartTooltipRow[] = items.map(item => ({
       color: item.color,

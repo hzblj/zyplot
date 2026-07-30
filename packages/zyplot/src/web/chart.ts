@@ -1,3 +1,5 @@
+import 'uplot/dist/uPlot.min.css'
+import '../charts.css'
 import {AreaChart} from './area'
 import {BarChart} from './bar'
 import {BoxplotChart} from './boxplot'

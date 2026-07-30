@@ -1,5 +1,6 @@
 export * from './color'
 export * from './engine'
+export * from './fill'
 export * from './format'
 export * from './frame'
 export * from './option'

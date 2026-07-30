@@ -22,7 +22,11 @@ struct ZyplotChartInteractionModifier: ViewModifier {
               if configuration.interaction?.drawsVerticalCrosshair == true {
                 ZyplotCrosshair(
                   style: configuration.interaction?.crosshairStyle,
-                  height: frame.height
+                  height: frame.height,
+                  label: configuration.interaction?.crosshairStyle?
+                    .label(at: configuration.resolvedCategories.firstIndex(of: category)),
+                  x: frame.minX + x,
+                  viewWidth: geometry.size.width
                 )
                 .offset(x: frame.minX + x, y: frame.minY)
               }
@@ -60,9 +64,6 @@ struct ZyplotChartInteractionModifier: ViewModifier {
                   .onEnded { _ in endSelection() }
               )
           }
-          // Measured here and reported outside, so an app can lay its own views over the plot
-          // — its own badge on an annotation, its own card at a reading — instead of taking
-          // the ones drawn above.
           .preference(
             key: ZyplotGeometryKey.self,
             value: snapshot(proxy: proxy, plotFrame: frame)

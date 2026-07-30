@@ -5,12 +5,9 @@ import type {NativeChartSeriesStyle} from '../contracts/chart-native'
 export type StyledChartSeries = ChartSeries & {style?: NativeChartSeriesStyle}
 
 /**
- * One series, styling included.
- *
- * `seriesStyles` is a record keyed by `id`, so styling a series normally means
- * writing its id twice — once on the series, once as the key — with nothing checking
- * the two agree. A typo does not fail, it silently drops the styling. Declaring both
- * in one place removes the second spelling.
+ * One series, styling included. `seriesStyles` is keyed by `id`, so styling a series normally
+ * means writing its id twice with nothing checking the two agree; declaring both in one place
+ * removes the second spelling.
  */
 export const series = (options: StyledChartSeries): StyledChartSeries => options
 

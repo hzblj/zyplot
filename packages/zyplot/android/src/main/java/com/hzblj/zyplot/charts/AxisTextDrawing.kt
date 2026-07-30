@@ -12,7 +12,6 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.sp
 import com.hzblj.zyplot.core.ChartConfiguration
 
-/** How far a tick mark reaches out of the plot, in px. */
 private const val TICK_LENGTH = 4f
 
 internal fun DrawScope.drawAxisText(
@@ -121,11 +120,6 @@ private fun DrawScope.drawNumericYLabels(
       textLayoutResult = text,
       topLeft = Offset(
         x = when {
-          // `labelInset` off the view's trailing edge, not the plot's: the plot already
-          // stops a label's width short of it, so measuring from there would inset the
-          // label twice and leave it stranded mid-plot. iOS reads the same way — its plot
-          // frame runs the full width and the marks are what stop short. The prop is in dp
-          // and the canvas is in pixels, so it is scaled like every other inset here.
           config.overlaysYAxis ->
             (size.width - config.yAxis.labelInset * density - text.size.width).coerceAtLeast(0f)
           config.yAxisAtEnd -> (plot.right + 6f).coerceAtMost(size.width - text.size.width)
@@ -195,11 +189,6 @@ private fun DrawScope.drawXLabels(
   }
 }
 
-/**
- * The short mark beside a tick label. Compose draws no domain line of its own, so
- * these are the only thing `theme.colors.axis` has to colour — and the only thing the
- * `ticks` axis option has to switch off.
- */
 private fun DrawScope.drawAxisTick(config: ChartConfiguration, start: Offset, end: Offset) {
   drawLine(color = config.axisColor, start = start, end = end, strokeWidth = 1f)
 }

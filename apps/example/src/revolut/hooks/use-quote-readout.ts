@@ -1,14 +1,12 @@
 import type {ChartGeometry} from '@hzblj/zyplot'
 import {useChartScrub} from '@hzblj/zyplot'
+import {formatNumber, INTRADAY_OPEN, type QuoteRange, splitPrice} from '@zyplot/feature-charts/revolut'
 import {useMemo} from 'react'
-import {formatNumber, INTRADAY_OPEN, type QuoteRange, splitPrice} from '../data/quote-data'
 
 export type QuoteReadout = {
   amount: string
-  /** The scrubbed category, for whatever the app wants to draw over the plot. */
   category?: string
   geometry: ChartGeometry | null
-  /** Where the finger is, for a card the app positions itself. */
   nativeX?: number
   isPreMarket: boolean
   isDown: boolean

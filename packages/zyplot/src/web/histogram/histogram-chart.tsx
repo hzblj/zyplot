@@ -69,6 +69,7 @@ const buildBins = (
  * observations and the bins are worked out here.
  */
 export const HistogramChart: FC<HistogramChartProps> = ({
+  animation,
   axis,
   binCount = DEFAULT_BIN_COUNT,
   className,
@@ -89,7 +90,7 @@ export const HistogramChart: FC<HistogramChartProps> = ({
     const bins = buildBins(values, binCount, valueFormat)
 
     return {
-      ...buildChartBaseOption(tokens, texture),
+      ...buildChartBaseOption(tokens, texture, animation),
       grid: buildChartGrid(),
       series: [
         {
@@ -128,7 +129,7 @@ export const HistogramChart: FC<HistogramChartProps> = ({
       },
       yAxis: {...buildValueAxis(tokens), show: axis?.y !== false},
     }
-  }, [axis, binCount, texture, tokens, valueFormat, values])
+  }, [animation, axis, binCount, texture, tokens, valueFormat, values])
 
   return (
     <ChartShell

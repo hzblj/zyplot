@@ -13,6 +13,7 @@
 		"@hzblj/zyplot": "workspace:*",
 		"@tailwindcss/postcss": "^4.3.2",
 		"@zyplot/core-tailwind-config": "workspace:*",
+		"@zyplot/feature-charts": "workspace:*",
 		"@zyplot/feature-website": "workspace:*",
 		"next": "16.2.12",
 		"react": "19.2.0",

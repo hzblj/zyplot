@@ -54,6 +54,7 @@ const toSunburstData = (
  * deep a taxonomy goes, worse at comparing sizes, and it degrades past three rings.
  */
 export const SunburstChart: FC<SunburstChartProps> = ({
+  animation,
   className,
   format,
   height,
@@ -70,7 +71,7 @@ export const SunburstChart: FC<SunburstChartProps> = ({
     }
 
     return {
-      ...buildChartBaseOption(tokens, texture),
+      ...buildChartBaseOption(tokens, texture, animation),
       series: [
         {
           data: toSunburstData(tokens, nodes),
@@ -104,7 +105,7 @@ export const SunburstChart: FC<SunburstChartProps> = ({
         trigger: 'item',
       },
     }
-  }, [format, nodes, texture, tokens])
+  }, [animation, format, nodes, texture, tokens])
 
   return (
     <ChartShell

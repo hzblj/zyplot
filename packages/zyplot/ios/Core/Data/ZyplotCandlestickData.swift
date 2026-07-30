@@ -29,8 +29,6 @@ struct ZyplotCandlestickStyle: Codable {
   var volumeHeightRatio: Double?
   var volumeUpColor: String?
   var wickWidth: Double?
-
   var resolvedCandleRadius: Double { candleRadius ?? 0 }
-  /// Rounded bodies want rounded wick caps too, or the wick reads as a cut-off stub.
   var wickCap: CGLineCap { resolvedCandleRadius > 0 ? .round : .butt }
 }

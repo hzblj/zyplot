@@ -58,7 +58,6 @@ struct ZyplotConfiguration: Codable {
   var yLabel: String?
   var interaction: ZyplotInteractionOptions?
   var style: ZyplotCandlestickStyle?
-
   static let empty = ZyplotConfiguration(type: "line")
 
   init(type: String) {

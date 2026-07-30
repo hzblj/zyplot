@@ -20,9 +20,19 @@ import com.hzblj.zyplot.core.presentation.PlotStyle
 import com.hzblj.zyplot.core.presentation.SeriesStyle
 import org.json.JSONObject
 
-class ChartConfiguration(raw: String, isSystemDark: Boolean = false) {
-  private val json = runCatching { JSONObject(raw) }
-    .getOrElse { JSONObject("""{"type":"line"}""") }
+private fun parsedConfiguration(raw: String): JSONObject =
+  runCatching { JSONObject(raw) }.getOrElse { JSONObject("""{"type":"line"}""") }
+
+class ChartConfiguration internal constructor(
+  private val json: JSONObject,
+  private val isSystemDark: Boolean,
+  private val frame: MorphFrame?,
+) {
+  constructor(raw: String, isSystemDark: Boolean = false) : this(
+    parsedConfiguration(raw),
+    isSystemDark,
+    null,
+  )
 
   val type: String = json.optString("type", "line")
   val accessibilityLabel: String = json.optString("accessibilityLabel", "Chart")
@@ -46,7 +56,7 @@ class ChartConfiguration(raw: String, isSystemDark: Boolean = false) {
   val interaction = InteractionOptions.from(json.optJSONObject("interaction"))
   val plot = PlotStyle.from(json.optJSONObject("plot"))
   val xAxis = AxisOptions.from(json.optJSONObject("xAxis"))
-  val yAxis = AxisOptions.from(json.optJSONObject("yAxis"))
+  val yAxis = frame?.yAxis ?: AxisOptions.from(json.optJSONObject("yAxis"))
 
   val xAxisLabel: String? = xAxis.label ?: json.nullableString("xLabel")
   val yAxisLabel: String? = yAxis.label ?: json.nullableString("yLabel")
@@ -62,8 +72,8 @@ class ChartConfiguration(raw: String, isSystemDark: Boolean = false) {
   val overlayAxisGutter: Float =
     overlayGutter(overlaysYAxis, yAxisVisible, yAxis.tickValues, yAxisFormat)
 
-  val annotations: List<ChartAnnotation> =
-    json.optJSONArray("annotations").objects().map(ChartAnnotation::from)
+  val annotations: List<ChartAnnotation> = frame?.annotations
+    ?: json.optJSONArray("annotations").objects().map(ChartAnnotation::from)
   val seriesStyles: Map<String, SeriesStyle> = json.readSeriesStyles()
   val candlestickStyle = CandlestickStyle.from(json.optJSONObject("style"))
   val showVolume = json.optBoolean("showVolume", false)
@@ -72,7 +82,7 @@ class ChartConfiguration(raw: String, isSystemDark: Boolean = false) {
   val columns: List<String> = json.optJSONArray("columns").strings()
   val rowLabels: List<String> = json.optJSONArray("rowLabels").strings()
   val values: List<Double> = json.optJSONArray("values").doubles()
-  val series: List<ChartSeries> = json.readSeries()
+  val series: List<ChartSeries> = frame?.series ?: json.readSeries()
   val data: List<ChartDatum> = json.readData()
   val scatterSeries: List<ScatterSeries> = json.readScatterSeries()
 
@@ -139,14 +149,8 @@ class ChartConfiguration(raw: String, isSystemDark: Boolean = false) {
   val gridColor: Color = json.themeColor("grid", "#e4e4e7")
   val trackColor: Color = json.themeColor("track", "#f4f4f5")
 
-  /** The chart's own fill, behind the plot. Null leaves whatever is under the view. */
   val backgroundColor: Color? = json.themeColorOrNull("background")
 
-  /**
-   * The family named by `theme.typography.fontFamily`, resolved to a [FontFamily] the
-   * first time a chart is drawn. Resolution needs an `AssetManager`, which only the
-   * composable has, so [ChartCanvas] sets it — see `fontFamilyName`.
-   */
   val fontFamilyName: String? = json.themeFontFamily()
 
   var fontFamily: FontFamily? = null
@@ -172,20 +176,14 @@ class ChartConfiguration(raw: String, isSystemDark: Boolean = false) {
   val labelColor: Color = json.themeColorOrNull("label")
     ?: if (isDark) Color(0xFFA1A1AA) else Color(0xFF71717A)
 
-  /** Tick marks. Compose draws no domain line, so the ticks are what `axis` colours. */
   val axisColor: Color = json.themeColorOrNull("axis")
     ?: if (isDark) Color(0xFF52525B) else Color(0xFFA1A1AA)
 
-  /** The tooltip card's fill. */
   val surfaceColor: Color = json.themeColorOrNull("surface")
     ?: if (isDark) Color(0xE6222222) else Color(0xF2FFFFFF)
 
   val contentColor: Color = if (isDark) Color(0xFFFAFAFA) else Color(0xFF18181B)
 
-  /**
-   * Every piece of text a chart draws goes through here, so naming a family in the
-   * theme reaches all of it — axis labels, titles, the gauge reading, annotations.
-   */
   fun textStyle(
     fontSize: TextUnit,
     color: Color = labelColor,
@@ -211,6 +209,12 @@ class ChartConfiguration(raw: String, isSystemDark: Boolean = false) {
 
   fun dimming(id: String): Float =
     if (emphasisId.isNullOrEmpty() || emphasisId == id) 1f else interaction.dimOpacity
+
+  internal fun framed(frame: MorphFrame): ChartConfiguration =
+    ChartConfiguration(json, isSystemDark, frame).also {
+      it.fontFamily = fontFamily
+      it.measuredYGutter = measuredYGutter
+    }
 
   fun valueExtent(values: List<Double>): Pair<Double, Double> {
     val minimum = values.minOrNull() ?: 0.0

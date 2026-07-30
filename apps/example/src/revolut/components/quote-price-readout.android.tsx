@@ -1,6 +1,6 @@
 import {Column, Row, Spacer} from '@expo/ui/jetpack-compose'
 import {background, clip, padding, size} from '@expo/ui/jetpack-compose/modifiers'
-import {quote} from '../data/quote-data'
+import {quote} from '@zyplot/feature-charts/revolut'
 import {quoteLayout, useQuoteTheme} from '../data/quote-theme'
 import type {QuoteReadout} from '../hooks/use-quote-readout'
 import {composeCircle, composeRounded} from './quote-nav-bar.android'
@@ -34,8 +34,7 @@ const MarketSun = () => {
       ]}
       verticalAlignment="center"
     >
-      {/* U+FE0E, as in the nav bar's switch: without it this sun is painted by the emoji
-          font and none of the colour above reaches it. */}
+      {}
       <QuoteText color={color.statusChipText} size={13}>
         ☀︎
       </QuoteText>

@@ -8,10 +8,6 @@ type ChartLegendProps = {
   items: ChartLegendItem[]
 }
 
-/**
- * The legend, in HTML rather than on the canvas. Every chart draws its own, so
- * reach for this only when you need to place it somewhere else yourself.
- */
 export const ChartLegend: FC<ChartLegendProps> = ({className, items}) => (
   <ul className={cn('flex list-none flex-wrap items-center gap-x-4 gap-y-1.5', className)}>
     {items.map(item => (

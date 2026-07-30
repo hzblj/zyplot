@@ -303,17 +303,8 @@ export const borderWidth = {
 } as const
 
 export const iconSize = {lg: 20, md: 16, sm: 13, xl: 28, xs: 11} as const
-
 export const chartHeight = {lg: 320, md: 280, sm: 160} as const
-
-/**
- * How wide a column of content gets before it stops growing, matching the docs site's own
- * reading column. A phone is narrower than this and never sees it; a desktop window is much
- * wider, and a list or a chart stretched across all of it reads as a table, not a screen.
- */
 export const contentWidth = 720
-
-/** The screen-edge inset that centres `contentWidth` in a window wider than it. */
 export const contentInset = (width: number) => Math.max(0, (width - contentWidth) / 2)
 
 export const alpha = (color: string, opacity: number) => {

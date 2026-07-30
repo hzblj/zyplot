@@ -1,6 +1,6 @@
+import {type QuoteTabId, quoteTabs} from '@zyplot/feature-charts/revolut'
 import {useEffect, useRef, useState} from 'react'
 import {Animated, type LayoutRectangle, Pressable, StyleSheet, View} from 'react-native'
-import {type QuoteTabId, quoteTabs} from '../data/quote-data'
 import {useQuoteTheme} from '../data/quote-theme'
 import {QuoteText} from './quote-text'
 
@@ -11,11 +11,6 @@ export type QuoteTabRowProps = {
 
 const SPRING = {damping: 17, mass: 1, stiffness: 210, useNativeDriver: false} as const
 
-/**
- * The pill glides and stretches between the tabs, which is what `matchedGeometryEffect`
- * gives the iOS screen for free. Here the tabs are measured and one pill is moved and
- * resized behind them — a second pill fading in and out would read as a blink, not a move.
- */
 export const QuoteTabRow = ({onSelect, selected}: QuoteTabRowProps) => {
   const {color} = useQuoteTheme()
   const [boxes, setBoxes] = useState<Partial<Record<QuoteTabId, LayoutRectangle>>>({})
@@ -35,7 +30,6 @@ export const QuoteTabRow = ({onSelect, selected}: QuoteTabRowProps) => {
       ]).start()
       return
     }
-    // The first pill is placed, not animated: it has nowhere to have come from.
     isMeasured.current = true
     left.setValue(box.x)
     width.setValue(box.width)

@@ -38,7 +38,6 @@ const FADE = 'motion-safe:transition-opacity motion-safe:duration-300 motion-saf
 
 export const ChartReveal: FC<ChartRevealProps> = ({children, className, isPending, skeleton}) => {
   const hasSettled = useSettledReveal(isPending)
-
   let skeletonState = 'pointer-events-none opacity-0'
   if (isPending) {
     skeletonState = 'opacity-100'

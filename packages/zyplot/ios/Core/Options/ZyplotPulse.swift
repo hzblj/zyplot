@@ -1,7 +1,5 @@
 import Foundation
 
-/// The bloom on a live point. Decodes from `true` as well as from an object, so
-/// `pulse: true` keeps working and `pulse: {duration: 300}` tunes the rhythm.
 struct ZyplotPulse: Codable {
   var color: String?
   var duration: Double?

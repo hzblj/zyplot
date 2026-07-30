@@ -1,8 +1,5 @@
 import Foundation
 
-/// The curves a reveal can follow, evaluated as plain math rather than as a SwiftUI
-/// `Animation`: the reveal drives its own clock through `TimelineView`, so it needs the
-/// progress at a given fraction, not an animation to hand to the layout system.
 enum ZyplotEasing: String {
   case easeIn = "ease-in"
   case easeInOut = "ease-in-out"

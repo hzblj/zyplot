@@ -14,11 +14,6 @@ export type QuotePageViewProps = {
   pages: readonly QuotePage[]
 }
 
-/**
- * Native pager (`UIPageViewController` / `ViewPager2`) behind the quote tabs. Swiping is
- * turned off while the chart is scrubbed, otherwise the pager's own pan recognizer would
- * swallow the horizontal drag the chart needs.
- */
 export const QuotePageView = ({index, isScrubbing, onIndexChange, pages}: QuotePageViewProps) => {
   const pager = useRef<PagerView>(null)
   const page = useRef(index)

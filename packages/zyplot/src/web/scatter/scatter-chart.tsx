@@ -53,6 +53,7 @@ const symbolSizeFor = (maxSize: number) => (value: number[]) => {
  * tellable apart. Past three, split it into small multiples.
  */
 export const ScatterChart: FC<ScatterChartProps> = ({
+  animation,
   axis,
   className,
   height,
@@ -76,7 +77,7 @@ export const ScatterChart: FC<ScatterChartProps> = ({
     const maxSize = Math.max(0, ...plotted.flatMap(item => item.points.map(point => point.size ?? 0)))
 
     return {
-      ...buildChartBaseOption(tokens, texture),
+      ...buildChartBaseOption(tokens, texture, animation),
       grid: buildChartGrid(),
       series: plotted.map((item, index) => ({
         data: item.points.map(point => [point.x, point.y, point.size ?? 0, point.label ?? '']),
@@ -120,7 +121,7 @@ export const ScatterChart: FC<ScatterChartProps> = ({
       },
       yAxis: {...buildValueAxis(tokens, yFormat), show: axis?.y !== false},
     }
-  }, [axis, plotted, texture, tokens, xFormat, xLabel, yFormat, yLabel])
+  }, [animation, axis, plotted, texture, tokens, xFormat, xLabel, yFormat, yLabel])
 
   const legend = useMemo(() => {
     if (!tokens) {

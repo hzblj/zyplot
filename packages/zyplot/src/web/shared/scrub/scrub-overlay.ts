@@ -2,6 +2,7 @@ import type {EChartsType} from 'echarts/core'
 import {graphic} from 'echarts/core'
 import {isHiddenAnnotation} from '../../../shared/annotation-views'
 import {fadeChartColor} from '../color'
+import {CROSSHAIR_LABEL_LIFT, CROSSHAIR_LABEL_SIZE} from '../option'
 import type {
   ChartCrosshairMode,
   ChartCrosshairStyle,
@@ -12,10 +13,6 @@ import type {
 } from '../types'
 import {type ChartPlotRect, slotWidth} from './scrub-geometry'
 
-/**
- * One slot's reading. `value` is what a crosshair and a line marker follow; `high` and
- * `low` are the band a mark occupies, which is what a candle needs.
- */
 export type ChartScrubMark = {
   category?: string
   high?: number
@@ -23,26 +20,26 @@ export type ChartScrubMark = {
   value: number | null
 }
 
-/** Where the read mark is: along a stroke, or a mark of its own the chart already lights. */
 export type ChartMarkerTarget = 'line' | 'mark'
 
 export type ScrubOverlayStyle = {
-  /** The crosshair's colour when `crosshairStyle` gives none. */
   axisColor: string
-  /** The read series' colour: what a glow blooms in unless told otherwise. */
   color: string
   crosshair?: ChartCrosshairMode
   crosshairStyle?: ChartCrosshairStyle
   isSmooth?: boolean
   marker?: ChartSelectionMarker
   markerTarget: ChartMarkerTarget
-  /** The surface behind a badge's glyph. */
   surfaceColor: string
   strokeWidth: number
+  transition?: {duration: number; easing: OverlayEasing}
 }
+
+export type OverlayEasing = 'cubicIn' | 'cubicInOut' | 'cubicOut' | 'elasticOut' | 'linear'
 
 export type ScrubOverlayInput = {
   annotations: readonly NativeChartAnnotation[]
+  isScrubbing?: boolean
   marks: readonly ChartScrubMark[]
   plot: ChartPlotRect
   style: ScrubOverlayStyle
@@ -53,6 +50,8 @@ const DEFAULT_POINT_SIZE = 8
 const DEFAULT_BADGE_SIZE = 18
 const DEFAULT_SPAN = 2
 const FRONT_Z = 20
+/** Over the crosshair and the marks, so a rule reads as starting under its badge, not through it. */
+const BADGE_Z = FRONT_Z + 2
 
 type Timers = Set<number>
 
@@ -67,16 +66,17 @@ const glowStyle = (glow: ChartGlow | undefined, fallback: string) => {
   }
 }
 
-/**
- * A ring that blooms out of a point and rests before doing it again. The shape's radius
- * is animated rather than the element's scale, so it stays centred on the point without
- * a transform origin to keep in step.
- */
-const startPulse = (ring: InstanceType<typeof graphic.Circle>, radius: number, pulse: ChartPulse, timers: Timers) => {
+const startPulse = (
+  ring: InstanceType<typeof graphic.Circle>,
+  radius: number,
+  pulse: ChartPulse,
+  timers: Timers,
+  fade = 1
+) => {
   const duration = pulse.duration ?? PULSE.duration
   const interval = pulse.interval ?? PULSE.interval
   const scale = pulse.scale ?? PULSE.scale
-  const opacity = pulse.opacity ?? PULSE.opacity
+  const opacity = (pulse.opacity ?? PULSE.opacity) * fade
 
   const bloom = () => {
     ring.stopAnimation()
@@ -100,6 +100,15 @@ const startPulse = (ring: InstanceType<typeof graphic.Circle>, radius: number, p
   bloom()
 }
 
+const annotationFade = (scrubOpacity: number | undefined, isScrubbing: boolean | undefined): number =>
+  isScrubbing ? (scrubOpacity ?? 1) : 1
+
+const pinnedLabelCentre = (centre: number, labelWidth: number, extent: number): number => {
+  const half = labelWidth / 2
+
+  return Math.min(Math.max(centre, half), Math.max(half, extent - half))
+}
+
 const pixelAt = (instance: EChartsType, index: number, value: number): number[] | null => {
   const point = instance.convertToPixel({seriesIndex: 0}, [index, value])
   if (!Array.isArray(point) || point.some(part => !Number.isFinite(part))) {
@@ -109,15 +118,6 @@ const pixelAt = (instance: EChartsType, index: number, value: number): number[] 
   return point as number[]
 }
 
-/**
- * Everything drawn over the plot that ECharts has no option for: the crosshair, the lit
- * stretch of line under the pointer and its bloom, and the points, halos and pulses an
- * annotation asks for.
- *
- * Two layers, because they change at different rates. The annotation layer is rebuilt
- * only when the chart lays out — a pulse would restart on every pointer move otherwise —
- * and the selection layer on every move.
- */
 export const createScrubOverlay = (instance: EChartsType) => {
   const marks = new graphic.Group({silent: true})
   const decorations = new graphic.Group({silent: true})
@@ -133,7 +133,36 @@ export const createScrubOverlay = (instance: EChartsType) => {
     timers.clear()
   }
 
-  const drawPoint = (item: Extract<NativeChartAnnotation, {type: 'point'}>, plot: ChartPlotRect) => {
+  const placed = new Map<string, {cx: number; cy: number; plot: string}>()
+  const plotKey = (plot: ChartPlotRect) => `${plot.x}|${plot.y}|${plot.width}|${plot.height}`
+
+  const travelling = (id: string, cx: number, cy: number, plot: ChartPlotRect, style: ScrubOverlayStyle) => {
+    const group = new graphic.Group({silent: true})
+    decorations.add(group)
+    const from = placed.get(id)
+    const key = plotKey(plot)
+    placed.set(id, {cx, cy, plot: key})
+
+    const travel = style.transition
+    if (!travel || travel.duration <= 0 || !from || from.plot !== key) {
+      return group
+    }
+    if (from.cx === cx && from.cy === cy) {
+      return group
+    }
+    group.x = from.cx - cx
+    group.y = from.cy - cy
+    group.animateTo({x: 0, y: 0}, {duration: travel.duration, easing: travel.easing})
+
+    return group
+  }
+
+  const drawPoint = (
+    item: Extract<NativeChartAnnotation, {type: 'point'}>,
+    plot: ChartPlotRect,
+    style: ScrubOverlayStyle,
+    fade: number
+  ) => {
     const point = instance.convertToPixel({seriesIndex: 0}, [item.x as number, item.y])
     if (!Array.isArray(point) || point.some(part => !Number.isFinite(part))) {
       return
@@ -146,15 +175,15 @@ export const createScrubOverlay = (instance: EChartsType) => {
 
     const color = item.color ?? '#ffffff'
     const radius = (item.size ?? DEFAULT_POINT_SIZE) / 2
-    /** The point's resting ring: its halo when it has one, otherwise the dot itself. */
     const ringRadius = (item.halo?.size ?? item.size ?? DEFAULT_POINT_SIZE) / 2
+    const target = travelling(item.id, cx, cy, plot, style)
 
     if (item.halo) {
-      decorations.add(
+      target.add(
         new graphic.Circle({
           shape: {cx, cy, r: ringRadius},
           silent: true,
-          style: {fill: fadeChartColor(item.halo.color ?? color, item.halo.opacity ?? 1)},
+          style: {fill: fadeChartColor(item.halo.color ?? color, item.halo.opacity ?? 1), opacity: fade},
           z: FRONT_Z,
         })
       )
@@ -163,8 +192,6 @@ export const createScrubOverlay = (instance: EChartsType) => {
     if (item.pulse) {
       const pulse = item.pulse === true ? {} : item.pulse
       const ring = new graphic.Circle({
-        // Blooming from the resting ring rather than from the dot: a bloom that starts
-        // inside the halo spends most of its travel underneath it and never reads.
         shape: {cx, cy, r: ringRadius},
         silent: true,
         style: {
@@ -174,15 +201,15 @@ export const createScrubOverlay = (instance: EChartsType) => {
         },
         z: FRONT_Z,
       })
-      decorations.add(ring)
-      startPulse(ring, ringRadius, pulse, timers)
+      target.add(ring)
+      startPulse(ring, ringRadius, pulse, timers, fade)
     }
 
-    decorations.add(
+    target.add(
       new graphic.Circle({
         shape: {cx, cy, r: radius},
         silent: true,
-        style: {fill: color, ...glowStyle(item.glow, color)},
+        style: {fill: color, opacity: fade, ...glowStyle(item.glow, color)},
         z: FRONT_Z,
       })
     )
@@ -191,7 +218,8 @@ export const createScrubOverlay = (instance: EChartsType) => {
   const drawBadge = (
     item: Extract<NativeChartAnnotation, {type: 'line'}>,
     plot: ChartPlotRect,
-    style: ScrubOverlayStyle
+    style: ScrubOverlayStyle,
+    fade: number
   ) => {
     if (!item.badge) {
       return
@@ -204,12 +232,17 @@ export const createScrubOverlay = (instance: EChartsType) => {
     }
 
     const size = item.size ?? DEFAULT_BADGE_SIZE
-    const cx = item.axis === 'x' ? pixel : plot.x + plot.width
-    const cy = item.axis === 'x' ? plot.y : pixel
+    // Held a radius inside the plot edge, the way iOS and Android hold it: centred on the edge
+    // itself, half the circle would fall outside the canvas and the glyph would read as clipped.
+    const cx = item.axis === 'x' ? pixel : plot.x + plot.width - size / 2
+    const cy = item.axis === 'x' ? plot.y + size / 2 : pixel
     const color = item.color ?? style.axisColor
+    const target = travelling(item.id, cx, cy, plot, style)
 
-    decorations.add(new graphic.Circle({shape: {cx, cy, r: size / 2}, silent: true, style: {fill: color}, z: FRONT_Z}))
-    decorations.add(
+    target.add(
+      new graphic.Circle({shape: {cx, cy, r: size / 2}, silent: true, style: {fill: color, opacity: fade}, z: BADGE_Z})
+    )
+    target.add(
       new graphic.Text({
         silent: true,
         style: {
@@ -217,38 +250,37 @@ export const createScrubOverlay = (instance: EChartsType) => {
           fill: style.surfaceColor,
           fontSize: Math.round(size * 0.58),
           fontWeight: 600,
+          opacity: fade,
           text: item.badge,
           verticalAlign: 'middle',
           x: cx,
           y: cy,
         },
-        z: FRONT_Z,
+        z: BADGE_Z,
       })
     )
   }
 
-  /** The annotations the chart draws itself rather than handing to ECharts. */
-  const drawAnnotations = ({annotations, plot, style}: ScrubOverlayInput) => {
+  const drawAnnotations = ({annotations, isScrubbing, plot, style}: ScrubOverlayInput) => {
     clearTimers()
     decorations.removeAll()
 
     for (const item of annotations) {
-      // Hidden ones are measured and reported like the rest; their pixels are the app's.
       if (isHiddenAnnotation(item)) {
         continue
       }
       if (item.type === 'point') {
-        drawPoint(item, plot)
+        drawPoint(item, plot, style, annotationFade(item.scrubOpacity, isScrubbing))
       }
       if (item.type === 'line') {
-        drawBadge(item, plot, style)
+        drawBadge(item, plot, style, annotationFade(item.scrubOpacity, isScrubbing))
       }
     }
 
     zr.refresh()
   }
 
-  const drawCrosshair = (x: number, y: number, plot: ChartPlotRect, style: ScrubOverlayStyle) => {
+  const drawCrosshair = (x: number, y: number, plot: ChartPlotRect, style: ScrubOverlayStyle, index: number) => {
     const mode = style.crosshair ?? 'x'
     if (mode === 'none') {
       return
@@ -280,17 +312,41 @@ export const createScrubOverlay = (instance: EChartsType) => {
         })
       )
     }
+
+    const label = style.crosshairStyle?.labels?.[index]
+    if (label === undefined) {
+      return
+    }
+
+    const size = style.crosshairStyle?.labelSize ?? CROSSHAIR_LABEL_SIZE
+    const text = new graphic.Text({
+      silent: true,
+      style: {
+        align: 'center',
+        fill: style.crosshairStyle?.labelColor ?? style.axisColor,
+        fontSize: size,
+        fontWeight: 500,
+        text: label,
+        verticalAlign: 'top',
+        x,
+        y: Math.max(0, plot.y - CROSSHAIR_LABEL_LIFT - size),
+      },
+      z: FRONT_Z,
+    })
+    const centre = pinnedLabelCentre(x, text.getBoundingRect().width, instance.getWidth())
+    if (centre !== x) {
+      text.attr({style: {x: centre}})
+    }
+    marks.add(text)
   }
 
-  /**
-   * A lit stretch of the line, rather than one more dot on it. The span is drawn over the
-   * dimmed stroke in the marker's colour, blooming in the series' own.
-   */
   const drawSegment = (index: number, input: ScrubOverlayInput, marker: ChartSelectionMarker) => {
-    const span = marker.span ?? DEFAULT_SPAN
+    const isTrail = marker.style === 'trail'
+    const from = isTrail ? 0 : index - (marker.span ?? DEFAULT_SPAN)
+    const to = isTrail ? index : index + (marker.span ?? DEFAULT_SPAN)
     const points: number[][] = []
 
-    for (let step = index - span; step <= index + span; step += 1) {
+    for (let step = from; step <= to; step += 1) {
       const value = input.marks[step]?.value
       if (value === undefined || value === null) {
         continue
@@ -321,13 +377,6 @@ export const createScrubOverlay = (instance: EChartsType) => {
     )
   }
 
-  /**
-   * The bloom behind a mark the chart lights itself, such as a candle.
-   *
-   * A flat fill with a shadow around it reads as a box sitting behind the mark, however
-   * soft its edges are. A radial gradient has no edge to read at all, which is what a light
-   * source behind something looks like.
-   */
   const drawMarkGlow = (index: number, input: ScrubOverlayInput, marker: ChartSelectionMarker) => {
     const mark = input.marks[index]
     const high = mark?.high ?? mark?.value
@@ -362,7 +411,6 @@ export const createScrubOverlay = (instance: EChartsType) => {
     )
   }
 
-  /** The crosshair and the marker, redrawn as the pointer moves. `null` clears them. */
   const drawSelection = (index: number | null, input: ScrubOverlayInput) => {
     marks.removeAll()
 
@@ -370,7 +418,7 @@ export const createScrubOverlay = (instance: EChartsType) => {
     if (index !== null && value !== null && value !== undefined) {
       const point = pixelAt(instance, index, value)
       if (point && point[0] !== undefined && point[1] !== undefined) {
-        drawCrosshair(point[0], point[1], input.plot, input.style)
+        drawCrosshair(point[0], point[1], input.plot, input.style, index)
       }
 
       const marker = input.style.marker

@@ -2,9 +2,11 @@
 
 import type {EChartsType} from 'echarts/core'
 import {useEffect, useRef} from 'react'
+import {chartEasing} from '../option'
 import type {
   ChartInteractionEvent,
   ChartInteractionPhase,
+  NativeChartAnimation,
   NativeChartAnnotation,
   NativeChartInteraction,
 } from '../types'
@@ -17,26 +19,17 @@ import {
   type ScrubOverlayStyle,
 } from './scrub-overlay'
 
-/** What a chart tells the pointer layer about the marks it drew. */
 export type ChartScrubConfig = {
-  /**
-   * The chart's own annotation option, rebuilt when a scrub starts and ends so an
-   * annotation that asked to step back while a mark is read can.
-   */
+  animation?: NativeChartAnimation
   annotationOption?: (isScrubbing: boolean) => Record<string, unknown>
-  /** Read for their geometry, and for the parts the overlay draws rather than ECharts. */
   annotations?: readonly NativeChartAnnotation[]
-  /** The read series' colour: what a glow blooms in unless told otherwise. */
   color: string
   interaction?: NativeChartInteraction
   isSmooth?: boolean
-  /** One entry per slot, in data order. */
   marks: readonly ChartScrubMark[]
   markerTarget: ChartMarkerTarget
-  /** The series the dim and annotation patches apply to. */
   seriesId: string
   strokeWidth: number
-  /** Token colours the overlay falls back to. */
   tokens: {axis: string; surface: string}
 }
 
@@ -61,16 +54,15 @@ const overlayStyle = (config: ChartScrubConfig): ScrubOverlayStyle => ({
   markerTarget: config.markerTarget,
   strokeWidth: config.strokeWidth,
   surfaceColor: config.tokens.surface,
+  transition: {
+    duration:
+      config.animation?.enabled === false || config.animation?.updates === false
+        ? 0
+        : (config.animation?.duration ?? 320),
+    easing: chartEasing(config.animation?.easing),
+  },
 })
 
-/**
- * The pointer over a plot, reported as the same scrub the native renderers do: `'began'`,
- * `'changed'` and `'ended'` around one gesture, the datum's index with every one of them,
- * and the plot's box on `'layout'` so an app can place its own views over the chart.
- *
- * It also draws what a scrub looks like — the crosshair, the lit mark, the dimmed rest —
- * because the chart, not the app, is where that belongs.
- */
 export const useChartScrubLayer = (
   instance: EChartsType | null,
   layoutVersion: number,
@@ -81,6 +73,7 @@ export const useChartScrubLayer = (
   const emitRef = useRef(onInteraction)
   const selectedRef = useRef<number | null>(null)
   const overlayRef = useRef<ScrubOverlay | null>(null)
+  const patchRef = useRef<((isScrubbing: boolean) => void) | null>(null)
 
   configRef.current = config
   emitRef.current = onInteraction
@@ -96,20 +89,22 @@ export const useChartScrubLayer = (
     let frame: number | null = null
     let pending: {x: number; y: number} | null = null
 
-    const drawn = () => {
+    const drawn = (isScrubbing: boolean) => {
       const current = configRef.current
       const plot = current ? readPlotRect(instance) : null
       if (!current || !plot) {
         return null
       }
 
-      return {annotations: current.annotations ?? [], marks: current.marks, plot, style: overlayStyle(current)}
+      return {
+        annotations: current.annotations ?? [],
+        isScrubbing,
+        marks: current.marks,
+        plot,
+        style: overlayStyle(current),
+      }
     }
 
-    /**
-     * How the plot reads while one mark does: the rest of the data steps back, and any
-     * annotation that asked to comes with it. Twice a gesture, not once a frame.
-     */
     const patchScrubState = (isScrubbing: boolean) => {
       const current = configRef.current
       if (!current) {
@@ -129,6 +124,8 @@ export const useChartScrubLayer = (
       }
     }
 
+    patchRef.current = patchScrubState
+
     const select = (index: number | null, point: {x: number; y: number} | null) => {
       const current = configRef.current
       const previous = selectedRef.current
@@ -141,9 +138,10 @@ export const useChartScrubLayer = (
           return
         }
         selectedRef.current = null
-        const layer = drawn()
+        const layer = drawn(false)
         if (layer) {
           overlay.drawSelection(null, layer)
+          overlay.drawAnnotations(layer)
         }
         if (current.markerTarget === 'mark') {
           instance.dispatchAction({seriesId: current.seriesId, type: 'downplay'})
@@ -153,24 +151,24 @@ export const useChartScrubLayer = (
         return
       }
 
-      if (previous === null) {
-        patchScrubState(true)
-      }
       if (index !== previous) {
         selectedRef.current = index
-        const layer = drawn()
+        const layer = drawn(true)
+        if (previous === null) {
+          patchScrubState(true)
+          if (layer) {
+            overlay.drawAnnotations(layer)
+          }
+        }
         if (layer) {
           overlay.drawSelection(index, layer)
         }
         if (current.markerTarget === 'mark') {
-          // Downplay first: highlight adds to the set, so every mark the pointer passed
-          // would otherwise stay lit behind it.
           instance.dispatchAction({seriesId: current.seriesId, type: 'downplay'})
           instance.dispatchAction({dataIndex: index, seriesId: current.seriesId, type: 'highlight'})
         }
       }
 
-      // Reported in the chart's own space, the one an app's overlay is positioned in.
       const offset = chartRootOffset(instance)
       const phase: ChartInteractionPhase = previous === null ? 'began' : 'changed'
       emitRef.current?.({
@@ -227,13 +225,13 @@ export const useChartScrubLayer = (
       }
       selectedRef.current = null
       overlayRef.current = null
+      patchRef.current = null
       overlay.dispose()
     }
   }, [instance, isActive])
 
   useEffect(() => {
     const overlay = overlayRef.current
-    // Nothing has been measured before the first option is applied: no grid, no geometry.
     if (!instance || !config || !overlay || layoutVersion === 0) {
       return
     }
@@ -245,12 +243,17 @@ export const useChartScrubLayer = (
 
     const layer = {
       annotations: config.annotations ?? [],
+      isScrubbing: selectedRef.current !== null,
       marks: config.marks,
       plot,
       style: overlayStyle(config),
     }
     overlay.drawAnnotations(layer)
     overlay.drawSelection(selectedRef.current, layer)
+
+    if (selectedRef.current !== null) {
+      patchRef.current?.(true)
+    }
 
     emitRef.current?.({
       geometry: chartGeometryEvent(instance, config.annotations ?? [], plot),

@@ -10,7 +10,6 @@ import type {ChartPlatform} from '../types'
 import {usePreference} from '../use-preference'
 
 const styles = docsStyles()
-
 const VIEWS = ['preview', 'code'] as const
 const WEB_ONLY = ['web'] as const satisfies readonly ChartPlatform[]
 
@@ -86,7 +85,6 @@ export const Example = ({
 
       {tab === 'code' ? (
         highlighted ? (
-          /* Shiki output, generated at build time from source strings in this repo. */
           <div className={styles.exampleCode()} dangerouslySetInnerHTML={{__html: highlighted}} />
         ) : (
           <pre className={styles.exampleCode()}>

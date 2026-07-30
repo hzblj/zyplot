@@ -8,20 +8,12 @@ export type ChartReading = {
 }
 
 /**
- * The last reading a series actually has, and the category it sits on.
- *
- * A series is often shorter than its axis on purpose — a trading session still in
- * progress, a forecast that has not started — so its last *slot* is not its last
- * reading. This walks back to where the data really ends, which is where a "now"
- * marker belongs and what the native renderers stop a scrub at.
- *
- * `null` when the series has no readings at all.
+ * The last reading a series actually has, and the category it sits on. A series is often
+ * shorter than its axis on purpose — a session still in progress, a forecast that has not
+ * started — so this walks back to where the data really ends. `null` when it has none.
  *
  * @example
  * const live = useLastReading(range.categories, range.values)
- * const annotations = live
- *   ? [annotation.point({id: 'live', pulse: true, x: live.category, y: live.value})]
- *   : []
  */
 export const useLastReading = (
   categories: readonly string[],

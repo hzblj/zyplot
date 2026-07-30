@@ -1,6 +1,12 @@
-// The bare import resolves here on the web anyway; the subpath is what types it as the web
-// API in a project that also has the native one.
 import {Chart} from '@hzblj/zyplot/web'
+import {
+  type QuoteRangeId,
+  type QuoteTabId,
+  quoteChartStyle,
+  quoteRange,
+  quoteTabs,
+  RevolutChart,
+} from '@zyplot/feature-charts/revolut'
 import {useRouter} from 'expo-router'
 import {useState} from 'react'
 import {StyleSheet, View} from 'react-native'
@@ -12,9 +18,6 @@ import {QuotePageScroll} from './components/quote-page-scroll'
 import {QuotePriceReadout} from './components/quote-price-readout'
 import {QuoteRangeSelector} from './components/quote-range-selector'
 import {QuoteTabRow} from './components/quote-tab-row'
-import {RevolutChart} from './components/revolut-chart'
-import {quoteChartStyle} from './components/revolut-chart-style'
-import {type QuoteRangeId, type QuoteTabId, quoteRange, quoteTabs} from './data/quote-data'
 import {quoteLayout, useQuoteTheme} from './data/quote-theme'
 import {useChartPlaceholder} from './hooks/use-chart-placeholder'
 import {useQuoteReadout} from './hooks/use-quote-readout'
@@ -34,14 +37,10 @@ export const RevolutScreen = () => {
 
   return (
     <View style={[styles.screen, {backgroundColor: color.background, paddingTop: Math.max(insets.top, TOP)}]}>
-      {/* The bar runs the full width of the window; what sits in it stops at the column. */}
+      {}
       <View style={styles.bar}>
         <View style={[styles.column, styles.header]}>
-          <QuoteNavBar
-            // Straight into the screen — a shared link, a reload — leaves nothing to go back
-            // to, and a button that does nothing at all is worse than one that goes home.
-            onBack={() => (router.canGoBack() ? router.back() : router.replace('/'))}
-          />
+          <QuoteNavBar onBack={() => (router.canGoBack() ? router.back() : router.replace('/'))} />
           <QuoteSymbolHeader />
           <QuoteTabRow onSelect={setTabId} selected={tabId} />
         </View>
@@ -60,13 +59,14 @@ export const RevolutScreen = () => {
                 </View>
 
                 <View style={styles.chart}>
-                  {/* The theme a native chart takes per chart; here the provider carries it. */}
+                  {}
                   <Chart.Provider colorMode={scheme} theme={quoteChartStyle(scheme).theme}>
                     <RevolutChart
                       isCandlestick={isCandlestick}
                       isLoading={isLoading}
                       onInteraction={readout.onInteraction}
                       range={range}
+                      scheme={scheme}
                     />
                   </Chart.Provider>
                   <QuoteChartOverlay

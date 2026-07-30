@@ -20,7 +20,6 @@ type NavGroup = {
   links: [href: string, label: string][]
 }
 
-/** What a reader needs before they can pick a chart at all. */
 const leadingGroups: NavGroup[] = [
   {
     label: 'Getting started',
@@ -61,11 +60,6 @@ const leadingGroups: NavGroup[] = [
   },
 ]
 
-/**
- * Full reference, kept below Charts on purpose. Someone browsing the library is
- * looking for a form, not for the hook that drives a readout — these matter once
- * a chart is already chosen, so they should not sit between the reader and it.
- */
 const trailingGroups: NavGroup[] = [
   {
     label: 'Hooks',
@@ -76,7 +70,10 @@ const trailingGroups: NavGroup[] = [
   },
   {
     label: 'Apps',
-    links: [['/docs/apps/revolut', 'Revolut']],
+    links: [
+      ['/docs/apps/revolut', 'Revolut'],
+      ['/docs/apps/kraken', 'Kraken'],
+    ],
   },
   {
     label: 'More',
@@ -87,10 +84,6 @@ const trailingGroups: NavGroup[] = [
   },
 ]
 
-/**
- * Plain text files, not pages: they are what an agent is pointed at, and the app
- * router would have to render a document to serve them through `Link`.
- */
 const resourceLinks: [href: string, label: string][] = [
   ['/llms.txt', 'llms.txt'],
   ['/llms-full.txt', 'llms-full.txt'],

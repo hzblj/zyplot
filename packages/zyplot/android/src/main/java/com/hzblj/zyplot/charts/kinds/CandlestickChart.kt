@@ -42,8 +42,6 @@ internal fun DrawScope.drawCandlestick(
   val width = plot.width / max(1, items.size)
   val maximumVolume = items.maxOfOrNull { it.optDouble("volume") }
     ?.coerceAtLeast(1.0) ?: 1.0
-  // A traced entrance arrives candle by candle, the way iOS trims the data it draws — the
-  // slot width stays keyed to the full count so nothing re-spaces as they land.
   val landed = if (reveal.isTracing) {
     ceil(items.size * reveal.fraction).toInt().coerceIn(1, items.size)
   } else {
@@ -66,11 +64,9 @@ internal fun DrawScope.drawCandlestick(
       config.candlestickStyle.downColor?.let(::parseColor)
         ?: config.negativeColor
     }
-    // The candle being read is lit with `highlightColor`; the rest fade to `dimOpacity`.
     val isSelected = selectedCategory != null && config.categories.getOrNull(index) == selectedCategory
     val highlight = config.interaction.highlightColor?.let(::parseColor)
     val color = when {
-      // Blended rather than replaced, so the candle's own red or green reads through the lift.
       isSelected && highlight != null -> lerp(base, highlight, config.interaction.highlightBlend)
       selectedCategory != null && !isSelected -> base.copy(alpha = config.interaction.dimOpacity)
       else -> base
@@ -81,7 +77,6 @@ internal fun DrawScope.drawCandlestick(
       Offset(center, high),
       Offset(center, low),
       strokeWidth = config.candlestickStyle.wickWidth * density,
-      // Rounded bodies want rounded wick caps too, or the wick reads as a cut-off stub.
       cap = if (radius > 0f) StrokeCap.Round else StrokeCap.Butt,
     )
     drawRoundRect(

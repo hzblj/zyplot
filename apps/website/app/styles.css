@@ -13,31 +13,16 @@ html.dark {
   color-scheme: dark;
 }
 
-/*
- * Syntax highlighting for the docs code blocks (see CodeBlock in
- * @zyplot/feature-website). Shiki is asked for both Night Owl variants at once:
- * the light colours arrive in each span's inline `style`, the dark ones in
- * `--shiki-dark`. Switching modes therefore only swaps which of the two the
- * stylesheet reads — no second request, no re-highlight, no flash.
- *
- * `!important` is unavoidable: the values being overridden are inline styles.
- */
 .shiki {
   margin: 0;
   background: transparent !important;
 }
 
-/* Let long lines scroll with the block rather than wrap mid-token. */
 .shiki code {
   display: block;
   width: fit-content;
 }
 
-/*
- * Colour is inlined for the default theme, but font style, weight and
- * decoration are always emitted as one variable per theme — so the light half
- * has to be applied too, or Night Owl Light loses its italic comments.
- */
 .shiki span {
   font-style: var(--shiki-light-font-style, normal);
   font-weight: var(--shiki-light-font-weight, inherit);

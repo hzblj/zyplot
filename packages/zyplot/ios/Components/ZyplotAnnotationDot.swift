@@ -16,9 +16,6 @@ struct ZyplotAnnotationDot: View {
     glow?.color(inheriting: color) ?? .clear
   }
 
-  /// The ring's hue only — its own opacity governs how strong it is, so the glow's opacity
-  /// is deliberately not folded in. A pulse with no glow to borrow from falls back to the
-  /// point's own colour rather than to the glow's `.clear`.
   private func ringColor(_ pulse: ZyplotPulse) -> Color {
     (pulse.color ?? glow?.color).map(Color.init(hex:)) ?? color
   }
@@ -34,8 +31,6 @@ struct ZyplotAnnotationDot: View {
   var body: some View {
     ZStack {
       if let pulses {
-        // A bloom then a rest, rather than one long fade: a ring that spends most of the
-        // cycle nearly transparent reads as no animation at all.
         KeyframeAnimator(
           initialValue: ZyplotPulseFrame(opacity: pulses.resolvedOpacity, scale: 1),
           repeating: true

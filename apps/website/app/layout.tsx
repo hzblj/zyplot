@@ -88,7 +88,7 @@ export default function RootLayout({children}: Readonly<{children: ReactNode}>) 
       <head>
         <Script id="theme" strategy="beforeInteractive">
           {
-            'try{const t=localStorage.getItem("zyplot-theme");const d=t==="dark"||(!t&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d)}catch{}'
+            'try{const t=localStorage.getItem("zyplot-theme");const d=t==="dark"||(!t&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d);document.documentElement.classList.toggle("light",!d)}catch{}'
           }
         </Script>
       </head>

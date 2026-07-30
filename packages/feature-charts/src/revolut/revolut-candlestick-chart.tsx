@@ -1,7 +1,7 @@
 import {Chart} from '@hzblj/zyplot'
 import {memo, useMemo} from 'react'
-import type {QuoteRange} from '../data/quote-data'
-import {quoteLayout, useQuoteTheme} from '../data/quote-theme'
+import type {QuoteRange} from './quote-data'
+import {quoteColors, quoteLayout} from './quote-theme'
 import type {RevolutChartProps} from './revolut-chart'
 import {plotInsets, plotStyle, priceAxis, priceFormat, quoteChartStyle} from './revolut-chart-style'
 
@@ -14,28 +14,31 @@ const useCandleDomain = (range: QuoteRange) =>
     [range]
   )
 
-const CandlestickChart = ({isLoading, onInteraction, range}: RevolutChartProps) => {
-  const {color, scheme} = useQuoteTheme()
+const CandlestickChart = ({
+  height = quoteLayout.chartHeight,
+  isLoading,
+  isTooltipVisible = false,
+  onInteraction,
+  range,
+  scheme,
+}: RevolutChartProps) => {
+  const color = quoteColors[scheme]
   const style = quoteChartStyle(scheme)
   const domain = useCandleDomain(range)
 
   return (
     <Chart.Candlestick
       animation={style.arrival}
-      // The event rule and its badge belong to the line chart only.
       annotations={[style.baselineAnnotation(range)]}
       data={range.candles}
       format={{...priceFormat, suffix: ' $'}}
-      height={quoteLayout.chartHeight}
-      // No native tooltip: the reading card is drawn in RN by quote-chart-overlay.tsx. The
-      // marker is what puts the glow on the candle being read.
-      interaction={{...style.scrubbing, marker: style.candleMarker, tooltip: false}}
+      height={height}
+      interaction={{...style.scrubbing, marker: style.candleMarker, tooltip: isTooltipVisible}}
       isLoading={isLoading}
       onInteraction={onInteraction}
       plot={plotStyle}
       style={{
         candleRadius: 2,
-        // Measured off the design: a 14 px body at a 51 px pitch, and a 1 pt wick.
         candleWidth: 0.27,
         downColor: color.down,
         upColor: color.up,

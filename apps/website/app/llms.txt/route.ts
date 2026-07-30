@@ -1,13 +1,7 @@
 import {DOCS_ROUTES, HERO_LEDE} from '@zyplot/feature-website'
 import {REPOSITORY_URL, SITE_NAME, SITE_URL} from '../site'
 
-/**
- * The llmstxt.org index: every docs page, with the description its own metadata
- * already carries. Generated from the route table rather than written by hand, so
- * a page added to the docs cannot be missing from the file agents read.
- */
 export const dynamic = 'force-static'
-
 const entry = ({description, href, title}: {description: string; href: string; title: string}) =>
   `- [${title}](${SITE_URL}${href}): ${description}`
 

@@ -33,7 +33,6 @@ const PAYLOAD_RENAMES: Partial<Record<string, readonly [string, string]>> = {
   treemap: ['data', 'hierarchy'],
 }
 
-/** One of the app's own views, centred on where the chart put the annotation it replaces. */
 const ChartAnnotationView = ({children, x, y}: {children: ReactNode; x: number; y: number}) => {
   const [size, setSize] = useState<{height: number; width: number} | null>(null)
 
@@ -46,9 +45,6 @@ const ChartAnnotationView = ({children, x, y}: {children: ReactNode; x: number; 
     <View
       onLayout={onLayout}
       pointerEvents="none"
-      // Centred on the spot rather than hung off it, because that is where a dot, a badge or
-      // a price belongs. Held back for the frame before it has been measured: laying it out
-      // is what gives it a size to centre by, and it would land off-centre without one.
       style={{
         left: x - (size?.width ?? 0) / 2,
         opacity: size ? 1 : 0,
@@ -90,29 +86,11 @@ export const createChart = <Props extends NativeChartBaseProps>(type: string) =>
 
   NativeChart.displayName = `Chart.${type}.Native`
 
-  /**
-   * Memoised because rendering this component *is* the serialisation: the whole
-   * payload goes through `JSON.stringify` on every pass, data included. A chart
-   * beside a scrubbed readout re-renders on every touch report, and without this it
-   * would restringify every point of the series to arrive at the same string.
-   *
-   * Props have to be stable for that to bite — an object literal built in the
-   * caller's render is a new object every time, and the comparison fails on it.
-   */
   const MemoChart = memo(NativeChart)
 
-  /**
-   * The chart, plus the views the app draws on it. It holds the last layout the chart
-   * reported and lays each `annotationViews` node over the spot its annotation landed on,
-   * which is the whole of what an app used to write by hand around every chart.
-   *
-   * The chart itself stays memoised behind this: the geometry lives out here, so a layout
-   * report moves the app's views without the payload being serialised again.
-   */
   const Chart = ({annotationViews, ...props}: Props & ChartAnnotationViewProps) => {
     const [geometry, setGeometry] = useState<ChartGeometry | null>(null)
     const ids = annotationViewIds(annotationViews)
-    /** Read inside a handler that must stay stable for the memo above to hold. */
     const listener = useRef(props.onInteraction)
     const wantsGeometry = useRef(false)
     listener.current = props.onInteraction
@@ -128,8 +106,6 @@ export const createChart = <Props extends NativeChartBaseProps>(type: string) =>
       listener.current?.(event)
     }, [])
 
-    // A chart nobody listens to reports nothing: the native side only sends what a listener
-    // is attached for, and a scrub with no reader is bridge traffic for nothing.
     const chart = (
       <MemoChart
         {...(props as Props)}

@@ -3952,6 +3952,7 @@ __metadata:
     "@hzblj/biome-config": "npm:^0.2.0"
     "@hzblj/zyplot": "workspace:*"
     "@types/react": "npm:^19.2.0"
+    "@zyplot/feature-charts": "workspace:*"
     expo: "npm:55.0.28"
     expo-build-properties: "npm:~55.0.9"
     expo-constants: "npm:~55.0.17"
@@ -3970,6 +3971,20 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@zyplot/feature-charts@workspace:*, @zyplot/feature-charts@workspace:packages/feature-charts":
+  version: 0.0.0-use.local
+  resolution: "@zyplot/feature-charts@workspace:packages/feature-charts"
+  dependencies:
+    "@biomejs/biome": "npm:2.5.4"
+    "@hzblj/biome-config": "npm:^0.2.0"
+    "@hzblj/zyplot": "workspace:*"
+    "@types/react": "npm:^19.2.0"
+    react: "npm:19.2.0"
+    react-native: "npm:0.83.10"
+    typescript: "npm:^5.9.3"
+  languageName: unknown
+  linkType: soft
+
 "@zyplot/feature-website@workspace:*, @zyplot/feature-website@workspace:packages/feature-website":
   version: 0.0.0-use.local
   resolution: "@zyplot/feature-website@workspace:packages/feature-website"
@@ -3978,6 +3993,7 @@ __metadata:
     "@hzblj/biome-config": "npm:^0.2.0"
     "@hzblj/zyplot": "workspace:*"
     "@types/react": "npm:^19.2.0"
+    "@zyplot/feature-charts": "workspace:*"
     next: "npm:16.2.12"
     react: "npm:19.2.0"
     react-dom: "npm:19.2.0"
@@ -3999,6 +4015,7 @@ __metadata:
     "@types/react": "npm:^19.2.0"
     "@types/react-dom": "npm:^19.2.0"
     "@zyplot/core-tailwind-config": "workspace:*"
+    "@zyplot/feature-charts": "workspace:*"
     "@zyplot/feature-website": "workspace:*"
     next: "npm:16.2.12"
     react: "npm:19.2.0"

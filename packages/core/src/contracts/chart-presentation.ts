@@ -39,6 +39,7 @@ export type ChartAxisOptions = {
   tickCount?: number
   /** Exact ticks, when the reader is looking for specific values. */
   tickValues?: readonly (number | string)[]
+  /** Draws the axis at all. Hiding one takes its grid with it — the rules belong to the scale. */
   visible?: boolean
 }
 

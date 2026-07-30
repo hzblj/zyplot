@@ -1,6 +1,8 @@
 package com.hzblj.zyplot.charts.kinds
 
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
@@ -8,6 +10,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.text.TextMeasurer
 import com.hzblj.zyplot.charts.appendLine
 import com.hzblj.zyplot.charts.drawAxisText
@@ -21,6 +24,8 @@ import com.hzblj.zyplot.charts.reveal.flashed
 import com.hzblj.zyplot.charts.reveal.trimmed
 import com.hzblj.zyplot.core.ChartConfiguration
 import com.hzblj.zyplot.core.parseColor
+import com.hzblj.zyplot.core.presentation.SeriesFill
+import com.hzblj.zyplot.core.presentation.SeriesStyle
 import kotlin.math.max
 
 private const val DEFAULT_HIGHLIGHT_COLOR = "#ffffff"
@@ -61,19 +66,11 @@ internal fun DrawScope.drawLineOrArea(
     val color = reveal
       .flashed(base, entrance?.flashColor)
       .copy(alpha = base.alpha * opacity)
-    // Authored in dp, drawn in pixels.
     val strokeWidth = (style?.strokeWidth ?: 3f) * density
     val dash = style?.dashPattern?.let { PathEffect.dashPathEffect(it.toFloatArray()) }
 
-    if (config.type == "area") {
-      val area = Path().apply {
-        moveTo(points.first().x, plot.bottom)
-        lineTo(points.first().x, points.first().y)
-        appendLine(points, config.isSmooth)
-        lineTo(points.last().x, plot.bottom)
-        close()
-      }
-      drawPath(area, base.copy(alpha = base.alpha * (style?.fillOpacity ?: 0.16f)))
+    if (config.type == "area" || style?.fill != null) {
+      drawSeriesFill(config, points, style, base, minimum, maximum, plot)
     }
 
     if (reveal.isTracing && entrance?.trackColor != null) {
@@ -97,8 +94,16 @@ internal fun DrawScope.drawLineOrArea(
       flashOpacity = entrance?.flashOpacity,
     )
 
-    if (selection != null && marker != null && marker.isSegment && seriesIndex == 0) {
-      drawSegmentHighlight(config, points, selection, marker.span, marker.color, strokeWidth)
+    if (selection != null && marker != null && marker.lightsStroke && seriesIndex == 0) {
+      val reach = max(1, marker.span - 1)
+      drawHighlightWindow(
+        config,
+        points,
+        from = if (marker.isTrail) 0 else selection - reach,
+        to = if (marker.isTrail) selection + 1 else selection + reach + 1,
+        color = parseColor(marker.color ?: DEFAULT_HIGHLIGHT_COLOR),
+        width = strokeWidth,
+      )
     }
 
     if (style?.symbol != null && style.symbol != "none") {
@@ -107,40 +112,71 @@ internal fun DrawScope.drawLineOrArea(
   }
 }
 
-private fun DrawScope.drawSegmentHighlight(
-  config: ChartConfiguration,
-  points: List<Offset>,
-  selection: Int,
-  span: Int,
-  color: String?,
-  strokeWidth: Float,
-) {
-  drawHighlightWindow(
-    config,
-    points,
-    selection,
-    max(1, span - 1),
-    parseColor(color ?: DEFAULT_HIGHLIGHT_COLOR),
-    1f,
-    strokeWidth,
-  )
-}
-
 private fun DrawScope.drawHighlightWindow(
   config: ChartConfiguration,
   points: List<Offset>,
-  selection: Int,
-  reach: Int,
+  from: Int,
+  to: Int,
   color: Color,
-  alpha: Float,
   width: Float,
 ) {
-  val from = (selection - reach).coerceIn(0, points.size)
-  val to = (selection + reach + 1).coerceIn(from, points.size)
-  if (to - from < 2) return
+  val start = from.coerceIn(0, points.size)
+  val end = to.coerceIn(start, points.size)
+  if (end - start < 2) return
   drawPath(
-    linePath(points.subList(from, to), config.isSmooth),
-    color.copy(alpha = alpha),
+    linePath(points.subList(start, end), config.isSmooth),
+    color,
     style = Stroke(width = width, cap = StrokeCap.Round, join = StrokeJoin.Round),
   )
+}
+
+private fun DrawScope.drawSeriesFill(
+  config: ChartConfiguration,
+  points: List<Offset>,
+  style: SeriesStyle?,
+  base: Color,
+  minimum: Double,
+  maximum: Double,
+  plot: Rect,
+) {
+  val fill = style?.fill
+  val floor = fill?.baseline
+    ?.let { normalizedY(it.toDouble(), minimum, maximum, plot) }
+    ?: plot.bottom
+  val area = Path().apply {
+    moveTo(points.first().x, floor)
+    lineTo(points.first().x, points.first().y)
+    appendLine(points, config.isSmooth)
+    lineTo(points.last().x, floor)
+    close()
+  }
+  val paint = base.copy(alpha = base.alpha * (style?.fillOpacity ?: 0.16f))
+
+  if (fill == null || !fill.isDotted) {
+    drawPath(area, paint)
+    return
+  }
+
+  clipPath(area) {
+    drawDotGrid(plot, fill, paint)
+  }
+}
+
+private fun DrawScope.drawDotGrid(plot: Rect, fill: SeriesFill, paint: Color) {
+  val spacing = fill.spacing * density
+  val dotSize = fill.dotSize * density
+  if (spacing <= 0f || plot.width <= 0f || plot.height <= 0f) return
+
+  var y = plot.top
+  while (y <= plot.bottom) {
+    val row = Path()
+    var x = plot.left
+    while (x <= plot.right) {
+      row.addOval(Rect(Offset(x, y) - Offset(dotSize / 2f, dotSize / 2f), Size(dotSize, dotSize)))
+      x += spacing
+    }
+    val depth = ((y - plot.top) / plot.height).coerceIn(0f, 1f)
+    drawPath(row, paint.copy(alpha = paint.alpha * (1f + (fill.fadeTo - 1f) * depth)))
+    y += spacing
+  }
 }

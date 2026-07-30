@@ -3,7 +3,15 @@ import Foundation
 struct ZyplotCrosshairStyle: Codable {
   var color: String?
   var dash: [Double]?
+  var labelColor: String?
+  var labelSize: Double?
+  var labels: [String]?
   var width: Double?
+
+  func label(at index: Int?) -> String? {
+    guard let index, let labels, index >= 0, index < labels.count else { return nil }
+    return labels[index]
+  }
 }
 
 struct ZyplotSelectionMarker: Codable {
@@ -12,8 +20,9 @@ struct ZyplotSelectionMarker: Codable {
   var size: Double?
   var span: Double?
   var style: String?
-
   var isSegment: Bool { style == "segment" }
+  var isTrail: Bool { style == "trail" }
+  var lightsStroke: Bool { isSegment || isTrail }
   var resolvedSpan: Int { Swift.max(1, Int((span ?? 2).rounded())) }
 }
 

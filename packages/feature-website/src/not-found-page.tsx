@@ -10,7 +10,6 @@ import {Wordmark} from './wordmark'
 const styles = marketingStyles()
 const notFound = notFoundStyles()
 
-/** Where a reader who hit a dead link most likely meant to go. */
 const suggestions = [
   ['/docs', 'Documentation', 'The guides, from installation to the native renderers.'],
   ['/docs/charts/line', 'Chart gallery', 'All twenty-one forms, with props and a live preview each.'],

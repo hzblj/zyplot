@@ -27,6 +27,7 @@ export type GaugeChartProps = ChartBaseProps & {
  * When there is no meaningful maximum this is a stat tile, not a gauge.
  */
 export const GaugeChart: FC<GaugeChartProps> = ({
+  animation,
   className,
   format,
   height = 200,
@@ -45,7 +46,7 @@ export const GaugeChart: FC<GaugeChartProps> = ({
     }
 
     return {
-      ...buildChartBaseOption(tokens, texture),
+      ...buildChartBaseOption(tokens, texture, animation),
       series: [
         {
           anchor: {show: false},
@@ -80,7 +81,7 @@ export const GaugeChart: FC<GaugeChartProps> = ({
         },
       ],
     }
-  }, [format, max, min, texture, tokens, value])
+  }, [animation, format, max, min, texture, tokens, value])
 
   return (
     <ChartShell

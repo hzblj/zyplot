@@ -17,9 +17,11 @@ struct ZyplotNativeChart: View {
     if configuration.isLoading == true {
       ZyplotLoadingChart(configuration: configuration)
     } else {
-      ZyplotChartCrossfade(configuration: configuration) { current in
-        ZyplotChartReveal(configuration: current) { revealed, reveal in
-          chart(revealed, reveal: reveal)
+      ZyplotChartCrossfade(configuration: configuration) { faded in
+        ZyplotChartMorph(configuration: faded) { current in
+          ZyplotChartReveal(configuration: current) { revealed, reveal in
+            chart(revealed, reveal: reveal)
+          }
         }
       }
     }

@@ -87,14 +87,10 @@ struct ZyplotChartAxisModifier: ViewModifier {
     configuration.theme?.colors?.grid.map(Color.init(hex:))
   }
 
-  /// The tick marks beside the labels. Swift Charts draws no domain line of its own,
-  /// so the ticks are what `theme.colors.axis` has to colour.
   private var axisColor: Color? {
     configuration.theme?.colors?.axis.map(Color.init(hex:))
   }
 
-  /// `nil` leaves the label at whatever Swift Charts resolves, which is what an axis
-  /// that names neither a size nor a family should keep.
   private func labelFont(_ options: ZyplotAxisOptions?) -> Font? {
     if let size = options?.labelSize {
       return configuration.font(size: size)

@@ -42,7 +42,6 @@ const parseComponent = (raw: string): number => {
 }
 
 const toByte = (channel: number): number => Math.round(Math.min(1, Math.max(0, channel)) * 255)
-
 const toHexPair = (byte: number): string => byte.toString(16).padStart(2, '0')
 
 export const toCanvasColor = (value: string): string => {
@@ -74,14 +73,8 @@ export const toCanvasColor = (value: string): string => {
 }
 
 const clamp = (value: number): number => Math.min(1, Math.max(0, value))
-
-/**
- * `amount` of `towards` mixed into `value`, 0–1. What `highlightBlend` does to the mark
- * being read: at 1 it is the highlight colour, below that its own colour still reads.
- */
 export const blendChartColor = (value: string, towards: string, amount: number): string =>
   color.lerp(clamp(amount), [toCanvasColor(value), toCanvasColor(towards)]) ?? toCanvasColor(value)
 
-/** The same colour at a given alpha, for a glow that is a light source rather than a fill. */
 export const fadeChartColor = (value: string, opacity: number): string =>
   color.modifyAlpha(toCanvasColor(value), clamp(opacity)) ?? toCanvasColor(value)

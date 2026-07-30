@@ -27,7 +27,6 @@ import {docsHrefForPage} from './routes'
 import type {ChartDoc, PropRow} from './types'
 
 const styles = docsStyles()
-
 const categories = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
 const series = [
   {
@@ -57,8 +56,9 @@ const heightProp: PropRow = {
 }
 
 const isLoadingProp: PropRow = {
-  defaultValue: 'false',
-  description: 'Held true while the data is in flight. Shows the matching skeleton, then cross-fades into the plot.',
+  defaultValue: 'unset',
+  description:
+    'Held true while the data is in flight. Shows the matching skeleton, then cross-fades into the plot. Passed false from the first render it also skips the placeholder the first frame would otherwise draw.',
   name: 'isLoading',
   type: 'boolean',
 }
@@ -103,7 +103,7 @@ const textureProp: PropRow = {
 
 const seriesStylesProp: PropRow = {
   description:
-    'Per-series stroke, fill, dash, symbol and glow, keyed by ChartSeries.id. A line draws no symbol per reading unless one is named here — a dot per datum is a mark the reader did not ask for, and the native renderers draw none.',
+    'Per-series stroke, dash, symbol, glow and fill — a wash or a dot grid, closed against the plot floor or a value — keyed by ChartSeries.id. A line draws no symbol per reading unless one is named here: a dot per datum is a mark the reader did not ask for, and the native renderers draw none.',
   name: 'seriesStyles',
   type: 'Record<string, NativeChartSeriesStyle>',
 }
@@ -178,16 +178,19 @@ const emphasisProp: PropRow = {
   type: 'string',
 }
 
-const withBase = (...props: PropRow[]) => [...props, textureProp, ...baseProps]
+const animationProp: PropRow = {
+  description:
+    'Entrance and data-change timing — duration, delay, easing, and enabled to turn both off. No traced reveal here: that needs a line to draw along.',
+  name: 'animation',
+  type: 'NativeChartAnimation',
+}
 
+const withBase = (...props: PropRow[]) => [...props, animationProp, textureProp, ...baseProps]
 const withPlotControls = (...props: PropRow[]) => [...props, axisProp, ...plotProps, textureProp, ...baseProps]
-
-/** Two web forms reserve a different height than the shared 240. */
 const withHeight = (props: PropRow[], defaultValue: string) =>
   props.map(prop => (prop.name === 'height' ? {...prop, defaultValue} : prop))
 
 const everywhere = ['web', 'ios', 'android'] as const
-
 const code = chartExample
 
 const heatCells = Array.from({length: 24}, (_, index) => ({
@@ -1060,19 +1063,8 @@ const chartDocs: ChartDoc[] = [
 ]
 
 const chartGroups = groupCharts(chartDocs)
-
-/** Chart ids in sidebar order, which is grouped rather than declared. */
 const chartIds = chartGroups.flatMap(group => group.charts.map(chart => chart.id))
 
-/**
- * Reading order, and what the pager walks. It matches the sidebar exactly, so
- * "Continue" never jumps somewhere the nav does not put next.
- *
- * The hooks sit after the charts deliberately: they are full reference for a
- * chart you have already chosen, not something to read on the way to choosing
- * one. Everything from `revolut` on is the tail of the nav — an example, then the
- * release history — so the pager ends where the sidebar does.
- */
 const guidePages = [
   'introduction',
   'installation',
@@ -1090,6 +1082,7 @@ const guidePages = [
   'use-chart-scrub',
   'use-last-reading',
   'revolut',
+  'kraken',
   'releases',
   'changelog',
 ]
@@ -1133,6 +1126,12 @@ const guidePageHeadings: Record<string, {id: string; label: string}[]> = {
     {id: 'entry-points', label: 'Entry points'},
   ],
   introduction: [{id: 'getting-started', label: 'Getting started'}],
+  kraken: [
+    {id: 'kraken', label: 'Kraken'},
+    {id: 'kraken-fill', label: 'The dotted fill'},
+    {id: 'kraken-trail', label: 'The trail scrub'},
+    {id: 'kraken-source', label: 'What it uses'},
+  ],
   'loading-states': [
     {id: 'loading-states', label: 'Loading'},
     {id: 'skeleton-props', label: 'Skeleton props'},
@@ -1284,8 +1283,11 @@ export const DocsPage = ({
           </p>
           <PackageInstall />
           <div className={styles.note()}>
-            <strong>No stylesheet import.</strong> Zyplot includes its compiled styles through the JavaScript entry
-            point. Your application does not need Tailwind CSS.
+            <strong>No stylesheet import.</strong> Zyplot includes its compiled styles through the same import that
+            reaches a chart, so there is no CSS path to remember and nothing a tree shake can drop. Your application
+            does not need Tailwind CSS — and if it has its own, ours arrives in the <code>base</code> cascade layer,
+            where it loses to everything your app writes. Two builds of the same utility names would otherwise collide,
+            with the one a chart pulled in coming second.
           </div>
           <h3 id="entry-points">Entry points</h3>
           <p>
@@ -1373,6 +1375,16 @@ export const DocsPage = ({
               },
             ]}
           />
+          <div className={styles.note()}>
+            <strong>The engine is also what animates.</strong> Every ECharts form reads <code>animation</code> — its{' '}
+            <code>duration</code>, <code>delay</code>, <code>easing</code>, and <code>enabled: false</code> to turn the
+            whole thing off — so one animation set on a page is one animation for every chart on it. The two uPlot forms
+            and the meter draw their marks in one pass instead: <code>Chart.Sparkline</code> and{' '}
+            <code>Chart.Meter</code> do not declare the prop, and <code>Chart.TimeSeries</code> accepts it with the rest
+            of the base props and times nothing by it. <code>animation.transition</code> is not read here either: a data
+            change moves the marks that are on both sides and fades the ones that are not, which is a better answer to a
+            changed axis than dissolving the plot, so the web does it whichever name the prop is given.
+          </div>
 
           <h3 id="web-legend">Text stays in the DOM</h3>
           <p>
@@ -1390,8 +1402,10 @@ export const DocsPage = ({
           <div className={styles.note()}>
             <strong>Colors are read off the document.</strong> A canvas takes color as a string, so each chart reads the
             resolved <code>--zyplot-*</code> values from the DOM after mounting and repaints when they change. Until
-            that first read there is nothing honest to paint, so a chart shows its skeleton for a frame even with{' '}
-            <code>isLoading</code> false.
+            that first read there is nothing honest to paint, so a chart that says nothing about <code>isLoading</code>{' '}
+            covers that frame with its placeholder — which is what a server-rendered page wants, markup to paint before
+            hydration. A chart mounted with its data already in hand can say <code>isLoading={'{false}'}</code> and{' '}
+            <Link href="/docs/loading-states">have the plot fade in instead</Link>.
           </div>
         </section>
 
@@ -1580,7 +1594,8 @@ export const Forecast = ({ bands }: ForecastProps) => (
           <PropsTable
             rows={[
               {
-                description: 'Adds glow — a bloom behind the stroke, in the series colour unless told otherwise.',
+                description:
+                  'Adds glow — a bloom behind the stroke, in the series colour unless told otherwise — and fill, the area under a trace: a wash or a grid of dots, closed against the plot floor or against a value.',
                 name: 'seriesStyles',
                 type: 'NativeChartSeriesStyle',
               },
@@ -1591,7 +1606,8 @@ export const Forecast = ({ bands }: ForecastProps) => (
                 type: 'NativeChartAnimation',
               },
               {
-                description: 'Adds crosshairStyle and marker — how the reading under the finger is picked out.',
+                description:
+                  'Adds marker — how the reading under the finger is picked out — and crosshairStyle, including the labels the crosshair carries above the plot.',
                 name: 'interaction',
                 type: 'NativeChartInteraction',
               },
@@ -1611,8 +1627,9 @@ export const Forecast = ({ bands }: ForecastProps) => (
           />
           <div className={styles.note()}>
             <strong>The names are historical.</strong> The vocabulary was built for the platform graphics stacks and
-            landed on the web renderer afterwards, so the types still read <code>Native*</code>. Four fields are still
-            native alone: <code>interaction.haptics</code>, which the web has no honest equivalent for,{' '}
+            landed on the web renderer afterwards, so the types still read <code>Native*</code>. Five fields are still
+            native alone: <code>animation.transition</code>, which the web renderer answers its own way — mark by mark,
+            whichever name it is given — <code>interaction.haptics</code>, which the web has no honest equivalent for,{' '}
             <code>style.candleRadius</code>, which the web candlestick engine cannot round, and{' '}
             <code>style.neutralColor</code> and <code>style.volumeHeightRatio</code> — the web candlestick colours a
             flat session as a rising one and gives the volume histogram a fixed share of the plot.
@@ -1638,6 +1655,25 @@ type ChartHalo = {
   color?: string
   opacity?: number
   size?: number
+}
+
+/** The area under a trace. Opacity stays fillOpacity, so there is one place to set it. */
+type ChartSeriesFill = {
+  /** The value the fill closes against instead of the plot's floor, filling either side of it. */
+  baseline?: number
+  /** One dot's diameter, in points. Default 1. */
+  dotSize?: number
+  /**
+   * How much of its strength the fill still has at the plot's floor, 0–1. Default 1,
+   * which is an even fill. On the web it needs an explicit height: the ramp is baked
+   * into a tile before the chart is measured, and a chart that has not said how tall
+   * it is keeps an even fill rather than guessing at one.
+   */
+  fadeTo?: number
+  /** "dots" | "solid" */
+  pattern?: ChartFillPattern
+  /** Centre-to-centre distance between dots, in points. Default 4. */
+  spacing?: number
 }
 
 type ChartPulse = {
@@ -1683,7 +1719,29 @@ type ChartTransition = 'crossfade' | 'morph'`}</CodeBlock>
               <code>crossfade</code> is the honest one when the axis changed.
             </strong>{' '}
             <code>morph</code> interpolates between the two datasets, which reads as the data moving. If the categories
-            underneath are not the same categories, nothing moved — dissolve instead.
+            underneath are not the same categories, nothing moved — dissolve instead. It is a choice iOS and Android
+            give you: on the web the renderer transitions a data change mark by mark on its own, moving the ones that
+            are on both sides and fading the ones that are not, so neither name changes what you get.
+          </div>
+          <div className={styles.note()}>
+            <strong>A morph needs the two sides to correspond.</strong> Both platforms blend the readings, the pinned
+            domain and the value a rule or a point sits at, and match annotations by <code>id</code> — one that exists
+            on both sides slides, one that does not simply arrives. Where the series count or the reading count differs
+            there is nothing to interpolate, so the new dataset is shown as it is: a screen switching between a day and
+            a year has to sample both into the same number of slots to be morphed between.{' '}
+            <code>animation.duration</code> and <code>animation.easing</code> time it — 320 ms and{' '}
+            <code>ease-in-out</code> by default, and <code>'spring'</code> resolves to that curve, since a transition
+            that overshot would carry the marks past their new values and back. A morph cut short sets off from what is
+            on screen rather than from the dataset the last one was heading for.
+          </div>
+          <div className={styles.note()}>
+            <strong>A fill is drawn by the forms that have an area to fill.</strong> <code>Chart.Line</code> and{' '}
+            <code>Chart.Area</code>, on all three renderers — a clipped dot grid on the SwiftUI and Compose canvases, a
+            repeating canvas pattern on ECharts. Giving a <code>Chart.Line</code> a <code>fill</code> is what paints an
+            area under it, where the fill is decoration; <code>Chart.Area</code> fills by default because there it is
+            the quantity, and a <code>fill</code> only changes its pattern and its baseline. Opacity stays{' '}
+            <code>fillOpacity</code> for both, and a dot grid usually wants more of it than a wash, since most of what
+            it covers stays bare.
           </div>
           <p>
             These are the fields the <Link href="/docs/builders">builders</Link> exist for. <code>reveal.draw</code> and{' '}
@@ -1722,7 +1780,7 @@ type ChartGeometry = {
 
 /** How the mark under the finger is picked out. */
 type ChartSelectionMarker = {
-  /** "point" | "segment" */
+  /** "point" | "segment" | "trail" */
   style?: ChartMarkerStyle
   color?: string
   glow?: ChartGlow
@@ -1735,20 +1793,28 @@ type ChartSelectionMarker = {
 type ChartCrosshairStyle = {
   color?: string
   dash?: number[]
+  /** What to write above the crosshair: one string per slot, in data order. */
+  labels?: string[]
+  /** Defaults to the theme’s label colour. */
+  labelColor?: string
+  /** Point size of the label. Default 13. */
+  labelSize?: number
   width?: number
 }`}</CodeBlock>
           <PropsTable
             rows={[
               {
                 defaultValue: '"point"',
-                description: 'A dot on the mark, or a lit stretch of the line around it.',
+                description:
+                  'A dot on the mark, a lit stretch of the line around it, or a lit stretch from the first reading up to it.',
                 name: 'marker.style',
-                type: '"point" | "segment"',
+                type: '"point" | "segment" | "trail"',
               },
               {defaultValue: '9', description: 'Dot diameter, in points.', name: 'marker.size', type: 'number'},
               {
                 defaultValue: '2',
-                description: 'Data steps either side of the touch.',
+                description:
+                  'Data steps either side of the touch. A trail reaches back to the first datum, so it reads neither this nor size.',
                 name: 'marker.span',
                 type: 'number',
               },
@@ -1756,6 +1822,23 @@ type ChartCrosshairStyle = {
               {defaultValue: '6', description: 'Glow radius, in points.', name: 'glow.radius', type: 'number'},
               {defaultValue: '12', description: 'Halo diameter, in points.', name: 'halo.size', type: 'number'},
               {defaultValue: '1', description: 'Crosshair line width.', name: 'crosshairStyle.width', type: 'number'},
+              {
+                description:
+                  'What the crosshair writes above the plot: one string per slot, in data order, and the chart draws the one for the mark being read. Your words — a time, a date, whatever the reading is called.',
+                name: 'crosshairStyle.labels',
+                type: 'string[]',
+              },
+              {
+                description: 'Colour of that label. Defaults to the theme’s label colour on all three renderers.',
+                name: 'crosshairStyle.labelColor',
+                type: 'string',
+              },
+              {
+                defaultValue: '13',
+                description: 'Point size of the label. Also what the web plot gives up at the top to fit it.',
+                name: 'crosshairStyle.labelSize',
+                type: 'number',
+              },
               {
                 defaultValue: 'false',
                 description:
@@ -1825,6 +1908,18 @@ type ChartCrosshairStyle = {
               },
             ]}
           />
+          <div className={styles.note()}>
+            <strong>The one label the chart draws is the one pinned to the crosshair.</strong> Everything else you put
+            over a plot sits still long enough for <code>onInteraction</code> to place it — a card against a rule, a
+            badge on an annotation. A label that has to move <em>with</em> the line cannot: a position that reaches
+            JavaScript through a bridge and comes back as a re-render is a frame or two behind the line it belongs to,
+            and read together the label visibly drags. So <code>crosshairStyle.labels</code> hands the words to whoever
+            is drawing the line. All three renderers keep the label whole against both edges of the chart, so the first
+            and last readings of a series are worth a full label rather than half of one, and on the web the plot gives
+            up <code>labelSize</code> plus 8px at the top to draw it in — only when labels were given and a crosshair is
+            drawn at all, and whether or not a pointer is over the plot: marks that changed height the moment one
+            arrived would be worse than either.
+          </div>
           <div className={styles.note()}>
             <strong>
               Reach for{' '}
@@ -2336,6 +2431,12 @@ type NativeChartTheme = {
             write — and a root that pins neither falls back to <code>prefers-color-scheme</code>. A project doing either
             needs no chart-specific wiring.
           </p>
+          <div className={styles.note()}>
+            <strong>Light is a state, not the absence of one.</strong> A toggle that only removes <code>.dark</code>{' '}
+            leaves the root pinning nothing, so a reader on a dark OS keeps the dark palette while the rest of the page
+            turns light. Write <code>.light</code> — or <code>data-theme="light"</code> — as the other half of the
+            toggle.
+          </div>
 
           <h3 id="color-modes">Resolution</h3>
           <p>
@@ -2665,12 +2766,14 @@ type ChartCandlestickStyle = {
             list <code>axis</code> alone.
           </p>
           <CodeBlock>{`type ChartAxisOptions = {
+  /** Draws the axis at all. Switching one off takes its grid with it — the rules belong to the scale. */
   visible?: boolean
   label?: string
   /** "auto" | "category" | "linear" | "log" | "time" */
   scale?: ChartAxisScale
   domain?: ChartAxisDomain
   format?: ChartNumberFormat
+  /** The rules across the plot. Turn them off on their own for an axis you still want labelled. */
   grid?: boolean
   gridDash?: number[]
   labelRotation?: number
@@ -2777,7 +2880,11 @@ type ChartTextAnnotation = {
   zoom?: boolean
   /** How far a hovered mark grows. */
   highlightScale?: number
-  /** How far the rest fades while one mark is hovered. */
+  /**
+   * How far the rest fades while one mark is hovered. It reaches the strokes and the marks,
+   * never the area fill under a trace: that is the ground the trace is drawn on, not one of
+   * the things being compared, and greying it dims the page rather than pointing at anything.
+   */
   dimOpacity?: number
   /** A colour the read mark is lifted towards, so it reads as lit rather than as undimmed. */
   highlightColor?: string
@@ -2823,9 +2930,9 @@ type ChartInteractionEvent = {
             <Link href="/docs/native#native-presentation">
               <code>Native*</code>
             </Link>{' '}
-            shapes, which add a traced <code>reveal</code>, a <code>glow</code> and a selection <code>marker</code> on
-            top of what is below — on every entry point, the web one included. The same goes for{' '}
-            <code>annotations</code> and the two axes.
+            shapes, which add a traced <code>reveal</code>, a <code>glow</code>, a patterned <code>fill</code> and a
+            selection <code>marker</code> on top of what is below — on every entry point, the web one included. The same
+            goes for <code>annotations</code> and the two axes.
           </div>
           <CodeBlock>{`type ChartPlotStyle = {
   backgroundColor?: string
@@ -2846,6 +2953,24 @@ type ChartSeriesStyle = {
   /** "circle" | "diamond" | "square" | "triangle" | "none" */
   symbol?: ChartSymbol
   symbolSize?: number
+}
+
+/** On NativeChartSeriesStyle, so every entry point takes it — the web one included. */
+type ChartSeriesFill = {
+  /** Closes the fill against a value instead of the plot's floor, filling either side of it. */
+  baseline?: number
+  /** One dot's diameter, in points. Default 1. */
+  dotSize?: number
+  /**
+   * How much strength the fill still has at the plot's floor, 0–1. Default 1, an even fill.
+   * On the web it needs an explicit height — the ramp is baked into a tile before the chart
+   * is measured, and one that has not said how tall it is keeps an even fill.
+   */
+  fadeTo?: number
+  /** "dots" | "solid" */
+  pattern?: ChartFillPattern
+  /** Centre-to-centre distance between dots, in points. Default 4. */
+  spacing?: number
 }
 
 type ChartAnimation = {
@@ -2886,6 +3011,7 @@ type ChartAnimation = {
   seriesProps,
   // Typed passthroughs for the groups with nothing to get wrong.
   animation,
+  fill,
   format,
   glow,
   halo,
@@ -2899,7 +3025,8 @@ type ChartAnimation = {
             <strong>They are on every entry point.</strong> The builders live in the shared contract, so the same import
             works from <code>@hzblj/zyplot</code>, <code>/web</code>, <code>/ios</code> and <code>/android</code>, and
             every renderer draws what they describe: <code>glow</code>, <code>halo</code>, <code>badge</code>,{' '}
-            <code>pulse</code> and <code>scrubOpacity</code> all land in the DOM as well as on a native canvas.
+            <code>pulse</code>, <code>fill</code> and <code>scrubOpacity</code> all land in the DOM as well as on a
+            native canvas.
           </div>
 
           <h3 id="builder-series">series and seriesProps</h3>
@@ -3107,10 +3234,10 @@ const marketOpen = (category: string) =>
 
           <h3 id="builder-marker">marker</h3>
           <p>
-            How the mark under the finger is picked out, passed as <code>interaction.marker</code>. The two styles read
+            How the mark under the finger is picked out, passed as <code>interaction.marker</code>. The styles read
             different fields: <code>span</code> is how far a segment reaches along the line and means nothing to a dot,{' '}
-            <code>size</code> is a dot's diameter and means nothing to a segment. The type permits both at once; these
-            do not.
+            <code>size</code> is a dot's diameter and means nothing to a stretch of stroke. The type permits all of them
+            at once; these do not.
           </p>
           <CodeBlock>{`const scrubbing = interaction({
   crosshair: 'x',
@@ -3140,8 +3267,19 @@ const marketOpen = (category: string) =>
                 name: 'marker.segment',
                 type: 'ChartSelectionMarker',
               },
+              {
+                description:
+                  'Brightens everything up to the mark instead of a window around it, so the line reads as the story so far and the rest as yet to come. Takes neither span nor size.',
+                name: 'marker.trail',
+                type: 'ChartSelectionMarker',
+              },
             ]}
           />
+          <div className={styles.note()}>
+            <strong>Both stroke styles need a dim to read against.</strong> <code>marker.segment</code> and{' '}
+            <code>marker.trail</code> are drawn over the line rather than beside it, so without <code>dimOpacity</code>{' '}
+            there is nothing for the lit stretch to stand out from.
+          </div>
           <div className={styles.note()}>
             <strong>A marker is not a tooltip.</strong> It says only which mark is being read, never what it says — so
             use it when the value is shown outside the plot, and pair it with{' '}
@@ -3162,7 +3300,12 @@ const marketOpen = (category: string) =>
 export const chartTheme = theme({ colors: { label: '#8a8a8a' } })
 export const priceFormat = format({ decimals: 2, locale: 'en-US' })
 export const card = surface({ background: '#0b0b0b', cornerRadius: 16, padding: 12 })
-export const priceLine = seriesStyle({ glow: glow({ opacity: 0.16, radius: 7 }), strokeWidth: 2.3 })`}</CodeBlock>
+export const priceLine = seriesStyle({
+  fill: fill({ fadeTo: 0.12, pattern: 'dots', spacing: 3.4 }),
+  fillOpacity: 0.32,
+  glow: glow({ opacity: 0.16, radius: 7 }),
+  strokeWidth: 2.3,
+})`}</CodeBlock>
           <PropsTable
             rows={[
               {description: 'Entrance and data-change timing.', name: 'animation', type: 'NativeChartAnimation'},
@@ -3182,6 +3325,12 @@ export const priceLine = seriesStyle({ glow: glow({ opacity: 0.16, radius: 7 }),
                   'A hard disc behind a point — unlike a glow it has an edge, so a small bright dot can sit in a larger ring.',
                 name: 'halo',
                 type: 'ChartHalo',
+              },
+              {
+                description:
+                  'The area under a trace: a wash or a grid of dots, thinning towards the plot floor or closed against a value. Goes on a series style beside glow.',
+                name: 'fill',
+                type: 'ChartSeriesFill',
               },
             ]}
           />
@@ -3213,6 +3362,16 @@ export const priceLine = seriesStyle({ glow: glow({ opacity: 0.16, radius: 7 }),
             selection alone. On native a finger is read by its position along the category axis, so the forms that have
             one — the line, area, bar and candlestick families — are the forms a scrub means something on. The radial
             and flow ones have no ordered axis to walk, and nothing usable comes back from them.
+          </div>
+          <div className={styles.note()}>
+            <strong>Text that has to keep up with the line is the chart's job, not the hook's.</strong> A readout above
+            the plot sits still, so a re-render places it fine. A label pinned to the crosshair moves with the finger,
+            and a position that comes back through this hook is a frame or two behind the line it belongs to — which
+            reads as the label dragging. Pass those words as{' '}
+            <Link href="/docs/native#native-scrubbing">
+              <code>crosshairStyle.labels</code>
+            </Link>{' '}
+            instead and whoever draws the line draws them.
           </div>
           <CodeBlock>{`'use client'
 
@@ -3443,18 +3602,27 @@ export const Price = ({ prices, categories }: PriceProps) => {
             only where an axis is visible. There is nothing to configure and nothing to keep in sync when the chart
             changes.
           </p>
+          <p>
+            Its marks are the form's own, not a generic block: on the web, bars grown off the baseline for the bar
+            family, candles floating on their wicks for <code>Chart.Candlestick</code>, a ring for the radial forms,
+            dots for the scatter, a curve for the lines. A placeholder shaped like something else moves every mark on
+            the plot when it is swapped out, which is the layout shift the reserved height exists to prevent.
+          </p>
           <div className={styles.note()}>
             <strong>The first frame is a loading state too.</strong> A chart has to read its colors off the document
-            before it can paint, so the built-in placeholder also covers that frame — with <code>isLoading</code> false
-            and data in hand. The wrapper carries <code>aria-busy</code> while either is true, and the placeholder
-            itself is <code>aria-hidden</code>.
+            before it can paint, so the built-in placeholder also covers that frame for a chart that says nothing about
+            loading. Pass <code>isLoading={'{false}'}</code> from the first render and it stays out of the way: the plot
+            fades in on its own, which is what a chart holding its data already wants. The wrapper carries{' '}
+            <code>aria-busy</code> while either is true, and the placeholder itself is <code>aria-hidden</code>.
           </div>
           <div className={styles.note()}>
             <strong>Native draws one too, in its own way.</strong> <code>isLoading</code> means the same thing on iOS
             and Android, and both draw a shimmering placeholder shaped like the form they stand in for — a ring for the
-            radial ones, a row of columns for the bar family, a curve for everything else. What they do not have is a{' '}
-            <code>skeleton</code> slot or a <code>.Skeleton</code> component to mount on its own: those are DOM
-            composition, and the placeholder there is one view the renderer draws.
+            radial ones, a row of columns for the bar family, a curve for everything else. They group a little more
+            coarsely than the web does: the candlestick and the boxplot take that column row, where the DOM renderer
+            draws candles and boxes. What they do not have is a <code>skeleton</code> slot or a <code>.Skeleton</code>{' '}
+            component to mount on its own: those are DOM composition, and the placeholder there is one view the renderer
+            draws.
           </div>
           <h3 id="skeleton-props">Skeleton props</h3>
           <p>
@@ -3531,9 +3699,10 @@ export const Price = ({ prices, categories }: PriceProps) => {
             <strong>
               It covers <code>isLoading</code> only.
             </strong>{' '}
-            The frame before the first paint still uses the built-in placeholder, because that one is derived from the
-            chart and always matches it. Legend rows and axis gutters are yours to mirror here — <code>axis</code>{' '}
-            shapes the built-in placeholder, not this one.
+            The frame before the first paint uses the built-in placeholder, because that one is derived from the chart
+            and always matches it — and an explicit <code>isLoading={'{false}'}</code> skips that frame altogether.
+            Legend rows and axis gutters are yours to mirror here — <code>axis</code> shapes the built-in placeholder,
+            not this one.
           </div>
         </section>
 
@@ -3633,7 +3802,6 @@ export const Price = ({ prices, categories }: PriceProps) => {
             toggle, and native tabs and headers above it all. It is the reference for what the native renderers are for
             — everything on the screen except the plot itself is ordinary React Native.
           </p>
-          {/* Two shots, one per appearance, swapped by the same rule the chart gallery uses. */}
           <figure className={styles.screenshot()}>
             <img
               alt="The Revolut-style quote screen running on the web, on Android and on iOS, side by side"
@@ -3654,25 +3822,25 @@ export const Price = ({ prices, categories }: PriceProps) => {
                 description:
                   'The intraday price: smoothed, glowing, with a dashed baseline rule, an event badge, and a pulsing point at the last reading that useLastReading finds.',
                 name: 'Chart.Line',
-                type: 'revolut-line-chart.tsx',
+                type: 'feature-charts/revolut-line-chart.tsx',
               },
               {
                 description:
                   'The same screen switched to OHLC, with the candle width and radius measured off the design and the volume histogram left off.',
                 name: 'Chart.Candlestick',
-                type: 'revolut-candlestick-chart.tsx',
+                type: 'feature-charts/revolut-candlestick-chart.tsx',
               },
               {
                 description:
                   'Turns the scrub into the price, the delta and the date above the plot, and back to the resting reading when the finger lifts. No tooltip is drawn by either chart.',
                 name: 'useChartScrub',
-                type: 'use-quote-readout.ts',
+                type: 'apps/example/use-quote-readout.ts',
               },
               {
                 description:
                   'The reading card and the event badge are React Native views placed over the plot from the geometry the layout phase reports — not something the library draws.',
                 name: 'geometry',
-                type: 'quote-chart-overlay.tsx',
+                type: 'apps/example/quote-chart-overlay.tsx',
               },
               {
                 description:
@@ -3683,13 +3851,159 @@ export const Price = ({ prices, categories }: PriceProps) => {
             ]}
           />
           <p>
-            The whole screen is <a href={`${REPOSITORY_URL}/tree/main/apps/example/src/revolut`}>in the repository</a>,
-            and <code>apps/example</code> runs it on a device with <code>yarn ios:example</code> or{' '}
-            <code>yarn android:example</code>.
+            The study is split where the library's job ends. The charts, their styling, the theme and the generated
+            quotes are a shared package —{' '}
+            <a href={`${REPOSITORY_URL}/tree/main/packages/feature-charts/src/revolut`}>
+              <code>packages/feature-charts</code>
+            </a>{' '}
+            — so the three screens render the same <code>Chart.Line</code> rather than three copies of it. Everything
+            around the plot is <a href={`${REPOSITORY_URL}/tree/main/apps/example/src/revolut`}>in the example app</a>,
+            one file per platform, and <code>apps/example</code> runs it on a device with <code>yarn ios:example</code>{' '}
+            or <code>yarn android:example</code>.
           </p>
           <div className={styles.note()}>
             <strong>A study, not a product.</strong> The screen is built to test the library against a design people
             already know by heart. It uses generated data, and it is not affiliated with or endorsed by Revolut.
+          </div>
+        </section>
+
+        <section className={cn(styles.section(), page !== 'kraken' && 'hidden')} id="kraken">
+          <p className={styles.kicker()}>App</p>
+          <h2>Kraken</h2>
+          <p>
+            A crypto price screen in the shape Kraken's has: a trace that runs off both edges of the window with no axes
+            at all, a readout that follows the finger, and the two numbers the plot reaches under it. Where the Revolut
+            study is about chrome — native tabs, headers and pickers around a plot — this one is about the plot itself,
+            and it is the reason two things exist in the presentation vocabulary.
+          </p>
+          <figure className={styles.screenshot()}>
+            <img
+              alt="The Kraken-style coin screen running on the web, on Android and on iOS, side by side"
+              className={styles.screenshotLight()}
+              loading="lazy"
+              src="/apps/kraken/light.png"
+            />
+            <img alt="" className={styles.screenshotDark()} loading="lazy" src="/apps/kraken/dark.png" />
+            <figcaption className={styles.galleryMeta()}>
+              One trace, three renderers — a repeating canvas pattern on the web, a clipped dot grid on Compose and on
+              SwiftUI — in the appearance you are reading this page in.
+            </figcaption>
+          </figure>
+
+          <h3 id="kraken-fill">The dotted fill</h3>
+          <p>
+            The area under the trace is a grid of dots rather than a wash, and it thins on the way down instead of
+            stopping dead at the bottom of the plot — so the fill has one edge to read, the trace, and the grey rule on
+            the floor is left to be the axis. Both come from one <code>fill</code> on the series style, and all three
+            renderers draw it: a clipped dot grid on the SwiftUI and Compose canvases, a repeating canvas pattern on the
+            web.
+          </p>
+          <CodeBlock>{`series({
+  color: '#f48415',
+  id: 'price',
+  label: '24H',
+  style: {
+    fill: fill({
+      // A tenth of its strength by the floor, so the paint gathers under the trace.
+      fadeTo: 0.12,
+      pattern: 'dots',
+      spacing: 3.4,
+    }),
+    // A dot grid wants more opacity than a wash — most of what it covers stays bare.
+    fillOpacity: 0.32,
+    strokeWidth: 2.4,
+  },
+  values: range.values,
+})`}</CodeBlock>
+          <div className={styles.note()}>
+            <strong>A fill is not a form.</strong> <code>Chart.Area</code> still fills by default, because there the
+            fill is the quantity. A <code>fill</code> on the series style is what puts one under a{' '}
+            <code>Chart.Line</code>, where it is decoration — which is what let this screen keep the line chart's scrub,
+            reveal and annotations.
+          </div>
+
+          <h3 id="kraken-trail">The trail scrub</h3>
+          <p>
+            Dragging across the plot lights the trace from its first reading up to the finger and leaves the rest
+            dimmed, so the line reads as the story so far. That is <code>marker.trail</code> — the third selection
+            marker, next to the dot and the window-around-the-reading segment.
+          </p>
+          <CodeBlock>{`const scrubbing = (labels: readonly string[]) =>
+  interaction({
+    crosshair: 'x',
+    // labels is one time per reading, in data order. The chart draws the one being read.
+    crosshairStyle: { color: '#f8b877', labelColor: '#8b8b8b', labels, width: 1 },
+    // What the trace fades to past the finger. Everything before it is redrawn at full
+    // strength by the trail, so this is only ever seen ahead of the reading.
+    dimOpacity: 0.66,
+    haptics: true,
+    hover: 'nearest',
+    marker: marker.trail({ color: '#f48415' }),
+    tooltip: false,
+  })`}</CodeBlock>
+          <p>
+            The time above the crosshair <em>is</em> drawn by the chart, through <code>crosshairStyle.labels</code> —
+            one string per slot, placed by whichever renderer is drawing the line. It is the one piece of scrub chrome
+            the app hands back: a label pinned to the crosshair has to move with it, and a position that reaches
+            JavaScript through a bridge and returns as a re-render is a frame behind the line beside it. The reading
+            card on the Revolut screen has no such problem, because it sits still.
+          </p>
+
+          <h3 id="kraken-source">What it uses</h3>
+          <PropsTable
+            rows={[
+              {
+                description:
+                  'The price trace: a dotted fill fading to the floor, a grey rule on that floor standing in for the axis, a dashed rule at the latest price, and a haloed point on the last reading.',
+                name: 'Chart.Line',
+                type: 'feature-charts/kraken-chart.tsx',
+              },
+              {
+                description:
+                  'Lights the stretch of trace up to the reading and dims the rest, paired with dimOpacity so there is something for it to stand out from.',
+                name: 'marker.trail',
+                type: 'feature-charts/kraken-chart-style.ts',
+              },
+              {
+                description:
+                  'The dot grid and its fade, resolved per scheme: ink on paper carries at a fraction of what light on black needs, so dark asks for roughly twice the opacity.',
+                name: 'fill',
+                type: 'feature-charts/kraken-chart-style.ts',
+              },
+              {
+                description:
+                  'The times above the crosshair, one per reading, handed over with the interaction so the label is drawn by whoever draws the line.',
+                name: 'crosshairStyle.labels',
+                type: 'feature-charts/kraken-chart-style.ts',
+              },
+              {
+                description:
+                  'Turns the scrub into the price and the delta above the plot. The change is measured from the window open; the dashed rule sits at the latest price. Two different questions.',
+                name: 'useChartScrub',
+                type: 'apps/example/use-kraken-readout.ts',
+              },
+              {
+                description:
+                  'One screen per platform: SwiftUI through @expo/ui on iOS, Compose on Android, React Native on the web — sharing the data, the theme and the chart.',
+                name: 'Platform files',
+                type: 'kraken-coin.ios.tsx · kraken-coin.android.tsx',
+              },
+            ]}
+          />
+          <p>
+            Split the same way the Revolut study is: the chart, its style, the theme and the generated prices are the
+            shared{' '}
+            <a href={`${REPOSITORY_URL}/tree/main/packages/feature-charts/src/kraken`}>
+              <code>packages/feature-charts</code>
+            </a>{' '}
+            package, and the screen around it —{' '}
+            <a href={`${REPOSITORY_URL}/tree/main/apps/example/src/kraken`}>in the example app</a> — is one file per
+            platform. <code>apps/example</code> runs it on a device with <code>yarn ios:example</code> or{' '}
+            <code>yarn android:example</code>.
+          </p>
+          <div className={styles.note()}>
+            <strong>A study, not a product.</strong> The screen is built to test the library against a design people
+            already know by heart. It uses generated data, and it is not affiliated with or endorsed by Kraken.
           </div>
         </section>
 

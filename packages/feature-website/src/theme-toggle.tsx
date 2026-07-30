@@ -18,7 +18,9 @@ type Theme = 'dark' | 'light'
 const styles = themeToggle()
 
 const applyTheme = (theme: Theme) => {
+  // `light` is not decoration: the chart tokens follow the OS until the root says otherwise.
   document.documentElement.classList.toggle('dark', theme === 'dark')
+  document.documentElement.classList.toggle('light', theme === 'light')
   localStorage.setItem('zyplot-theme', theme)
 }
 

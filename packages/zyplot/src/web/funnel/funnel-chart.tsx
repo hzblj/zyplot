@@ -31,7 +31,16 @@ export type FunnelChartProps = ChartBaseProps & {
  * Stages that shrink as things drop out. Each stage must be a subset of the one
  * above it; when the stages are merely ordered, use a bar chart instead.
  */
-export const FunnelChart: FC<FunnelChartProps> = ({className, format, height, isLoading, stages, texture, theme}) => {
+export const FunnelChart: FC<FunnelChartProps> = ({
+  animation,
+  className,
+  format,
+  height,
+  isLoading,
+  stages,
+  texture,
+  theme,
+}) => {
   const tokens = useChartTokens(theme)
 
   const option = useMemo(() => {
@@ -40,7 +49,7 @@ export const FunnelChart: FC<FunnelChartProps> = ({className, format, height, is
     }
 
     return {
-      ...buildChartBaseOption(tokens, texture),
+      ...buildChartBaseOption(tokens, texture, animation),
       series: [
         {
           data: stages.map((stage, index) => ({
@@ -74,7 +83,7 @@ export const FunnelChart: FC<FunnelChartProps> = ({className, format, height, is
         trigger: 'item',
       },
     }
-  }, [format, stages, texture, tokens])
+  }, [animation, format, stages, texture, tokens])
 
   const legend = useMemo(() => {
     if (!tokens) {

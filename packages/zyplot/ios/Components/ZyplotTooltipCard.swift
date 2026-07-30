@@ -1,8 +1,6 @@
 import SwiftUI
 
 struct ZyplotTooltipCard<Content: View>: View {
-  /// `theme.colors.surface` when the chart names one. Without it the card keeps the
-  /// system material, which is the honest default: it stays legible over any plot.
   var fill: Color?
   @ViewBuilder let content: Content
 

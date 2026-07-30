@@ -59,7 +59,7 @@
 		"directory": "packages/zyplot"
 	},
 	"scripts": {
-		"build": "tsc -p tsconfig.build.json && tailwindcss -i src/web/chart.css -o build/charts.css --minify",
+		"build": "tsc -p tsconfig.build.json && tailwindcss -i src/web/chart.css -o build/charts.css --minify && node scripts/layer-styles.mjs build/charts.css",
 		"lint": "biome check .",
 		"lint:fix": "biome check --write ."
 	},

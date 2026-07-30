@@ -8,6 +8,7 @@ import org.json.JSONObject
 
 data class SeriesStyle(
   val color: String?,
+  val fill: SeriesFill?,
   val fillOpacity: Float,
   val glow: Glow?,
   val opacity: Float,
@@ -22,6 +23,7 @@ data class SeriesStyle(
     fun from(json: JSONObject): SeriesStyle = SeriesStyle(
       color = json.nullableString("color"),
       glow = Glow.from(json.optJSONObject("glow")),
+      fill = SeriesFill.from(json.optJSONObject("fill")),
       fillOpacity = json.optDouble("fillOpacity", 0.16).toFloat(),
       opacity = json.optDouble("opacity", 1.0).toFloat(),
       strokeDash = json.optJSONArray("strokeDash").floats(),

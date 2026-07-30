@@ -3,7 +3,6 @@ import {Text, View} from 'react-native'
 import {alpha, borderWidth, chartHeight, radius, space} from '../../theme/tokens'
 import {useTheme} from '../../theme/use-theme'
 
-/** What `annotationViews` puts where the last reading sits, in place of the chart's dot. */
 const PeakTag = ({background, label}: {background: string; label: string}) => (
   <View
     style={{backgroundColor: background, borderRadius: radius.full, paddingHorizontal: space.sm, paddingVertical: 2}}
@@ -82,8 +81,6 @@ export const CartesianExample = ({id}: {id: string}) => {
               start: 'Mar',
               type: 'range',
             },
-            // The chart measures this one and draws nothing for it: the tag below takes
-            // its place and rides the same coordinates.
             {color: color.content.accent, id: 'peak', type: 'point', x: 'Jun', y: 91},
           ]}
           annotationViews={{peak: <PeakTag background={color.content.accent} label="$91" />}}

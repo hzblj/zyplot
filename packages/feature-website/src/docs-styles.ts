@@ -1,7 +1,6 @@
 import {tv} from 'tailwind-variants'
 
 const flow = '[&>*+*]:mt-6 [&>div]:mb-0 [&>h3+*]:mt-0 [&>h3]:mb-6 [&>h3]:mt-10 [&>p]:mb-0'
-
 const inlineCode = '[&_code]:font-semibold [&_pre_code]:font-normal [&_td_code]:font-normal'
 
 export const docsStyles = tv({
@@ -32,7 +31,6 @@ export const docsStyles = tv({
     codeCopy:
       'cursor-pointer rounded-md px-2 py-1 transition-colors hover:bg-fill-secondary-hover hover:text-content-primary',
     compactPreview: 'flex min-h-[280px] items-center px-[12%]',
-    /** The mobile bottom padding clears the fixed pager bar — see `pager`. */
     content: 'min-w-0 px-10 pb-40 max-[820px]:px-7 max-[820px]:pb-[128px] max-[560px]:px-5',
     example: 'overflow-hidden rounded-2xl border border-border-secondary bg-surface-primary shadow-card-default',
     exampleBar:
@@ -47,16 +45,6 @@ export const docsStyles = tv({
       'border-t border-border-secondary px-4 py-3 text-[13px] text-content-tertiary [&_a]:font-medium [&_a]:text-content-accent [&_a]:underline [&_a]:underline-offset-2 [&_a]:transition-opacity [&_a:hover]:opacity-70',
     galleryStage: 'bg-[#fafafa] px-4 py-6 dark:bg-[#171717]',
     hero: 'scroll-mt-6 border-b border-border-secondary pb-[72px] pt-[108px] max-[820px]:pt-[72px] [&_h1]:mb-[30px] [&_h1]:text-[clamp(52px,6vw,76px)] [&_h1]:font-bold [&_h1]:leading-[.98] [&_h1]:tracking-[-.06em] [&>p:last-child]:max-w-[680px] [&>p:last-child]:text-base [&>p:last-child]:leading-7 [&>p:last-child]:text-content-secondary',
-    /**
-     * The install block keeps the managers on a row of their own and drops Copy
-     * beside the command, so the two never compete for width on a phone.
-     */
-    /**
-     * No right padding of its own: the gap and Copy already separate the two, and
-     * the 20px it would spend is the difference between the longest command
-     * (`npm install @hzblj/zyplot`) reading in full on a 320px screen and being
-     * clipped mid-token. Narrower than that it still scrolls on its own.
-     */
     installCommand: 'min-w-0 flex-1 pr-0 max-[400px]:pl-4',
     installCopy: 'mr-1 shrink-0 text-[11px] text-content-tertiary',
     installRow: 'flex items-center gap-2 pr-2',
@@ -74,11 +62,6 @@ export const docsStyles = tv({
     navSubGroup: 'mt-3.5 grid gap-[3px] first:mt-0',
     navSubGroupLabel: 'mb-1 pl-2 text-[11px] font-semibold text-content-tertiary',
     note: 'mt-6 rounded-xl bg-surface-secondary p-5 text-sm leading-relaxed text-content-secondary [&_strong]:mb-1.5 [&_strong]:block [&_strong]:font-semibold [&_strong]:text-content-primary',
-    /**
-     * Below the sidebar breakpoint the pager stops being the end of the page and
-     * becomes the bottom bar: the two links a reader reaches for most are then one
-     * thumb away at any scroll position, instead of a full page down.
-     */
     pager:
       'mt-8 flex items-center justify-between gap-4 max-[820px]:fixed max-[820px]:inset-x-0 max-[820px]:bottom-0 max-[820px]:z-30 max-[820px]:mt-0 max-[820px]:border-t max-[820px]:border-border-secondary max-[820px]:bg-surface-base/90 max-[820px]:px-5 max-[820px]:pt-3 max-[820px]:pb-[calc(12px+env(safe-area-inset-bottom))] max-[820px]:backdrop-blur',
     pagerLink:
@@ -93,12 +76,6 @@ export const docsStyles = tv({
     propsTableWrap: 'overflow-x-auto rounded-xl border border-border-secondary',
     propsTypeLink:
       'rounded-sm text-content-accent underline decoration-transparent underline-offset-4 transition-colors hover:decoration-current',
-    /**
-     * A device shot sits on the black plate it was captured against, so the
-     * frame keeps its own surface for the caption only and lets the image run
-     * to the edges. The top margin comes from `flow`; the rest is cleared so a
-     * `figure` does not add the browser's default one.
-     */
     screenshot:
       'mx-0 mb-0 overflow-hidden rounded-2xl border border-border-secondary bg-surface-primary shadow-card-default',
     screenshotDark: 'hidden w-full dark:block',
@@ -125,7 +102,6 @@ export const docsStyles = tv({
     tocLinkActive: 'bg-fill-secondary-hover font-semibold text-content-primary',
     tocNav:
       'relative grid gap-px pl-3 text-[11px] leading-[1.35] text-content-tertiary [&_a]:rounded-md [&_a]:px-2 [&_a]:py-1 [&_a]:transition-colors [&_a:hover]:bg-fill-secondary-hover [&_a:hover]:text-content-primary',
-    /** How far down the page the reader is, drawn against the section list itself. */
     tocProgress: 'text-[10px] font-semibold tabular-nums text-content-tertiary',
     tocRail: 'absolute inset-y-0 left-0 w-[2px] overflow-hidden rounded-full bg-border-secondary',
     tocRailFill:

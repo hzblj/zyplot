@@ -11,13 +11,6 @@ const EASINGS: Record<ChartRevealEasing, EasingFunction> = {
 
 export const chartEase = (easing: ChartRevealEasing = 'ease-out'): EasingFunction => EASINGS[easing] ?? EASINGS.linear
 
-/**
- * A value moved over time, on frames.
- *
- * ECharts animates the marks; a flash is the stroke's own style changing after they have
- * landed, which no option covers — so it is driven here and written back a frame at a time.
- * Returns the way to stop it.
- */
 export const runChartTween = (
   duration: number,
   easing: ChartRevealEasing | undefined,
@@ -33,7 +26,7 @@ export const runChartTween = (
   let frame: number | null = null
 
   const step = (now: number) => {
-    const elapsed = Math.min(1, (now - started) / duration)
+    const elapsed = Math.min(1, Math.max(0, (now - started) / duration))
     onFrame(ease(elapsed))
     frame = elapsed < 1 ? window.requestAnimationFrame(step) : null
   }

@@ -1,5 +1,5 @@
+import {quote} from '@zyplot/feature-charts/revolut'
 import {StyleSheet, View} from 'react-native'
-import {quote} from '../data/quote-data'
 import {quoteLayout, useQuoteTheme} from '../data/quote-theme'
 import type {QuoteReadout} from '../hooks/use-quote-readout'
 import {QuoteCircleButton} from './quote-nav-bar'
@@ -10,8 +10,7 @@ const MarketStatus = ({isPreMarket}: {isPreMarket: boolean}) => {
 
   return isPreMarket ? (
     <View style={[styles.chip, {backgroundColor: color.statusChip}]}>
-      {/* U+FE0E, as in the nav bar's switch: without it a colour emoji font takes the sun
-          over and none of the colour above reaches it. */}
+      {}
       <QuoteText color={color.statusChipText} size={11}>
         ☀︎
       </QuoteText>

@@ -1,3 +1,4 @@
+import {formatNumber, type QuoteCandle, type QuoteEvent} from '@zyplot/feature-charts/revolut'
 import {type ReactNode, useEffect, useRef, useState} from 'react'
 import {
   Animated,
@@ -9,14 +10,12 @@ import {
   View,
   type ViewStyle,
 } from 'react-native'
-import {formatNumber, type QuoteCandle, type QuoteEvent} from '../data/quote-data'
 import {type QuoteColors, useQuoteTheme} from '../data/quote-theme'
 import type {QuoteReadout} from '../hooks/use-quote-readout'
 
 const BADGE = 18
 const CARD_WIDTH = 150
 const CARD_GAP = 12
-/** Lifts the badge off the plot's top edge, where the rule it caps starts. */
 const BADGE_LIFT = 6
 const FADE_IN = 140
 const FADE_OUT = 200
@@ -74,17 +73,9 @@ const QuoteFadeView = ({
   )
 }
 
-/**
- * Everything the chart could have drawn itself but shouldn't: the event badge, its card and
- * the candle reading. The chart only reports where the annotation landed and which datum is
- * under the finger (`readout.geometry`, `readout.category`), so what appears there — a
- * letter, a logo, a whole panel — is this file's business.
- */
 export const QuoteChartOverlay = ({candles, event, readout}: QuoteChartOverlayProps) => {
   const {color} = useQuoteTheme()
   const [cardHeight, setCardHeight] = useState(0)
-  // The card outlives its reading by one fade, so the last one drawn is held here rather
-  // than blinking out the moment the finger lifts.
   const [card, setCard] = useState<CardModel | null>(null)
   const geometry = readout.geometry
   const plot = geometry?.plot
@@ -102,8 +93,6 @@ export const QuoteChartOverlay = ({candles, event, readout}: QuoteChartOverlayPr
     }
     const room = plot.x + plot.width - CARD_WIDTH
     const trailing = (anchor ?? plot.x) + CARD_GAP
-    // Whichever side of the finger still fits, flipping only when the near side would
-    // overflow rather than at the halfway mark, so it does not jump about mid-plot.
     const left = trailing <= room ? trailing : (anchor ?? plot.x) - CARD_GAP - CARD_WIDTH
     const scrubbed = candles?.find(item => item.category === category)
     setCard({

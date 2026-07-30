@@ -10,7 +10,7 @@ struct ZyplotSelectionMarkerView: View {
 
   @ViewBuilder
   var body: some View {
-    if marker.isSegment {
+    if marker.lightsStroke {
       let radius = marker.glow?.resolvedRadius ?? 12
       Circle()
         .fill(

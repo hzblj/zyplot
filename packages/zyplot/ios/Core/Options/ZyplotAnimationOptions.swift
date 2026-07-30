@@ -13,7 +13,6 @@ struct ZyplotRevealAnimation: Codable {
   var style: String?
   var trackColor: String?
   var trackOpacity: Double?
-
   var isDrawn: Bool { style == "draw" }
   var isFaded: Bool { style == "fade" }
   var isEnabled: Bool { isDrawn || isFaded }
@@ -26,7 +25,6 @@ struct ZyplotRevealAnimation: Codable {
   }
   var resolvedStartOpacity: Double { startOpacity ?? 0.5 }
   var resolvedTrackOpacity: Double { trackOpacity ?? 0.35 }
-  /// A trace runs at a steady speed unless asked otherwise; a fade eases out.
   var resolvedEasing: ZyplotEasing {
     ZyplotEasing.named(easing, or: isDrawn ? .linear : .easeOut)
   }
@@ -44,4 +42,9 @@ struct ZyplotAnimationOptions: Codable {
   var reveal: ZyplotRevealAnimation?
   var transition: String?
   var updates: Bool?
+  var transitionSeconds: Double { Swift.max(0.001, (duration ?? 320) / 1_000) }
+
+  var transitionEasing: ZyplotEasing {
+    ZyplotEasing.named(easing, or: .easeInOut)
+  }
 }

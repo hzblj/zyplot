@@ -7,7 +7,6 @@ type DocumentationPageProps = {
   params: Promise<{slug: string[]}>
 }
 
-/** The three nested groups whose page id is the last segment, not the first. */
 const NESTED_GROUPS = new Set(['apps', 'charts', 'hooks'])
 
 const pageFor = (slug: string[]): string => {

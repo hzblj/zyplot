@@ -9,13 +9,10 @@ extension ZyplotConfiguration {
     return values.map(Color.init(hex:))
   }
 
-  /// What an annotation badge paints behind itself so the rule it caps stops at its edge.
-  /// Transparent unless the chart names a plot or theme background to borrow.
   var badgeBackground: Color {
     Color(hex: plot?.backgroundColor ?? theme?.colors?.background ?? "#00000000")
   }
 
-  /// The tooltip card's fill. `nil` keeps the system material.
   var tooltipFill: Color? {
     theme?.colors?.surface.map(Color.init(hex:))
   }

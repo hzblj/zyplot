@@ -97,6 +97,12 @@ const guideRoutes: Omit<DocsRoute, 'isGuide'>[] = [
     title: 'Revolut',
   },
   {
+    description:
+      'A Kraken-style crypto price screen built with Zyplot: a full-bleed trace with no axes, a dotted area fill closed against the latest price, and a scrub that lights the line up to the finger.',
+    href: '/docs/apps/kraken',
+    title: 'Kraken',
+  },
+  {
     description: 'Where to find every published Zyplot version, its notes and the commits behind it.',
     href: '/docs/releases',
     title: 'Releases',
@@ -249,12 +255,9 @@ export const DOCS_ROUTES: DocsRoute[] = [
 
 export const docsRouteFor = (href: string) => DOCS_ROUTES.find(route => route.href === href)
 
-/**
- * The guide pages whose section id and URL differ. Every other page is its own
- * slug, so it needs no entry here.
- */
 const GUIDE_HREFS: Record<string, string> = {
   introduction: '/docs',
+  kraken: '/docs/apps/kraken',
   'native-android': '/docs/native/android',
   'native-ios': '/docs/native/ios',
   'native-package': '/docs/native',
@@ -264,13 +267,5 @@ const GUIDE_HREFS: Record<string, string> = {
   'web-package': '/docs/web',
 }
 
-/**
- * The URL for a page id — the inverse of the slug decoding the route does.
- *
- * The pager is the only thing that has to turn an id back into a link, and the
- * ids are not all slugs: three of the native pages sit under `/docs/native/`.
- * Keeping the mapping here rather than inline means a page whose id and slug
- * differ cannot ship with a pager that 404s.
- */
 export const docsHrefForPage = (page: string, chartIds: readonly string[]) =>
   GUIDE_HREFS[page] ?? (chartIds.includes(page) ? `/docs/charts/${page}` : `/docs/${page}`)

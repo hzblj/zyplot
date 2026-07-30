@@ -1,5 +1,6 @@
 package com.hzblj.zyplot.charts.presentation
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import com.hzblj.zyplot.charts.plotRect
@@ -17,6 +18,14 @@ internal fun DrawScope.presentationPlotRect(config: ChartConfiguration): Rect {
     bottom = fullPlot.bottom -
       fullPlot.height * config.candlestickStyle.volumeHeightRatio.coerceIn(0.12f, 0.35f) -
       6f,
+  )
+}
+
+internal fun pointerOnPlot(pointer: Offset, plot: Rect): Offset? {
+  if (plot.width <= 0f || plot.height <= 0f) return null
+  return Offset(
+    pointer.x.coerceIn(plot.left, plot.right),
+    pointer.y.coerceIn(plot.top, plot.bottom),
   )
 }
 

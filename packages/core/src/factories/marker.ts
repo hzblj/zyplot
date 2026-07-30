@@ -1,11 +1,9 @@
 import type {ChartSelectionMarker} from '../contracts/chart-native'
 
 /**
- * Builders for `interaction.marker`.
- *
- * The two styles read different fields — `span` is how far a `'segment'` reaches
- * along the line and means nothing to a dot, `size` is a dot's diameter and means
- * nothing to a segment. The type allows both at once; these do not.
+ * Builders for `interaction.marker`. The styles read different fields — `span` belongs to a
+ * `'segment'`, `size` to a dot, and a `'trail'` takes neither — and the type allows all of
+ * them at once where these do not.
  */
 export const marker = {
   point: (options: Omit<ChartSelectionMarker, 'span' | 'style'> = {}): ChartSelectionMarker => ({
@@ -15,5 +13,9 @@ export const marker = {
   segment: (options: Omit<ChartSelectionMarker, 'size' | 'style'> = {}): ChartSelectionMarker => ({
     ...options,
     style: 'segment',
+  }),
+  trail: (options: Omit<ChartSelectionMarker, 'size' | 'span' | 'style'> = {}): ChartSelectionMarker => ({
+    ...options,
+    style: 'trail',
   }),
 }

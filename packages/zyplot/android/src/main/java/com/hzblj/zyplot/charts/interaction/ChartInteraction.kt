@@ -20,7 +20,6 @@ internal fun chartSelection(
   width: Float,
   density: Float = 1f,
 ): ChartSelection {
-  // The pointer arrives in pixels, so the plot box has to be measured in pixels too.
   val left = plotLeft(config, density)
   val right = plotRight(config, width, density)
   val plotWidth = (right - left).coerceAtLeast(1f)
@@ -116,7 +115,6 @@ internal fun interactionPayload(
   selection.value?.let { put("value", it) }
   put("phase", phase)
   pointer?.let {
-    // In dp, like the geometry and like iOS: the app positions its own views with these.
     put("nativeX", it.x / density)
     put("nativeY", it.y / density)
   }

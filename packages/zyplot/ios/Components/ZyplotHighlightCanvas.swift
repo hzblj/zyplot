@@ -9,7 +9,7 @@ struct ZyplotHighlightCanvas: View {
     GeometryReader { geometry in
       Canvas { graphics, _ in
         guard let marker = context.configuration.interaction?.marker,
-              marker.isSegment,
+              marker.lightsStroke,
               let category = context.selection,
               let series = context.configuration.resolvedSeries.first,
               let centre = context.configuration.resolvedCategories.firstIndex(of: category),
@@ -18,14 +18,15 @@ struct ZyplotHighlightCanvas: View {
           return
         }
         let reach = max(1, marker.resolvedSpan - 1)
+        let lit = marker.isTrail ? 0...centre : (centre - reach)...(centre + reach)
         let curve = ZyplotChartCurve(
           series: series,
           context: context,
           proxy: proxy,
           frame: frame,
-          indices: (centre - reach)...(centre + reach)
+          indices: lit
         )
-        guard let path = curve.window(around: centre, reach: reach) else { return }
+        guard let path = curve.path else { return }
         graphics.stroke(
           path,
           with: .color(marker.color.map(Color.init(hex:)) ?? .white),

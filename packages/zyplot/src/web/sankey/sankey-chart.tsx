@@ -33,6 +33,7 @@ export type SankeyChartProps = ChartBaseProps & {
  * way. Over two stages it is a bar chart drawn expensively.
  */
 export const SankeyChart: FC<SankeyChartProps> = ({
+  animation,
   className,
   format,
   height = 300,
@@ -52,7 +53,7 @@ export const SankeyChart: FC<SankeyChartProps> = ({
     const colorById = new Map(nodes.map((node, index) => [node.id, seriesColor(tokens, node, index)]))
 
     return {
-      ...buildChartBaseOption(tokens, texture),
+      ...buildChartBaseOption(tokens, texture, animation),
       series: [
         {
           data: nodes.map(node => ({
@@ -92,7 +93,7 @@ export const SankeyChart: FC<SankeyChartProps> = ({
         trigger: 'item',
       },
     }
-  }, [format, links, nodes, texture, tokens])
+  }, [animation, format, links, nodes, texture, tokens])
 
   return (
     <ChartShell

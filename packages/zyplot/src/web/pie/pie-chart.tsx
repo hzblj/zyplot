@@ -55,6 +55,7 @@ const foldTail = (
  * `Chart.StackedBar`.
  */
 export const PieChart: FC<PieChartProps> = ({
+  animation,
   className,
   data,
   format,
@@ -80,7 +81,7 @@ export const PieChart: FC<PieChartProps> = ({
     }
 
     return {
-      ...buildChartBaseOption(tokens, texture),
+      ...buildChartBaseOption(tokens, texture, animation),
       series: [
         {
           avoidLabelOverlap: true,
@@ -114,7 +115,7 @@ export const PieChart: FC<PieChartProps> = ({
         trigger: 'item',
       },
     }
-  }, [format, isSolid, slices, texture, tokens])
+  }, [animation, format, isSolid, slices, texture, tokens])
 
   const legend = useMemo(() => {
     if (!tokens) {

@@ -3,10 +3,6 @@ package com.hzblj.zyplot.core.presentation
 import com.hzblj.zyplot.core.json.nullableString
 import org.json.JSONObject
 
-/**
- * The bloom on a live point. Parses from `true` as well as from an object, so `pulse: true`
- * keeps working and `pulse: {duration: 300}` tunes the rhythm.
- */
 data class Pulse(
   val color: String? = null,
   val bloomMillis: Int = 450,

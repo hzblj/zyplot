@@ -24,13 +24,11 @@ struct ZyplotFlowLink: Codable, Identifiable {
   var source: String
   var target: String
   var value: Double
-
   var id: String { "\(source):\(target)" }
 }
 
 struct ZyplotRadarAxis: Codable, Identifiable {
   var label: String
   var max: Double
-
   var id: String { label }
 }

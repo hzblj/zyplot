@@ -112,8 +112,6 @@ struct ZyplotCandlestickChart: View {
     if selectedCategory == item.category,
        let highlight = configuration.interaction?.highlightColor
     {
-      // Blended rather than replaced: at anything below 1 the candle's own red or green
-      // still reads through the lift.
       return base(of: item).blended(
         with: Color(hex: highlight),
         amount: configuration.interaction?.highlightBlend ?? 1
@@ -122,8 +120,6 @@ struct ZyplotCandlestickChart: View {
     return base(of: item).opacity(dimming(item))
   }
 
-  /// Candles either side of the read one fade back, the way the series marks already do —
-  /// `dimOpacity` had no effect on a candlestick chart at all before.
   private func dimming(_ item: ZyplotCandlestickDatum) -> Double {
     guard let selectedCategory,
           selectedCategory != item.category,

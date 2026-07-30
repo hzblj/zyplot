@@ -15,16 +15,16 @@ internal fun DrawScope.drawSelectionMarker(
   val marker = config.interaction.marker ?: return
   if (pointer == null || value == null) return
   val plot = presentationPlotRect(config)
-  if (!plot.contains(pointer)) return
+  val at = pointerOnPlot(pointer, plot) ?: return
   val extent = config.markExtent
   val y = normalizedY(value, extent.first, extent.second, plot)
   val radius = marker.size / 2f * density
   val color = marker.color?.let(::parseColor)
     ?: config.series.firstOrNull()?.color?.let(::parseColor)
     ?: config.palette[0]
-  val centre = Offset(pointer.x, y)
+  val centre = Offset(at.x, y)
 
-  if (marker.isSegment) {
+  if (marker.lightsStroke) {
     val glow = marker.glow ?: return
     val glowColor = (glow.color?.let(::parseColor) ?: color).copy(alpha = glow.opacity)
     val spread = glow.radius * density

@@ -1,7 +1,6 @@
 import type {ChartNumberFormat} from '../types'
 
 const DEFAULT_LOCALE = 'en-US'
-
 const formatters = new Map<string, Intl.NumberFormat>()
 
 const formatterFor = (locale: string | undefined, decimals: number): Intl.NumberFormat => {

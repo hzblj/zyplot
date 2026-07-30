@@ -13,7 +13,6 @@ struct ZyplotThemeColors: Codable {
 }
 
 struct ZyplotThemeTypography: Codable {
-  /// A family the host app has registered, addressed the way `<Text>` addresses one.
   var fontFamily: String?
 }
 

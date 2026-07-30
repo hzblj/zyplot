@@ -1,6 +1,6 @@
 import {HStack, Image, Spacer, VStack} from '@expo/ui/swift-ui'
 import {background, clipShape, frame, padding} from '@expo/ui/swift-ui/modifiers'
-import {quote} from '../data/quote-data'
+import {quote} from '@zyplot/feature-charts/revolut'
 import {quoteLayout, useQuoteTheme} from '../data/quote-theme'
 import type {QuoteReadout} from '../hooks/use-quote-readout'
 import {QuoteCircleButton} from './quote-nav-bar.ios'

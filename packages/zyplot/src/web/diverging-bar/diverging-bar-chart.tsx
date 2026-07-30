@@ -41,6 +41,7 @@ export type DivergingBarChartProps = ChartBaseProps & {
  * zero line is always drawn, so the sign is never a guess.
  */
 export const DivergingBarChart: FC<DivergingBarChartProps> = ({
+  animation,
   axis,
   className,
   data,
@@ -79,7 +80,7 @@ export const DivergingBarChart: FC<DivergingBarChartProps> = ({
     })
 
     return {
-      ...buildChartBaseOption(tokens, texture),
+      ...buildChartBaseOption(tokens, texture, animation),
       ...buildCartesianAxes(tokens, categories, format, isHorizontal, axis),
       grid: buildChartGrid(!isHorizontal),
       series: [
@@ -116,7 +117,7 @@ export const DivergingBarChart: FC<DivergingBarChartProps> = ({
         trigger: 'axis',
       },
     }
-  }, [axis, data, format, orientation, texture, tokens])
+  }, [animation, axis, data, format, orientation, texture, tokens])
 
   return (
     <ChartShell

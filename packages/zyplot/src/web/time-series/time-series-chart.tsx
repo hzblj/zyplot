@@ -11,6 +11,29 @@ import {TimeSeriesChartSkeleton} from './time-series-chart-skeleton'
 
 const DEFAULT_HEIGHT = 240
 const LINE_WIDTH = 2
+const AXIS_FONT_SIZE = 11
+
+const AXIS_GAP = 8
+
+let measureContext: CanvasRenderingContext2D | null | undefined
+
+const measureLabel = (text: string, font: string): number => {
+  measureContext ??= document.createElement('canvas').getContext('2d')
+  if (!measureContext) {
+    return 0
+  }
+  measureContext.font = font
+
+  return measureContext.measureText(text).width
+}
+
+const valueAxisSize =
+  (font: string) =>
+  (_plot: uPlot, values: string[] | null): number => {
+    const widest = (values ?? []).reduce((longest, value) => (value.length > longest.length ? value : longest), '')
+
+    return AXIS_GAP + Math.ceil(measureLabel(widest, font))
+  }
 
 /** Props for `Chart.TimeSeries`. */
 export type TimeSeriesChartProps = ChartBaseProps & {
@@ -42,8 +65,10 @@ export const TimeSeriesChart: FC<TimeSeriesChartProps> = ({
       return null
     }
 
+    const font = `${AXIS_FONT_SIZE}px ${tokens.fontFamily}`
     const axisStyle = {
-      font: `11px ${tokens.fontFamily}`,
+      font,
+      gap: AXIS_GAP,
       grid: {stroke: tokens.grid, width: 1},
       stroke: tokens.label,
       ticks: {show: false},
@@ -55,7 +80,7 @@ export const TimeSeriesChart: FC<TimeSeriesChartProps> = ({
         {
           ...axisStyle,
           show: axis?.y !== false,
-          size: 48,
+          size: valueAxisSize(font),
           values: (_plot, splits) => splits.map(split => formatChartNumber(split, format)),
         },
       ],

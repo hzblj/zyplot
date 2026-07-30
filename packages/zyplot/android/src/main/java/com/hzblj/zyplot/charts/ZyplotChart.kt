@@ -17,6 +17,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -50,22 +51,22 @@ fun ZyplotChart(
     }
   }
   val textMeasurer = rememberTextMeasurer()
-  val scrub = rememberChartScrub(configuration)
+  val scrub = rememberChartScrub(config.datasetKey)
   val reveal = rememberChartReveal(config)
   val crossfade = rememberChartCrossfade(config)
+  val morph = rememberChartMorph(config)
   val haptic = LocalHapticFeedback.current
   val density = LocalDensity.current.density
 
-  var animationStarted by remember(configuration) {
+  var animationStarted by remember(config.datasetKey, config.isLoading) {
     mutableStateOf(!config.animation.enabled || !config.animation.initial)
   }
-  LaunchedEffect(configuration) {
+  LaunchedEffect(config.datasetKey, config.isLoading) {
     if (config.animation.enabled && config.animation.initial) {
       if (config.animation.delayMillis > 0) delay(config.animation.delayMillis.toLong())
       animationStarted = true
     }
   }
-  // One clock for every pulsing annotation: bloom, then rest, then again.
   val bloom = config.annotations.firstNotNullOfOrNull { it.pulse }
   val pulseTransition = rememberInfiniteTransition(label = "zyplot-pulse")
   val bloomProgress by pulseTransition.animateFloat(
@@ -113,6 +114,9 @@ fun ZyplotChart(
     selection?.let { onInteraction(interactionPayload(it, null, "ended", density)) }
   }
 
+  val onScrub by rememberUpdatedState({ position: Offset, width: Float -> select(position, width) })
+  val onScrubEnd by rememberUpdatedState({ width: Float -> endSelection(width) })
+
   if (config.isLoading) {
     Box(modifier = chartSurfaceModifier(config)) {
       ChartLoadingPlaceholder(config)
@@ -139,26 +143,26 @@ fun ZyplotChart(
       modifier = Modifier
         .fillMaxSize()
         .alpha(reveal.opacity * crossfade.progress)
-        .pointerInput(configuration) {
+        .pointerInput(Unit) {
           detectTapGestures { position ->
-            select(position, size.width.toFloat())
-            endSelection(size.width.toFloat())
+            onScrub(position, size.width.toFloat())
+            onScrubEnd(size.width.toFloat())
           }
         }
-        .pointerInput(configuration) {
+        .pointerInput(Unit) {
           detectDragGestures(
-            onDragStart = { position -> select(position, size.width.toFloat()) },
-            onDragEnd = { endSelection(size.width.toFloat()) },
-            onDragCancel = { endSelection(size.width.toFloat()) },
+            onDragStart = { position -> onScrub(position, size.width.toFloat()) },
+            onDragEnd = { onScrubEnd(size.width.toFloat()) },
+            onDragCancel = { onScrubEnd(size.width.toFloat()) },
           ) { change, _ ->
-            select(change.position, size.width.toFloat())
+            onScrub(change.position, size.width.toFloat())
           }
         },
     ) {
       val pointer = scrub.pointer.value
       val growth = if (config.animation.reveal?.isDrawn == true) 1f else progress
       drawChart(
-        config,
+        morph.frame(config),
         growth,
         reveal,
         textMeasurer,

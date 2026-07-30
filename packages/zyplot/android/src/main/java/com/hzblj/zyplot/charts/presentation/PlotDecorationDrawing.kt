@@ -8,8 +8,6 @@ import com.hzblj.zyplot.core.parseColor
 
 internal fun DrawScope.drawPlotDecoration(config: ChartConfiguration) {
   val plot = presentationPlotRect(config)
-  // The chart's own theme background is the fallback, so a chart that names one but
-  // no plot style still paints it — the same order the iOS renderer resolves in.
   (config.plot.backgroundColor?.let(::parseColor) ?: config.backgroundColor)?.let {
     drawRoundRect(
       color = it,

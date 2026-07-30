@@ -102,6 +102,12 @@ const products: ChartCatalogItem[] = [
     layer: 'Traced reveal · glow · scrub readout',
     route: '/revolut',
   },
+  {
+    id: 'kraken',
+    label: 'Crypto price',
+    layer: 'Dotted fill · baseline rule · trail scrub',
+    route: '/kraken',
+  },
 ]
 
 export const chartSections = [

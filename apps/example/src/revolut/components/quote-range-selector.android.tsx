@@ -1,6 +1,6 @@
 import {Row, Spacer} from '@expo/ui/jetpack-compose'
 import {background, clickable, clip, padding, size, weight} from '@expo/ui/jetpack-compose/modifiers'
-import {type QuoteRangeId, quoteRanges} from '../data/quote-data'
+import {type QuoteRangeId, quoteRanges} from '@zyplot/feature-charts/revolut'
 import {quoteLayout, useQuoteTheme} from '../data/quote-theme'
 import {composeRounded, QuoteCircleButton} from './quote-nav-bar.android'
 import {QuoteText} from './quote-text.android'
@@ -12,11 +12,6 @@ export type QuoteRangeSelectorProps = {
   selected: QuoteRangeId
 }
 
-/**
- * The same pill track the iOS selector shows, drawn by hand: Material's segmented buttons
- * put a check glyph and an outline on the selected item, and the Compose wrapper gives no
- * way to turn either off.
- */
 export const QuoteRangeSelector = ({
   isCandlestick,
   onSelect,

@@ -4,6 +4,7 @@ import {LineChart as EChartsLineChart} from 'echarts/charts'
 import {type FC, useCallback, useMemo, useState} from 'react'
 import {fadeChartColor} from '../shared/color'
 import {echarts} from '../shared/engine'
+import {buildSeriesAreaStyle} from '../shared/fill'
 import {ChartShell} from '../shared/frame'
 import {
   buildAxisTooltipFormatter,
@@ -14,11 +15,14 @@ import {
   buildChartInteraction,
   buildChartLegendItems,
   buildValueAxis,
+  chartUpdateAnimation,
+  crosshairHeadroom,
+  plotInnerHeight,
 } from '../shared/option'
 import {buildChartReveal} from '../shared/reveal'
 import type {ChartScrubConfig} from '../shared/scrub'
 import {emphasisSeriesColor, useChartTokens} from '../shared/tokens'
-import type {ChartBaseProps, ChartNumberFormat, ChartSeries} from '../shared/types'
+import type {ChartBaseProps, ChartNumberFormat, ChartSeries, NativeChartInteraction} from '../shared/types'
 import {LineChartSkeleton} from './line-chart-skeleton'
 
 echarts.use([EChartsLineChart])
@@ -35,6 +39,14 @@ export type LineChartProps = ChartBaseProps & {
 }
 
 const DEFAULT_STROKE = 2
+
+const focusMode = (interaction?: NativeChartInteraction) => {
+  if (interaction?.dimOpacity !== undefined) {
+    return 'none' as const
+  }
+
+  return interaction?.hover === 'series' ? ('series' as const) : ('self' as const)
+}
 
 /**
  * A trend over time, one line per series. Gaps in the data are drawn as gaps,
@@ -63,11 +75,9 @@ export const LineChart: FC<LineChartProps> = ({
 }) => {
   const tokens = useChartTokens(theme)
   const isScrubbable = interaction?.hover !== 'none'
-  /** An entrance happens once. After that its flash has no business being built again. */
   const [hasRevealed, setHasRevealed] = useState(false)
   const onRevealed = useCallback(() => setHasRevealed(true), [])
 
-  /** The read series is the first one: the one a scrub and a traced entrance follow. */
   const read = series[0]
   const readColor = useMemo(
     () =>
@@ -94,11 +104,6 @@ export const LineChart: FC<LineChartProps> = ({
     })
   }, [animation, hasRevealed, isSmooth, plot, read, readColor, readStroke, seriesStyles])
 
-  /**
-   * The annotation option is a function of whether a mark is being read, because
-   * `scrubOpacity` steps a reference line back while one is. The pointer layer calls it
-   * again when a scrub starts and ends.
-   */
   const annotationOption = useMemo(
     () =>
       tokens
@@ -119,10 +124,11 @@ export const LineChart: FC<LineChartProps> = ({
     }
 
     const hasCategoryAxis = (xAxis?.visible ?? axis?.x) !== false
+    const headroom = crosshairHeadroom(interaction)
 
     return {
       ...buildChartBaseOption(tokens, texture, animation),
-      grid: buildChartGrid(hasCategoryAxis, plot, xAxis),
+      grid: buildChartGrid(hasCategoryAxis, plot, xAxis, headroom),
       series: [
         ...reveal.extraSeries,
         ...series.map((item, index) => {
@@ -137,15 +143,19 @@ export const LineChart: FC<LineChartProps> = ({
                   animationDelay: reveal.main.animationDelay,
                   animationDuration: reveal.main.animationDuration,
                   animationEasing: reveal.main.animationEasing,
+                  ...chartUpdateAnimation(animation),
                 }
               : {}),
+            areaStyle: buildSeriesAreaStyle(
+              style?.fill,
+              color,
+              style?.fillOpacity,
+              plotInnerHeight(height, hasCategoryAxis, plot, headroom)
+            ),
             clip: plot?.clip ?? true,
             connectNulls: false,
             data: item.values,
-            emphasis:
-              interaction?.hover === 'none'
-                ? {disabled: true}
-                : {focus: interaction?.hover === 'series' ? 'series' : 'self'},
+            emphasis: interaction?.hover === 'none' ? {disabled: true} : {focus: focusMode(interaction)},
             id: item.id,
             itemStyle: {color, opacity: style?.opacity},
             lineStyle: {
@@ -157,8 +167,6 @@ export const LineChart: FC<LineChartProps> = ({
               width: style?.strokeWidth ?? DEFAULT_STROKE,
             },
             name: item.label,
-            // A dot on every reading is a mark the reader did not ask for, and the native
-            // renderers draw none. Give a `symbol` and they appear; otherwise, on hover only.
             showSymbol: style?.symbol !== undefined && style.symbol !== 'none',
             smooth: isSmooth,
             symbol: style?.symbol,
@@ -188,6 +196,7 @@ export const LineChart: FC<LineChartProps> = ({
     categories,
     emphasisId,
     format,
+    height,
     interaction,
     isScrubbable,
     isSmooth,
@@ -207,6 +216,7 @@ export const LineChart: FC<LineChartProps> = ({
     }
 
     return {
+      animation,
       annotationOption,
       annotations,
       color: readColor,
@@ -219,6 +229,7 @@ export const LineChart: FC<LineChartProps> = ({
       tokens: {axis: tokens.axis, surface: tokens.surface},
     }
   }, [
+    animation,
     annotationOption,
     annotations,
     categories,

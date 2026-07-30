@@ -5,18 +5,8 @@ import {useEffect, useRef} from 'react'
 import {type ChartRevealPlan, REVEAL_FLASH_ID} from './reveal-series'
 import {runChartTween} from './reveal-tween'
 
-/** How long the traced stroke takes to come up to full strength once it has landed. */
 const LIFT = 220
 
-/**
- * Runs the part of a traced entrance that no option covers: the stroke coming up from
- * `startOpacity` once it has landed, and the flash holding and then leaving.
- *
- * The entrance belongs to the first render, the way it does on the native renderers, so it
- * runs once — new data does not re-trace. `isReady` is what it waits for: a chart still
- * showing its placeholder has not been seen yet, and a trace drawn behind one is a trace
- * nobody watched. `onSettled` says when there is nothing left to put out.
- */
 export const useChartReveal = (
   instance: EChartsType | null,
   plan: ChartRevealPlan | null,

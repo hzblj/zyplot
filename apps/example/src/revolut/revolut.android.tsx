@@ -1,5 +1,6 @@
 import {Column, Host} from '@expo/ui/jetpack-compose'
 import {padding} from '@expo/ui/jetpack-compose/modifiers'
+import {type QuoteRangeId, type QuoteTabId, quoteRange, quoteTabs, RevolutChart} from '@zyplot/feature-charts/revolut'
 import {useRouter} from 'expo-router'
 import {useState} from 'react'
 import {StyleSheet, View} from 'react-native'
@@ -10,8 +11,6 @@ import {QuotePageView} from './components/quote-page-view'
 import {QuotePriceReadout} from './components/quote-price-readout.android'
 import {QuoteRangeSelector} from './components/quote-range-selector.android'
 import {QuoteTabRow} from './components/quote-tab-row.android'
-import {RevolutChart} from './components/revolut-chart'
-import {type QuoteRangeId, type QuoteTabId, quoteRange, quoteTabs} from './data/quote-data'
 import {quoteLayout, useQuoteTheme} from './data/quote-theme'
 import {useChartPlaceholder} from './hooks/use-chart-placeholder'
 import {useQuoteReadout} from './hooks/use-quote-readout'
@@ -19,7 +18,7 @@ import {useQuoteReadout} from './hooks/use-quote-readout'
 export const RevolutScreen = () => {
   const insets = useSafeAreaInsets()
   const router = useRouter()
-  const {color} = useQuoteTheme()
+  const {color, scheme} = useQuoteTheme()
   const [tabId, setTabId] = useState<QuoteTabId>('Overview')
   const [rangeId, setRangeId] = useState<QuoteRangeId>('1d')
   const [isCandlestick, setIsCandlestick] = useState(false)
@@ -60,6 +59,7 @@ export const RevolutScreen = () => {
                     isLoading={isLoading}
                     onInteraction={readout.onInteraction}
                     range={range}
+                    scheme={scheme}
                   />
                   <QuoteChartOverlay
                     candles={isCandlestick ? range.candles : undefined}

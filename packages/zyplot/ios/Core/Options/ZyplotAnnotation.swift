@@ -8,7 +8,6 @@ struct ZyplotAnnotation: Codable, Identifiable {
   var end: ZyplotCoordinate?
   var glow: ZyplotGlow?
   var halo: ZyplotHalo?
-  /// Measured and reported like any other, but drawn by the app rather than the chart.
   var hidden: Bool?
   var id: String
   var label: String?

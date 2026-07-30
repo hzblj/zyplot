@@ -8,13 +8,6 @@ import {cn} from './utils'
 
 const styles = marketingStyles()
 
-/**
- * The hero's install block: pick a package manager, copy the command.
- *
- * Softer than the docs' code block — no divider, no syntax colour — but the same
- * two rows, so the two do not read as different controls. `yarn` is the default
- * because that is what this repo is built with.
- */
 export const InstallCommand = () => {
   const [manager, setManager] = useState<PackageManager>('yarn')
   const [copied, setCopied] = useState(false)
@@ -46,7 +39,6 @@ export const InstallCommand = () => {
       </div>
       <div className={styles.installRow()}>
         <code className={styles.installCommand()}>{INSTALL_COMMANDS[manager]}</code>
-        {/* The manager rides along: which one people copy is the useful half. */}
         <button
           aria-label={copied ? 'Copied' : 'Copy install command'}
           className={styles.installCopy()}

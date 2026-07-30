@@ -4,7 +4,6 @@ struct ZyplotHeatmapCell: Codable, Identifiable {
   var columnIndex: Int
   var rowIndex: Int
   var value: Double?
-
   var id: String { "\(columnIndex):\(rowIndex)" }
 }
 

@@ -46,13 +46,6 @@ struct ZyplotChartCurve {
     return path
   }
 
-  func window(around centre: Int, reach: Int) -> Path? {
-    let positions = readings
-      .filter { $0.index >= centre - reach && $0.index <= centre + reach }
-      .map(\.position)
-    return Self.path(through: positions, isSmooth: isSmooth)
-  }
-
   private static func path(through positions: [CGPoint], isSmooth: Bool) -> Path? {
     guard positions.count > 1, let first = positions.first else { return nil }
     var path = Path()

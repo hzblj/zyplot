@@ -3,6 +3,7 @@ export {
   animation,
   annotation,
   axis,
+  fill,
   format,
   glow,
   halo,

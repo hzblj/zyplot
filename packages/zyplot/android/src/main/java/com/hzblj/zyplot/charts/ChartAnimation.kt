@@ -19,7 +19,6 @@ internal fun chartAnimationSpec(animation: AnimationOptions): FiniteAnimationSpe
     else -> tween(animation.durationMillis, easing = LinearOutSlowInEasing)
   }
 
-/** The reveal names its own curve, so it needs the easing without an animation spec. */
 internal fun chartEasing(name: String?, fallback: Easing): Easing =
   when (name) {
     "linear" -> LinearEasing

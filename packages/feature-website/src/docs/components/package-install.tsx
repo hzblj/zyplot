@@ -39,7 +39,6 @@ export const PackageInstall = () => {
       </div>
       <div className={styles.installRow()}>
         {highlighted ? (
-          /* Shiki output, generated at build time from source strings in this repo. */
           <div
             className={cn(styles.codeBlockBody(), styles.installCommand())}
             dangerouslySetInnerHTML={{__html: highlighted}}

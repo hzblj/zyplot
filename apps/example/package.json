@@ -20,6 +20,7 @@
 		"@expo/log-box": "55.0.13",
 		"@expo/ui": "^55.0.17",
 		"@hzblj/zyplot": "workspace:*",
+		"@zyplot/feature-charts": "workspace:*",
 		"expo": "55.0.28",
 		"expo-build-properties": "~55.0.9",
 		"expo-constants": "~55.0.17",
