@@ -17,6 +17,7 @@ struct ZyplotAxisOptions: Codable {
   var grid: Bool?
   var gridDash: [Double]?
   var label: String?
+  var labelEdgeAlign: Bool?
   var labelInset: Double?
   var labelRotation: Double?
   var labelSize: Double?
@@ -26,6 +27,7 @@ struct ZyplotAxisOptions: Codable {
   var reversed: Bool?
   var scale: String?
   var scrollPosition: ZyplotCoordinate?
+  var minorTicks: Bool?
   var tickCount: Int?
   var ticks: Bool?
   var tickValues: [ZyplotCoordinate]?
@@ -39,5 +41,16 @@ struct ZyplotAxisOptions: Codable {
       return nil
     }
     return numbers.isEmpty ? nil : numbers
+  }
+
+  /// The ticks a category axis was given. Without these it falls back to a desired count, which
+  /// on a band scale is every category — thirty-one labels in the room for four.
+  var categoryTickValues: [String]? {
+    guard let tickValues else { return nil }
+    let labels = tickValues.compactMap { value -> String? in
+      if case .text(let label) = value { return label }
+      return nil
+    }
+    return labels.isEmpty ? nil : labels
   }
 }

@@ -13,6 +13,7 @@ import {
   buildChartInteraction,
   buildChartLegendItems,
 } from '../shared/option'
+import {skeletonAxis} from '../shared/skeleton'
 import {emphasisSeriesColor, useChartTokens} from '../shared/tokens'
 import type {ChartBaseProps, ChartNumberFormat, ChartSeries} from '../shared/types'
 import {StackedBarChartSkeleton} from './stacked-bar-chart-skeleton'
@@ -94,7 +95,7 @@ export const StackedBarChart: FC<StackedBarChartProps> = ({
     return {
       ...buildChartBaseOption(tokens, texture, animation),
       ...buildCartesianAxes(tokens, categories, valueFormat, isHorizontal, axis, xAxis, yAxis),
-      grid: buildChartGrid(!isHorizontal, plot),
+      grid: buildChartGrid({down: yAxis, hasCategoryGutter: !isHorizontal, plot}),
       series: plotted.map((item, index) => ({
         ...(index === 0 ? buildChartAnnotationOption(annotations) : {}),
         barMaxWidth: 28,
@@ -153,17 +154,20 @@ export const StackedBarChart: FC<StackedBarChartProps> = ({
       annotations={annotations}
       className={className}
       height={height}
+      interaction={interaction}
       legend={legend}
       option={option}
       isLoading={isLoading}
       onInteraction={onInteraction}
       skeleton={
         <StackedBarChartSkeleton
+          categories={categories}
+          format={format}
           height={height}
           legendCount={series.length}
           orientation={orientation}
-          xAxis={(xAxis?.visible ?? axis?.x) !== false}
-          yAxis={(yAxis?.visible ?? axis?.y) !== false}
+          xAxis={skeletonAxis(axis?.x, xAxis)}
+          yAxis={skeletonAxis(axis?.y, yAxis)}
         />
       }
     />

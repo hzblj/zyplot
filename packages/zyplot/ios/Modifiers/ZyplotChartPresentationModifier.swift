@@ -2,6 +2,14 @@ import Charts
 import SwiftUI
 
 struct ZyplotChartPresentationModifier: ViewModifier {
+  /**
+   The air the chart keeps above and below the marks, held around the chart rather than inside the
+   plot — Swift Charts lays the axes out against the plot's own edges, so an inset there takes the
+   room from the label rows instead of from the marks. The canvases that stroke the trace are sized
+   to the chart and so stop short of a plot given a negative inset; they take this back as overdraw.
+   */
+  static let reserve: CGFloat = 8
+
   let configuration: ZyplotConfiguration
   var reveal: ZyplotRevealState = .settled
 
@@ -67,18 +75,6 @@ struct ZyplotChartPresentationModifier: ViewModifier {
   }
 
   private var plotInsets: EdgeInsets {
-    switch configuration.plot?.padding {
-    case .value(let value):
-      return EdgeInsets(top: value, leading: value, bottom: value, trailing: value)
-    case .edges(let value):
-      return EdgeInsets(
-        top: value.top ?? 0,
-        leading: value.left ?? 0,
-        bottom: value.bottom ?? 0,
-        trailing: value.right ?? 0
-      )
-    case nil:
-      return EdgeInsets()
-    }
+    configuration.plot?.padding?.insets ?? EdgeInsets()
   }
 }

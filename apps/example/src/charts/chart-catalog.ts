@@ -95,18 +95,38 @@ const advanced: ChartCatalogItem[] = [
   },
 ]
 
+// Named for the app each one is built after, because "Stock detail" and "Quote sheet" are the
+// same words and the point of the row is knowing which screen you are about to open.
 const products: ChartCatalogItem[] = [
   {
     id: 'revolut',
-    label: 'Stock detail',
+    label: 'Revolut · stock detail',
     layer: 'Traced reveal · glow · scrub readout',
     route: '/revolut',
   },
   {
     id: 'kraken',
-    label: 'Crypto price',
+    label: 'Kraken · crypto price',
     layer: 'Dotted fill · baseline rule · trail scrub',
     route: '/kraken',
+  },
+  {
+    id: 'family',
+    label: 'Family · token detail',
+    layer: 'Custom skeleton · morphing ranges · pulse',
+    route: '/family',
+  },
+  {
+    id: 'health',
+    label: 'Apple Health · steps',
+    layer: 'Bars · two-finger span · headline card',
+    route: '/health',
+  },
+  {
+    id: 'stocks',
+    label: 'Apple Stocks · quote sheet',
+    layer: 'Direction colour · split span · volume tape',
+    route: '/stocks',
   },
 ]
 

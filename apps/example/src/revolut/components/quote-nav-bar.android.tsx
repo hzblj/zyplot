@@ -1,11 +1,9 @@
 import {Column, Row, Spacer} from '@expo/ui/jetpack-compose'
 import {background, clickable, clip, size, weight} from '@expo/ui/jetpack-compose/modifiers'
 import {quote} from '@zyplot/feature-charts/revolut'
-import {setColorScheme} from '../../theme/color-scheme'
 import {quoteLayout, useQuoteTheme} from '../data/quote-theme'
 import {QuoteText} from './quote-text.android'
 
-const schemeGlyph = {dark: '☾', light: '☀︎'} as const
 export const composeCircle = {type: 'circle'} as const
 export const composeRounded = {radius: 18, type: 'roundedCorner'} as const
 
@@ -32,22 +30,6 @@ export const QuoteCircleButton = ({
       verticalAlignment="center"
     >
       <QuoteText size={diameter * 0.42}>{glyph}</QuoteText>
-    </Row>
-  )
-}
-
-export const QuoteNavBar = ({onBack}: {onBack: () => void}) => {
-  const {scheme} = useQuoteTheme()
-  const next = scheme === 'dark' ? 'light' : 'dark'
-
-  return (
-    <Row verticalAlignment="center">
-      <QuoteCircleButton glyph="‹" onPress={onBack} />
-      <Row horizontalArrangement="end" modifiers={[weight(1)]}>
-        <QuoteCircleButton glyph="○" />
-        <Spacer modifiers={[size(12, 1)]} />
-        <QuoteCircleButton glyph={schemeGlyph[next]} onPress={() => setColorScheme(next)} />
-      </Row>
     </Row>
   )
 }

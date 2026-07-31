@@ -1,6 +1,8 @@
 import Foundation
 
 struct ZyplotAnnotation: Codable, Identifiable {
+  /// Where in a category's band a rule sits: `center`, `start` or `end`.
+  var align: String?
   var axis: String?
   var badge: String?
   var color: String?

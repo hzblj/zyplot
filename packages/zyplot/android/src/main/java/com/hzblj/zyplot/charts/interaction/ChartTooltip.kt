@@ -27,7 +27,7 @@ internal fun ChartTooltip(
   scrub: ChartScrub,
   width: Float,
 ) {
-  if (!config.interaction.tooltip) return
+  if (!config.interaction.tooltip || scrub.range.value != null) return
   val pointer = scrub.pointer.value ?: return
   val selection = scrub.selection(config, width, LocalDensity.current.density) ?: return
 

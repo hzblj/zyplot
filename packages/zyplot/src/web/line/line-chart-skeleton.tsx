@@ -10,14 +10,8 @@ export type LineChartSkeletonProps = ChartSkeletonProps
  * The placeholder for `Chart.Line`: the same shape at the same height, so nothing
  * moves when the data lands.
  */
-export const LineChartSkeleton: FC<LineChartSkeletonProps> = ({
-  className,
-  height,
-  legendCount = 0,
-  xAxis = true,
-  yAxis = true,
-}) => (
-  <ChartSkeletonFrame className={className} height={height} legendCount={legendCount} xAxis={xAxis} yAxis={yAxis}>
+export const LineChartSkeleton: FC<LineChartSkeletonProps> = props => (
+  <ChartSkeletonFrame {...props}>
     <SkeletonLine />
   </ChartSkeletonFrame>
 )

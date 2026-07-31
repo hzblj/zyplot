@@ -13,6 +13,7 @@ import {
   firstTooltipParam,
   renderChartTooltip,
 } from '../shared/option'
+import {skeletonAxis} from '../shared/skeleton'
 import {useChartTokens} from '../shared/tokens'
 import type {ChartBaseProps, ChartDatum, ChartNumberFormat} from '../shared/types'
 import {DivergingBarChartSkeleton} from './diverging-bar-chart-skeleton'
@@ -82,7 +83,7 @@ export const DivergingBarChart: FC<DivergingBarChartProps> = ({
     return {
       ...buildChartBaseOption(tokens, texture, animation),
       ...buildCartesianAxes(tokens, categories, format, isHorizontal, axis),
-      grid: buildChartGrid(!isHorizontal),
+      grid: buildChartGrid({hasCategoryGutter: !isHorizontal}),
       series: [
         {
           barMaxWidth: 24,
@@ -129,8 +130,8 @@ export const DivergingBarChart: FC<DivergingBarChartProps> = ({
         <DivergingBarChartSkeleton
           height={height}
           legendCount={0}
-          xAxis={axis?.x !== false}
-          yAxis={axis?.y !== false}
+          xAxis={skeletonAxis(axis?.x)}
+          yAxis={skeletonAxis(axis?.y)}
         />
       }
     />

@@ -41,6 +41,15 @@ class ChartConfiguration internal constructor(
   val isHorizontal: Boolean = orientation == "horizontal"
   val isStacked: Boolean = json.optBoolean("isStacked", type == "stacked-bar")
   val isSmooth: Boolean = json.optBoolean("isSmooth", false)
+
+  /**
+   * Whether a category is a position on the plot rather than a band across it. A trace runs corner
+   * to corner, so its first mark is the plot's leading edge and its last is the trailing one; a bar
+   * owns a width and stands in the middle of it. Everything placed by category — an annotation, a
+   * rule, the reported geometry — has to follow the marks it is placed against.
+   */
+  val laysMarksOnEdges: Boolean =
+    type == "line" || type == "area" || type == "time-series" || type == "sparkline"
   val value: Double = json.optDouble("value", 0.0)
   val change: Double? = json.nullableDouble("change")
   val minimum: Double = json.optDouble("min", 0.0)
@@ -167,6 +176,34 @@ class ChartConfiguration internal constructor(
 
   var measuredYGutter: Float? = null
 
+  /** How far the marks are stepped back for the reading in progress. Ramped by the view. */
+  var scrubDimming: Float = 1f
+
+  /**
+   * The mark whose stroke stays lit while the step back is coming back up, after the touch that was
+   * reading it has gone. Dropping the lighting with the touch would leave the length of trace that
+   * was never dimmed to come up with the rest of it, which reads as the whole chart flashing.
+   */
+  var scrubLit: Int? = null
+
+  /**
+   * The span whose stretch stays lit, for the same reason `scrubLit` outlives its touch. Never set
+   * beside `scrubLit`: a span and a single reading are two readings, not one held two ways.
+   */
+  var scrubRange: IntRange? = null
+
+  /**
+   * How far the lighting has come up, which is how far the marks have stepped back. The lit stroke is
+   * drawn that far from the trace's own colour towards the marker's, so it can be let go of at the
+   * end of the ramp without anything showing.
+   */
+  val scrubLitStrength: Float
+    get() {
+      val span = 1f - (interaction.scrubDimOpacity ?: return 1f)
+      if (span <= 0f) return 1f
+      return ((1f - scrubDimming) / span).coerceIn(0f, 1f)
+    }
+
   val isDark: Boolean = when (colorMode) {
     "dark" -> true
     "light" -> false
@@ -207,6 +244,17 @@ class ChartConfiguration internal constructor(
         ?: colorFor(index, series.color, series.slot)
       ).copy(alpha = dimming(series.id))
 
+  /**
+   * The colour a held span is drawn in, or null where the chart named none. The span's own direction
+   * rather than the period's, off the first series the way every other reading is — so a fortnight
+   * down inside a year up is drawn as the fortnight.
+   */
+  fun rangeTint(from: Int, to: Int): String? {
+    val style = interaction.rangeStyle ?: return null
+    val values = series.firstOrNull()?.values
+    return style.tint(rose = (values?.getOrNull(to) ?: 0.0) >= (values?.getOrNull(from) ?: 0.0))
+  }
+
   fun dimming(id: String): Float =
     if (emphasisId.isNullOrEmpty() || emphasisId == id) 1f else interaction.dimOpacity
 
@@ -214,6 +262,9 @@ class ChartConfiguration internal constructor(
     ChartConfiguration(json, isSystemDark, frame).also {
       it.fontFamily = fontFamily
       it.measuredYGutter = measuredYGutter
+      it.scrubDimming = scrubDimming
+      it.scrubLit = scrubLit
+      it.scrubRange = scrubRange
     }
 
   fun valueExtent(values: List<Double>): Pair<Double, Double> {

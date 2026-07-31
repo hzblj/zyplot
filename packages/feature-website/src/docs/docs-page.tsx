@@ -1083,6 +1083,9 @@ const guidePages = [
   'use-last-reading',
   'revolut',
   'kraken',
+  'family',
+  'health',
+  'stocks',
   'releases',
   'changelog',
 ]
@@ -1120,6 +1123,18 @@ const guidePageHeadings: Record<string, {id: string; label: string}[]> = {
     {id: 'annotations', label: 'Annotations'},
     {id: 'interaction', label: 'Interaction'},
     {id: 'plot-style', label: 'Plot and series style'},
+  ],
+  family: [
+    {id: 'family', label: 'Family'},
+    {id: 'family-arrival', label: 'The wave that becomes the price'},
+    {id: 'family-scrub', label: 'A step back with a beat'},
+    {id: 'family-source', label: 'What it uses'},
+  ],
+  health: [
+    {id: 'health', label: 'Health'},
+    {id: 'health-overlay', label: 'The scale inside the plot'},
+    {id: 'health-span', label: 'Two fingers, one total'},
+    {id: 'health-source', label: 'What it uses'},
   ],
   installation: [
     {id: 'installation', label: 'Installation'},
@@ -1161,6 +1176,12 @@ const guidePageHeadings: Record<string, {id: string; label: string}[]> = {
   revolut: [
     {id: 'revolut', label: 'Revolut'},
     {id: 'revolut-source', label: 'What it uses'},
+  ],
+  stocks: [
+    {id: 'stocks', label: 'Stocks'},
+    {id: 'stocks-grid', label: 'Measuring the plot box'},
+    {id: 'stocks-span', label: 'A span the chart paints'},
+    {id: 'stocks-source', label: 'What it uses'},
   ],
   theming: [
     {id: 'theming', label: 'Theming'},
@@ -1627,12 +1648,25 @@ export const Forecast = ({ bands }: ForecastProps) => (
           />
           <div className={styles.note()}>
             <strong>The names are historical.</strong> The vocabulary was built for the platform graphics stacks and
-            landed on the web renderer afterwards, so the types still read <code>Native*</code>. Five fields are still
-            native alone: <code>animation.transition</code>, which the web renderer answers its own way — mark by mark,
-            whichever name it is given — <code>interaction.haptics</code>, which the web has no honest equivalent for,{' '}
+            landed on the web renderer afterwards, so the types still read <code>Native*</code>. Six of its fields are
+            still native alone: <code>animation.transition</code>, which the web renderer answers its own way — mark by
+            mark, whichever name it is given — <code>interaction.haptics</code>, which the web has no honest equivalent
+            for, <code>interaction.rangeStyle</code>, which draws a span the web has no second finger to hold,{' '}
             <code>style.candleRadius</code>, which the web candlestick engine cannot round, and{' '}
             <code>style.neutralColor</code> and <code>style.volumeHeightRatio</code> — the web candlestick colours a
-            flat session as a rising one and gives the volume histogram a fixed share of the plot.
+            flat session as a rising one and gives the volume histogram a fixed share of the plot. Two fields on the
+            plain contract are native alone as well: <code>interaction.range</code>, which needs a second finger, and{' '}
+            <code>annotation.align</code>, which the web still centres.
+          </div>
+          <div className={styles.note()}>
+            <strong>
+              A series' own <code>glow</code> and <code>fill</code> are drawn where a trace is.
+            </strong>{' '}
+            Both ride the canvas that strokes the series, so they land on <code>Chart.Line</code> and{' '}
+            <code>Chart.Area</code> on iOS and Android — iOS carries them to <code>Chart.Sparkline</code> and{' '}
+            <code>Chart.TimeSeries</code> as well — and on the web on <code>Chart.Line</code>, plus the fill on{' '}
+            <code>Chart.Area</code>, where the area is the quantity rather than decoration. A <code>glow</code> set on a
+            bar or a scatter is accepted by the type and drawn by nobody.
           </div>
           <div className={styles.note()}>
             <strong>A decorated point is drawn by the layer that reads the pointer.</strong> So <code>glow</code>,{' '}
@@ -1665,9 +1699,9 @@ type ChartSeriesFill = {
   dotSize?: number
   /**
    * How much of its strength the fill still has at the plot's floor, 0–1. Default 1,
-   * which is an even fill. On the web it needs an explicit height: the ramp is baked
-   * into a tile before the chart is measured, and a chart that has not said how tall
-   * it is keeps an even fill rather than guessing at one.
+   * which is an even fill. A dotted fill on the web also needs an explicit height: the
+   * ramp is baked into a tile before the chart is measured, and a chart that has not
+   * said how tall it is keeps an even fill rather than guessing at one.
    */
   fadeTo?: number
   /** "dots" | "solid" */
@@ -1783,11 +1817,25 @@ type ChartSelectionMarker = {
   /** "point" | "segment" | "trail" */
   style?: ChartMarkerStyle
   color?: string
+  /** Puts the dot of "point" on the reading as well, so a lit stretch can name its head. */
+  dot?: boolean
   glow?: ChartGlow
-  /** A dot’s diameter. "point" only. */
+  /** A dot’s diameter. "point", and the other two once dot is set. */
   size?: number
   /** How many data steps either side of the touch a segment covers. "segment" only. */
   span?: number
+}
+
+/** How the stretch between two fingers is picked out. Native only, like the span itself. */
+type ChartRangeStyle = {
+  /** The held stretch’s colour, and the rules at its ends. Defaults to the trace’s own. */
+  color?: string
+  /** Its colour when the span closed below where it opened. Defaults to color. */
+  downColor?: string
+  /** How far the rest of the trace steps back, 0–1, the fill with it. Default 1. */
+  dimOpacity?: number
+  /** A dot at each end of the span, in the stretch’s colour. Default true. */
+  dot?: boolean
 }
 
 type ChartCrosshairStyle = {
@@ -1795,8 +1843,16 @@ type ChartCrosshairStyle = {
   dash?: number[]
   /** What to write above the crosshair: one string per slot, in data order. */
   labels?: string[]
+  /** Painted behind the label, which makes the words a chip. */
+  labelBackground?: string
   /** Defaults to the theme’s label colour. */
   labelColor?: string
+  /** The gap between the label and the top of the plot. Default 8. */
+  labelLift?: number
+  /** How far the chip reaches past its text. Default {x: 10, y: 5}. */
+  labelPadding?: number | {x?: number; y?: number}
+  /** Corner radius of the chip. Defaults to half its height. */
+  labelRadius?: number
   /** Point size of the label. Default 13. */
   labelSize?: number
   width?: number
@@ -1814,13 +1870,51 @@ type ChartCrosshairStyle = {
               {
                 defaultValue: '2',
                 description:
-                  'Data steps either side of the touch. A trail reaches back to the first datum, so it reads neither this nor size.',
+                  'Data steps either side of the touch. A trail reaches back to the first datum, so it reads no span — only size, and only once it has been asked for a dot.',
                 name: 'marker.span',
                 type: 'number',
               },
-              {defaultValue: '0.55', description: 'Glow opacity at rest.', name: 'glow.opacity', type: 'number'},
-              {defaultValue: '6', description: 'Glow radius, in points.', name: 'glow.radius', type: 'number'},
-              {defaultValue: '12', description: 'Halo diameter, in points.', name: 'halo.size', type: 'number'},
+              {
+                description:
+                  'The held stretch of a two-finger span, painted in the direction the span itself went: downColor when it closed below where it opened, color otherwise. The rules at its ends take the same colour over crosshairStyle.color, since they are the ends of the stretch. Both default to the trace’s own colour, which reads as no split at all.',
+                name: 'rangeStyle.color · rangeStyle.downColor',
+                type: 'string',
+              },
+              {
+                defaultValue: '1',
+                description:
+                  'How far the trace outside the span steps back, and the fill under it with it — a span picks out a stretch of the period rather than one mark out of many. Separate from interaction.dimOpacity, so one finger can read a whole trace and two can still spotlight part of it.',
+                name: 'rangeStyle.dimOpacity',
+                type: 'number',
+              },
+              {
+                defaultValue: 'true',
+                description:
+                  'A dot on each end of the span, in the stretch’s colour and at the marker’s own size. Drawn from the fingers, so both ends keep up with them.',
+                name: 'rangeStyle.dot',
+                type: 'boolean',
+              },
+              {
+                defaultValue: '0.55 native · 0.35 web',
+                description:
+                  'Glow opacity at rest. The web’s own blooms are fainter: 0.35 behind a stroke or a selection marker, 0.3 for the bloom on a read mark.',
+                name: 'glow.opacity',
+                type: 'number',
+              },
+              {
+                defaultValue: '6',
+                description:
+                  'Glow radius, in points — on both native renderers and on the web’s scrub chrome. A series glow on the web takes no default: leave radius out and the stroke gets no bloom at all.',
+                name: 'glow.radius',
+                type: 'number',
+              },
+              {
+                defaultValue: '12 native',
+                description:
+                  'Halo diameter, in points. On the web a halo with no size is drawn at the point’s own diameter, which is a ring you cannot see — name it there.',
+                name: 'halo.size',
+                type: 'number',
+              },
               {defaultValue: '1', description: 'Crosshair line width.', name: 'crosshairStyle.width', type: 'number'},
               {
                 description:
@@ -1835,9 +1929,40 @@ type ChartCrosshairStyle = {
               },
               {
                 defaultValue: '13',
-                description: 'Point size of the label. Also what the web plot gives up at the top to fit it.',
+                description:
+                  'Point size of the label. What the web plot gives up at the top is this plus the chip’s vertical padding and labelLift, so the room and the text cannot drift apart.',
                 name: 'crosshairStyle.labelSize',
                 type: 'number',
+              },
+              {
+                description:
+                  'Painted behind the label, which makes the words a chip. Sized by labelPadding and rounded by labelRadius.',
+                name: 'crosshairStyle.labelBackground',
+                type: 'string',
+              },
+              {
+                defaultValue: '{x: 10, y: 5}',
+                description: 'How far the chip reaches past its text. A single number pads both ways.',
+                name: 'crosshairStyle.labelPadding',
+                type: 'number | {x, y}',
+              },
+              {
+                description: 'Corner radius of the chip. Defaults to half its height, so it ends in a round cap.',
+                name: 'crosshairStyle.labelRadius',
+                type: 'number',
+              },
+              {
+                defaultValue: '8',
+                description: 'The gap between the label and the top of the plot.',
+                name: 'crosshairStyle.labelLift',
+                type: 'number',
+              },
+              {
+                defaultValue: 'false',
+                description:
+                  'Puts the dot of "point" on the reading as well, so a "segment" or a "trail" can light the line and still mark where the finger is. Sized by marker.size and blooming by marker.glow.',
+                name: 'marker.dot',
+                type: 'boolean',
               },
               {
                 defaultValue: 'false',
@@ -1859,15 +1984,37 @@ type ChartCrosshairStyle = {
                 type: '"auto" | "bottom" | "leading" | "top" | "trailing"',
               },
               {
-                description: 'A colour the mark under the finger is lifted towards, so the read one reads as lit.',
+                description:
+                  'A colour the mark under the finger is lifted towards, so the read one reads as lit. Chart.Candlestick alone reads it, on all three renderers — the other forms are lit by marker and dimOpacity.',
                 name: 'interaction.highlightColor',
                 type: 'string',
               },
               {
                 defaultValue: '1',
-                description: 'How far towards it. Below 1 the mark’s own colour still reads through the lift.',
+                description:
+                  'How far towards it. Below 1 the mark’s own colour still reads through the lift. Candlestick only, like the colour it blends.',
                 name: 'interaction.highlightBlend',
                 type: 'number',
+              },
+              {
+                defaultValue: '0',
+                description:
+                  'How long the marks take to step back to dimOpacity when a reading starts, and to come back up when it ends, in ms. 0 is the cut every chart has always had; a beat is worth it where the dimming is the whole feedback for the gesture. The lit stretch of a segment or a trail is held until the ramp is all the way up, so the part of the trace that was never dimmed has nothing to flash against.',
+                name: 'interaction.dimDuration',
+                type: 'number',
+              },
+              {
+                defaultValue: 'false',
+                description:
+                  'Reads a span rather than a mark: two fingers report the marks under each of them and everything between, as range on the event. A rule is drawn at each end of the span instead of a crosshair through one. iOS and Android only.',
+                name: 'interaction.range',
+                type: 'boolean',
+              },
+              {
+                description:
+                  'How the held stretch is picked out, beside the rules at its ends: color and downColor paint it in the span’s own direction, dimOpacity steps the rest of the trace back behind it, and dot puts the reading marker on each end. Drawn by the chart from the fingers themselves, so the ends keep up with them — a masked second series fed back through a scrub handler arrives a render late. iOS and Android only.',
+                name: 'interaction.rangeStyle',
+                type: '{color?, downColor?, dimOpacity?, dot?}',
               },
               {
                 defaultValue: '0',
@@ -1909,16 +2056,26 @@ type ChartCrosshairStyle = {
             ]}
           />
           <div className={styles.note()}>
-            <strong>The one label the chart draws is the one pinned to the crosshair.</strong> Everything else you put
-            over a plot sits still long enough for <code>onInteraction</code> to place it — a card against a rule, a
-            badge on an annotation. A label that has to move <em>with</em> the line cannot: a position that reaches
+            <strong>Anything that follows the finger belongs to the chart.</strong> Everything else you put over a plot
+            sits still long enough for <code>onInteraction</code> to place it — a card against a rule, a badge on an
+            annotation. A label or a dot that has to move <em>with</em> the line cannot: a position that reaches
             JavaScript through a bridge and comes back as a re-render is a frame or two behind the line it belongs to,
-            and read together the label visibly drags. So <code>crosshairStyle.labels</code> hands the words to whoever
-            is drawing the line. All three renderers keep the label whole against both edges of the chart, so the first
-            and last readings of a series are worth a full label rather than half of one, and on the web the plot gives
-            up <code>labelSize</code> plus 8px at the top to draw it in — only when labels were given and a crosshair is
-            drawn at all, and whether or not a pointer is over the plot: marks that changed height the moment one
-            arrived would be worse than either.
+            and read against the crosshair beside it the thing visibly drags — tens of points behind on a fast drag, not
+            a shimmer. So <code>crosshairStyle.labels</code> hands the words to whoever is drawing the line, and{' '}
+            <code>marker.dot</code> does the same for the dot on the reading. All three renderers keep the label whole
+            against both edges of the chart, so the first and last readings of a series are worth a full label rather
+            than half of one, and on the web the plot gives up the label’s height plus <code>labelLift</code> at the top
+            to draw it in — only when labels were given and a crosshair is drawn at all, and whether or not a pointer is
+            over the plot: marks that changed height the moment one arrived would be worse than either.
+          </div>
+          <div className={styles.note()}>
+            <strong>You can still draw the chip yourself.</strong> Nothing stops you: take the plot rect and the
+            annotation spots out of <code>geometry</code>, put your own view on them, and it will be as much yours as
+            any other component — which is the way to go for a readout the options cannot describe. Know what it costs
+            first. It is the round trip above, and it shows most on the thing nearest the finger, so style the built-in
+            chip where you can — <code>labelBackground</code>, <code>labelPadding</code>, <code>labelRadius</code> and{' '}
+            <code>labelLift</code> are there to make it the chip your design asked for — and keep your own views for
+            what sits still.
           </div>
           <div className={styles.note()}>
             <strong>
@@ -1949,29 +2106,43 @@ type ChartCrosshairStyle = {
                 type: '"start" | "end" | "overlay"',
               },
               {
-                defaultValue: '2',
+                defaultValue: '—',
                 description:
-                  'How far an overlaid label sits from the plot’s trailing edge. Only read when position is overlay.',
+                  'How far the labels sit off the plot’s edge, in points: inside it for overlay, out in the gutter for start and end, which widens to keep them. Left out, each renderer keeps a few points of its own.',
                 name: 'labelInset',
                 type: 'number',
               },
               {defaultValue: '11', description: 'Point size of the tick labels.', name: 'labelSize', type: 'number'},
               {
-                defaultValue: 'true',
+                defaultValue: 'true native · false web',
                 description:
-                  'Draws the short marks beside each label. Independent of grid, and coloured by theme.colors.axis, which is the only thing either renderer draws with it — neither Swift Charts nor a Compose canvas draws a domain line.',
+                  'Draws the short marks beside each label, independently of grid. iOS and Android draw them in theme.colors.axis; the web takes ECharts’ own colour, which follows the axis line — theme.colors.grid on a category axis, the engine’s own grey on a value one. The web category axis also draws that line along the plot, which is the one piece of axis furniture neither Swift Charts nor a Compose canvas has; minorTicks takes it off and puts the row of marks there instead.',
                 name: 'ticks',
                 type: 'boolean',
               },
               {
-                defaultValue: '0',
-                description: 'Free space, in points, kept before the first mark.',
+                defaultValue: 'false',
+                description:
+                  'A shorter mark at every category, not only at the named ones. When two categories out of twenty-four are labelled, the row of these is what reads as the axis — a rule inside the plot only looks like one until a line rests on it. The named ticks become the longer marks that cap the row, and one more closes it on the trailing edge of the last band. Needs ticks, and a category axis along the bottom: Chart.Line, Chart.Bar and Chart.StackedBar on the web, any kind on native.',
+                name: 'minorTicks',
+                type: 'boolean',
+              },
+              {
+                defaultValue: 'false',
+                description:
+                  'Pins the first and last labels to the ends of the axis instead of centring each on its own mark, so a pair of bookends — 0:00 and 23:00 — squares up with the row of ticks they bracket. Read on the x axis, and on iOS only for the labels a tickValues named.',
+                name: 'labelEdgeAlign',
+                type: 'boolean',
+              },
+              {
+                description:
+                  'Free space, in points, kept before the first mark. What you give is the whole gutter, so 0 puts the first mark on the plot’s leading edge; left out, a renderer keeps a few points of its own so a mark that sits at the edge is not cut in half. On the x axis this is the room at the plot’s sides, on the y axis the air under the lowest reading.',
                 name: 'plotDimensionStartPadding',
                 type: 'number',
               },
               {
-                defaultValue: '0',
-                description: 'Free space, in points, kept after the last mark.',
+                description:
+                  'Free space, in points, kept after the last mark. Read like plotDimensionStartPadding — on the y axis, the headroom over the highest reading. The label row under the plot is not part of it and keeps whatever it needs.',
                 name: 'plotDimensionEndPadding',
                 type: 'number',
               },
@@ -2036,15 +2207,36 @@ type ChartCrosshairStyle = {
                 name: 'labels',
                 type: 'wider on native',
               },
+              {
+                description:
+                  'Two fingers report the span between them, and the chart draws a rule at each end rather than a crosshair through one. A pointer has no second finger, so on the web the flag changes nothing and range stays null on every event.',
+                name: 'interaction.range',
+                type: 'native only',
+              },
+              {
+                description:
+                  'How that span is drawn: its stretch in the direction it went, the rest of the trace stepped back behind it, a dot on each end. Nothing to answer on the web, where there is no span to draw.',
+                name: 'interaction.rangeStyle',
+                type: 'native only',
+              },
+              {
+                description:
+                  'Which edge of a category’s band a rule sits on. iOS and Android place it where they place every other category position, so the reported geometry agrees with the pixels; the web renderer still centres every rule on its mark.',
+                name: 'annotation.align',
+                type: 'native only',
+              },
             ]}
           />
           <div className={styles.note()}>
             <strong>The presentation props are not on this list.</strong> <code>glow</code>, <code>reveal</code>,{' '}
-            <code>marker</code>, <code>badge</code>, <code>pulse</code>, <code>halo</code> and the overlaid axis all
-            render in the DOM as well — see <a href="#native-presentation">the presentation vocabulary</a> above. Only{' '}
-            <code>interaction.haptics</code>, <code>style.candleRadius</code>, <code>style.neutralColor</code> and{' '}
-            <code>style.volumeHeightRatio</code> are native alone. Eleven forms do take different data props, though:
-            those are in <a href="#native-coverage">chart coverage</a>.
+            <code>marker</code> — <code>dot</code> and all — <code>badge</code>, <code>pulse</code>, <code>halo</code>,{' '}
+            <code>crosshairStyle</code>’s chip, <code>minorTicks</code> and the overlaid axis all render in the DOM as
+            well — see <a href="#native-presentation">the presentation vocabulary</a> above. Only{' '}
+            <code>interaction.haptics</code>, <code>interaction.range</code>, <code>interaction.rangeStyle</code>,{' '}
+            <code>annotation.align</code>, <code>style.candleRadius</code>, <code>style.neutralColor</code> and{' '}
+            <code>style.volumeHeightRatio</code> are native alone, and <code>animation.transition</code> is answered its
+            own way in the DOM rather than read. Eleven forms do take different data props, though: those are in{' '}
+            <a href="#native-coverage">chart coverage</a>.
           </div>
           <CodeBlock>{`type ChartCandlestickLabels = {
   open: string
@@ -2541,6 +2733,17 @@ type NativeChartTheme = {
             <code>color(display-p3 …)</code>, which ECharts' own parser rejects. Every color is normalized to sRGB on
             the way to the canvas, so the variable can hold whatever your design tokens hold.
           </div>
+          <div className={styles.note()}>
+            <strong>Two data attributes on the chart's own wrapper are public too.</strong>{' '}
+            <code>data-zyplot-chart</code> marks every chart root, and <code>data-zyplot-interactive</code> marks one
+            whose plot answers a pointer — the forms that read <code>interaction</code> (<code>Chart.Line</code>,{' '}
+            <code>Chart.Area</code>, <code>Chart.Bar</code>, <code>Chart.StackedBar</code>,{' '}
+            <code>Chart.Candlestick</code>) unless <code>interaction.hover</code> is <code>"none"</code>, plus{' '}
+            <code>Chart.TimeSeries</code>. The stylesheet uses the second one for the pointer cursor, which it puts on
+            the canvas itself rather than the wrapper: zrender writes <code>cursor: default</code> inline on the div it
+            owns and uPlot lays a bare overlay over its canvas, so a rule on the container would lose to both. Selectors
+            of your own can hang off either.
+          </div>
         </section>
 
         <section className={cn(styles.section(), page !== 'data-types' && 'hidden')} id="data-types">
@@ -2782,7 +2985,7 @@ type ChartCandlestickStyle = {
   reversed?: boolean
   /** A hint, not a guarantee — the engine still picks readable ticks. */
   tickCount?: number
-  /** Exact ticks, when the reader is looking for specific ones. */
+  /** Exact ticks, when the reader is looking for specific ones: a number, or a category name. */
   tickValues?: (number | string)[]
 }
 
@@ -2804,6 +3007,16 @@ type ChartAxisDomain = {
             Without it a line runs into the top and bottom of its own plot, which reads as clipped rather than as the
             highest and lowest reading. A pinned <code>min</code>/<code>max</code> fixes that too, but it has to be
             recomputed every time the data changes; a fraction does not.
+          </div>
+          <div className={styles.note()}>
+            <strong>
+              <code>tickValues</code> pins the labels; the rules are a separate question.
+            </strong>{' '}
+            Every renderer names exactly the ticks it is given — numbers on a value axis, category names on a category
+            one, and a category with no label still has its mark. The gridlines only follow them on iOS, where each
+            Swift Charts mark carries its own rule; the web and Android space theirs evenly off <code>tickCount</code>{' '}
+            instead, wherever the named readings happen to fall. So a plot that leans on exactly two rules asks for them
+            with <code>tickCount</code>, or switches <code>grid</code> off and draws them as annotations.
           </div>
 
           <h3 id="annotations">Annotations</h3>
@@ -2829,6 +3042,12 @@ type ChartLineAnnotation = {
   dash?: number[]
   /** Rule thickness. Default 1. */
   width?: number
+  /**
+   * Where in a category's band the rule sits: "center" through the mark, "start" or "end" along
+   * the band's own edges — which is where a rule meaning "up to here" belongs. Ignored on a
+   * numeric axis. Read on iOS and Android. Default "center".
+   */
+  align?: 'center' | 'end' | 'start'
 }
 
 /** A shaded span — a quarter, an incident window, a tolerance band. */
@@ -2873,12 +3092,13 @@ type ChartTextAnnotation = {
   hover?: ChartHoverMode
   /** "both" | "x" | "y" | "none" */
   crosshair?: ChartCrosshairMode
+  /** Default true: every renderer draws its own card unless it is told not to. */
   tooltip?: boolean
   /** "single" | "multiple" | "none" */
   selection?: ChartSelectionMode
   pan?: boolean
   zoom?: boolean
-  /** How far a hovered mark grows. */
+  /** Whether a hovered mark grows. Read on the web candlestick, which scales by its own amount. */
   highlightScale?: number
   /**
    * How far the rest fades while one mark is hovered. It reaches the strokes and the marks,
@@ -2886,12 +3106,31 @@ type ChartTextAnnotation = {
    * the things being compared, and greying it dims the page rather than pointing at anything.
    */
   dimOpacity?: number
+  /**
+   * How long that fade takes, in ms, in both directions. Default 0, which is instant. Give it a
+   * beat where the dimming is the whole feedback for the gesture, so a finger landing reads as the
+   * lights coming down rather than as a cut.
+   */
+  dimDuration?: number
   /** A colour the read mark is lifted towards, so it reads as lit rather than as undimmed. */
   highlightColor?: string
   /** How far towards it, 0–1. Below 1 the mark's own colour still reads. Default 1. */
   highlightBlend?: number
   /** Native only — the web has no honest equivalent. */
   haptics?: boolean
+  /**
+   * Reads a span rather than a mark: two fingers report the marks under each of them and
+   * everything between, as "range" on the event. iOS and Android only — a pointer has no
+   * second finger.
+   */
+  range?: boolean
+  /**
+   * How that span is drawn, on the wider NativeChartInteraction: "color" and "downColor" paint the
+   * held stretch in the direction it went, "dimOpacity" steps the rest of the trace back behind it
+   * — the fill with it, because a span is a spotlight rather than one mark picked out of many —
+   * and "dot" puts the reading marker on each end.
+   */
+  rangeStyle?: ChartRangeStyle
 }
 
 type ChartInteractionEvent = {
@@ -2911,12 +3150,89 @@ type ChartInteractionEvent = {
   phase?: ChartInteractionPhase
   /** Where the plot and its annotations sit, on the "layout" phase. */
   geometry?: ChartGeometry
+  /** The span under two fingers, when interaction.range is on and both are down. */
+  range?: ChartInteractionRange
 }`}</CodeBlock>
           <div className={styles.note()}>
             <strong>A handler is a client boundary.</strong> Everything else on a chart is serializable data, so a
             server component can render it — <code>onInteraction</code> is the one prop that cannot cross, and the file
             that passes it needs <code>"use client"</code>.
           </div>
+          <p>
+            <strong>Not every field is read by every renderer, and the type does not say so.</strong> What each does
+            today:
+          </p>
+          <PropsTable
+            rows={[
+              {
+                description: 'Web and Android draw x, y and both; iOS draws the vertical rule only.',
+                name: 'crosshair',
+                type: 'all three',
+              },
+              {
+                description:
+                  'All three, and on by default — pass false whenever a readout of your own is the answer, or the chart draws a card next to it.',
+                name: 'tooltip',
+                type: 'all three',
+              },
+              {
+                description:
+                  'The web picks the tooltip’s trigger and the emphasis from it. iOS and Android read only whether it is "none", as an off switch for the whole gesture.',
+                name: 'hover',
+                type: 'web · native as on/off',
+              },
+              {
+                description:
+                  'The same off switch on native, and nothing on the web: no renderer tells "single" from "multiple" yet.',
+                name: 'selection',
+                type: 'native as on/off',
+              },
+              {
+                description: 'All three, on every form that reads a pointer at all.',
+                name: 'dimOpacity · dimDuration · marker · crosshairStyle',
+                type: 'all three',
+              },
+              {
+                description: 'Chart.Candlestick alone, on all three. Every other form is lit by marker and dimOpacity.',
+                name: 'highlightColor · highlightBlend',
+                type: 'candlestick only',
+              },
+              {
+                description:
+                  'The web candlestick, as an on/off — the number is not a factor, and the engine scales by its own amount. Native decodes it and draws nothing.',
+                name: 'highlightScale',
+                type: 'web candlestick, as a flag',
+              },
+              {
+                description:
+                  'Chart.Candlestick on the web, through ECharts’ inside zoom. Native decodes it and does nothing.',
+                name: 'zoom',
+                type: 'web candlestick',
+              },
+              {
+                description:
+                  'Nowhere yet. Chart.TimeSeries drag-zooms its x range on its own, which is uPlot’s default rather than either flag being read.',
+                name: 'pan',
+                type: 'not read',
+              },
+              {
+                description: 'iOS and Android. The web has no honest equivalent.',
+                name: 'haptics',
+                type: 'native only',
+              },
+              {
+                description: 'iOS and Android. A pointer has no second finger, so the web keeps range at null.',
+                name: 'range',
+                type: 'native only',
+              },
+              {
+                description:
+                  'iOS and Android, wherever a span can be held: the stretch between the fingers in its own direction, the trace stepped back around it, a dot on each end.',
+                name: 'rangeStyle',
+                type: 'native only',
+              },
+            ]}
+          />
 
           <h3 id="plot-style">Plot, series style and animation</h3>
           <p>
@@ -2963,8 +3279,8 @@ type ChartSeriesFill = {
   dotSize?: number
   /**
    * How much strength the fill still has at the plot's floor, 0–1. Default 1, an even fill.
-   * On the web it needs an explicit height — the ramp is baked into a tile before the chart
-   * is measured, and one that has not said how tall it is keeps an even fill.
+   * A dotted one on the web also needs an explicit height — the ramp is baked into a tile
+   * before the chart is measured, and one that has not said how tall it is keeps an even fill.
    */
   fadeTo?: number
   /** "dots" | "solid" */
@@ -3085,7 +3401,7 @@ type ChartAnimation = {
             rows={[
               {
                 description:
-                  'A reference line: a target, a threshold, a launch date. Takes axis and value, plus dash and width for how it is drawn — omit dash for a solid rule.',
+                  'A reference line: a target, a threshold, a launch date. Takes axis and value, plus dash and width for how it is drawn — omit dash for a solid rule — and align, where in a category’s band it sits.',
                 name: 'annotation.line',
                 type: 'NativeChartLineAnnotation',
               },
@@ -3130,6 +3446,14 @@ const marketOpen = (category: string) =>
   annotation.line({ axis: 'x', badge: '↑', dash: [2, 4], id: 'open', size: 18, value: category })
 
 <Chart.Line annotations={[baseline(range.baseline, 'Prev close'), marketOpen('09:30')]} … />`}</CodeBlock>
+          <div className={styles.note()}>
+            <strong>A rule on a category has to pick a side of it.</strong> A category is a band, a width rather than a
+            line, so <code>align: 'end'</code> runs the rule along the band's trailing edge — where a rule meaning{' '}
+            <em>up to here</em> belongs, since the mark it names is inside the span rather than at the end of it —{' '}
+            <code>'start'</code> along its leading one, and the default <code>'center'</code> through the mark. It means
+            nothing on a numeric axis, where a value is already a position, and it is read on iOS and Android: the web
+            renderer centres every rule for now.
+          </div>
 
           <h3 id="builder-axis">axis</h3>
           <p>
@@ -3138,9 +3462,10 @@ const marketOpen = (category: string) =>
             keeps the full width for the marks.
           </p>
           <p>
-            <code>labelInset</code> — how far an overlaid label sits off that trailing edge — only means something when
-            the labels are inside the plot, because a gutter axis has no edge to sit off. So it is <code>overlay</code>
-            's alone, and the other two do not accept it.
+            <code>labelInset</code> is how far the labels sit off the plot's edge, whichever side of it they are on: an
+            overlaid label steps back inside from the trailing edge, a gutter one steps out and the gutter widens to
+            keep it. Left out, each renderer keeps a few points of its own — the same few the loading placeholder draws
+            its labels at, so nothing moves when the data lands.
           </p>
           <CodeBlock>{`const priceAxis = (domain: { max: number; min: number }) =>
   axis.overlay({
@@ -3168,7 +3493,7 @@ const marketOpen = (category: string) =>
                 type: 'NativeChartAxisOptions',
               },
               {
-                description: 'Labels inside the plot, no gutter reserved. The only position that takes labelInset.',
+                description: 'Labels inside the plot, no gutter reserved.',
                 name: 'axis.overlay',
                 type: 'NativeChartAxisOptions',
               },
@@ -3263,13 +3588,13 @@ const marketOpen = (category: string) =>
               },
               {
                 description:
-                  'Brightens the stretch of line around the mark and blooms behind it, which reads as light moving along the data. Takes span; rejects size.',
+                  'Brightens the stretch of line around the mark and blooms behind it, which reads as light moving along the data. Takes span; rejects size unless dot is set.',
                 name: 'marker.segment',
                 type: 'ChartSelectionMarker',
               },
               {
                 description:
-                  'Brightens everything up to the mark instead of a window around it, so the line reads as the story so far and the rest as yet to come. Takes neither span nor size.',
+                  'Brightens everything up to the mark instead of a window around it, so the line reads as the story so far and the rest as yet to come. Rejects span.',
                 name: 'marker.trail',
                 type: 'ChartSelectionMarker',
               },
@@ -3279,6 +3604,14 @@ const marketOpen = (category: string) =>
             <strong>Both stroke styles need a dim to read against.</strong> <code>marker.segment</code> and{' '}
             <code>marker.trail</code> are drawn over the line rather than beside it, so without <code>dimOpacity</code>{' '}
             there is nothing for the lit stretch to stand out from.
+          </div>
+          <div className={styles.note()}>
+            <strong>
+              Pass <code>dot</code> to mark the reading as well as light it.
+            </strong>{' '}
+            A segment or a trail with <code>dot: true</code> puts a <code>size</code> dot on the mark under the finger,
+            drawn by the chart — a dot you place yourself from a scrub handler lands a frame or two after the finger has
+            moved on.
           </div>
           <div className={styles.note()}>
             <strong>A marker is not a tooltip.</strong> It says only which mark is being read, never what it says — so
@@ -3335,6 +3668,12 @@ export const priceLine = seriesStyle({
             ]}
           />
           <div className={styles.note()}>
+            <strong>They are drawn on every platform, on the forms that have the mark they decorate.</strong> A series'{' '}
+            <code>glow</code> and <code>fill</code> ride the canvas that strokes a trace, so they need a form that has
+            one; a <code>halo</code> or a <code>pulse</code> needs a point to sit behind. Which forms those are is in{' '}
+            <Link href="/docs/native#native-presentation">the presentation vocabulary</Link>.
+          </div>
+          <div className={styles.note()}>
             <strong>There is no builder for a pulse.</strong> It is the one nested object that also takes a{' '}
             <code>boolean</code>: <code>pulse: true</code> is the whole of what most live points want, and{' '}
             <code>annotation.point</code> already types the object form for the ones that tune the rhythm.
@@ -3356,6 +3695,19 @@ export const priceLine = seriesStyle({
             is the signal a readout needs to go back to its resting value.
           </p>
           <div className={styles.note()}>
+            <strong>
+              A second finger moves the reading from <code>selection</code> to <code>range</code>.
+            </strong>{' '}
+            Turn on{' '}
+            <Link href="/docs/data-types#interaction">
+              <code>interaction.range</code>
+            </Link>{' '}
+            and two fingers report the span between them — <code>startIndex</code> and <code>endIndex</code> in data
+            order, plus where each end's mark landed, so a total can sit over the bars it covers. Only ever one of the
+            two is set, so a headline can show a value or a total without deciding which arrived last. iOS and Android
+            only: a pointer has no second finger, and the web keeps <code>range</code> at <code>null</code>.
+          </div>
+          <div className={styles.note()}>
             <strong>A scrub is a continuous reading, so not every form has one.</strong> On the web it is{' '}
             <code>Chart.Line</code> and <code>Chart.Candlestick</code> that turn the pointer into one; the other forms
             report the mark the pointer landed on instead, which carries no <code>index</code> and so leaves the
@@ -3371,7 +3723,10 @@ export const priceLine = seriesStyle({
             <Link href="/docs/native#native-scrubbing">
               <code>crosshairStyle.labels</code>
             </Link>{' '}
-            instead and whoever draws the line draws them.
+            instead and whoever draws the line draws them, and ask for the dot on the reading with{' '}
+            <code>marker.dot</code> for the same reason. A held span is the same story twice over: hand it to{' '}
+            <code>interaction.rangeStyle</code> rather than feeding the two indices back as a masked series, or the
+            chart is rebuilt on every step of both fingers and the ends trail them.
           </div>
           <CodeBlock>{`'use client'
 
@@ -3403,6 +3758,12 @@ export const Price = ({ prices, categories }: PriceProps) => {
                 type: 'ChartScrubSelection | null',
               },
               {
+                description:
+                  'The span under two fingers, or null when one finger is reading and when nothing is. Needs interaction.range, and iOS or Android to be the one drawing.',
+                name: 'range',
+                type: 'ChartInteractionRange | null',
+              },
+              {
                 description: 'Hand this straight to the chart’s onInteraction.',
                 name: 'onInteraction',
                 type: '(event) => void',
@@ -3428,6 +3789,17 @@ export const Price = ({ prices, categories }: PriceProps) => {
   nativeX?: number
   nativeY?: number
   value?: number
+}
+
+type ChartInteractionRange = {
+  /** Always the lower of the two, however the fingers are placed. Both ends inclusive. */
+  startIndex: number
+  endIndex: number
+  startCategory?: string
+  endCategory?: string
+  /** Where each end’s mark sits, in the chart view’s own coordinate space. */
+  startX?: number
+  endX?: number
 }
 
 type ChartGeometry = {
@@ -3609,6 +3981,16 @@ export const Price = ({ prices, categories }: PriceProps) => {
             the plot when it is swapped out, which is the layout shift the reserved height exists to prevent.
           </p>
           <div className={styles.note()}>
+            <strong>It is drawn in the plot the chart is about to use.</strong> The axis options themselves are what the
+            placeholder works its geometry out of: the gutter on the side the labels are on and no wider than the widest
+            of them — none at all for an <code>overlay</code> axis, which draws its labels inside the plot — a mark for
+            each <code>tickValue</code> at the reading it was pinned to, the categories on the middle of their own
+            bands, and the plot's own <code>plotDimension</code> paddings. The axis furniture is laid down once in the
+            grid colour and left to sit; only the marks shimmer, since a rule the chart is about to draw in the same
+            place is not a value still to come. All three renderers keep the same gutters, so nothing moves on any of
+            them when the data lands.
+          </div>
+          <div className={styles.note()}>
             <strong>The first frame is a loading state too.</strong> A chart has to read its colors off the document
             before it can paint, so the built-in placeholder also covers that frame for a chart that says nothing about
             loading. Pass <code>isLoading={'{false}'}</code> from the first render and it stays out of the way: the plot
@@ -3650,15 +4032,42 @@ export const Price = ({ prices, categories }: PriceProps) => {
               },
               {
                 defaultValue: 'true',
-                description: 'Reserves the horizontal-axis label row.',
+                description:
+                  'The horizontal axis: false for one the chart hides, true for the label row alone, or the same options object the chart is given — which is what lets the placeholder keep the gutter, the labels and the plot paddings the chart is about to keep.',
                 name: 'xAxis',
-                type: 'boolean',
+                type: 'boolean | NativeChartAxisOptions',
               },
               {
                 defaultValue: 'true',
-                description: 'Reserves the vertical-axis label column.',
+                description:
+                  'The vertical axis, read the same way. Given the options, the gutter goes on the side the labels are on — an overlay axis reserves none — and a pill is drawn at each tickValue the chart pinned.',
                 name: 'yAxis',
-                type: 'boolean',
+                type: 'boolean | NativeChartAxisOptions',
+              },
+              {
+                description:
+                  'The names the category axis will write, which is also how many marks the plot will hold: a week of seven bars and a month of thirty are spaced the way they will land.',
+                name: 'categories',
+                type: 'readonly string[]',
+              },
+              {
+                description:
+                  'How the value labels will read. What they will need is what their gutter has to be, so a prefixed or long format is reserved for rather than guessed at.',
+                name: 'format',
+                type: 'ChartNumberFormat',
+              },
+              {
+                description:
+                  'Which way the marks run, for the forms that can be turned. Defaults to vertical, and to horizontal on Chart.StackedBar.Skeleton.',
+                name: 'orientation',
+                type: '"horizontal" | "vertical"',
+              },
+              {
+                defaultValue: '8',
+                description:
+                  'How many bars, on Chart.Bar.Skeleton alone. Taken from categories when they are given, so it is for a standalone fallback that has none.',
+                name: 'count',
+                type: 'number',
               },
               {
                 description: 'CSS class applied to the skeleton root.',
@@ -4004,6 +4413,511 @@ export const Price = ({ prices, categories }: PriceProps) => {
           <div className={styles.note()}>
             <strong>A study, not a product.</strong> The screen is built to test the library against a design people
             already know by heart. It uses generated data, and it is not affiliated with or endorsed by Kraken.
+          </div>
+        </section>
+
+        <section className={cn(styles.section(), page !== 'family' && 'hidden')} id="family">
+          <p className={styles.kicker()}>App</p>
+          <h2>Family</h2>
+          <p>
+            A token screen in the shape Family's has: a trace edge to edge with no axes, a price above it that follows
+            the finger, and a window picker under it. Where the Revolut study is about the chrome around a plot and the
+            Kraken one about the plot itself, this one is about time — nothing on the screen is allowed to cut. The data
+            arrives as a morph, the reading is lit over a beat rather than at the touch, and both of those exist in the
+            library because this screen asked for them.
+          </p>
+          <figure className={styles.screenshot()}>
+            <img
+              alt="The Family-style token screen running on the web, on Android and on iOS, side by side"
+              className={styles.screenshotLight()}
+              loading="lazy"
+              src="/apps/family/light.png"
+            />
+            <img alt="" className={styles.screenshotDark()} loading="lazy" src="/apps/family/dark.png" />
+            <figcaption className={styles.galleryMeta()}>
+              One trace, three renderers, in the appearance you are reading this page in — the resting wave already
+              handed over to the window it morphed into.
+            </figcaption>
+          </figure>
+
+          <h3 id="family-arrival">The wave that becomes the price</h3>
+          <p>
+            While the price is loading the plot is not a skeleton but the same chart with other values: a resting curve
+            laid in the window's own domain. When the data lands the marks are interpolated to it, so nothing unmounts
+            and nothing is swapped — which is also the only way to do it on a device, because a custom{' '}
+            <code>skeleton</code> is a web-only prop. <code>isLoading</code> stays <code>false</code> throughout for the
+            same reason: the chart's own placeholder is the thing being replaced.
+          </p>
+          <CodeBlock>{`const arrival = animation({
+  // What 'morph' interpolates over: the wave's values towards the window's.
+  duration: 360,
+  easing: 'ease-in-out',
+  reveal: reveal.draw({ duration: 620, easing: 'ease-in-out' }),
+  transition: 'morph',
+  updates: true,
+})
+
+// The wave is the placeholder, so the chart is never told it is loading.
+const values = isLoading ? waveValues(domain) : range.values
+
+<Chart.Line animation={arrival} isLoading={false} series={[series({ id: 'price', values })]} />`}</CodeBlock>
+          <div className={styles.note()}>
+            <strong>The domain is the trick.</strong> The wave is built inside the price window's own{' '}
+            <code>yAxis.domain</code>, not in a range of its own. A placeholder drawn somewhere else has to travel as
+            well as change shape, and a curve that slides up the plot on arrival reads as the chart moving rather than
+            as the numbers landing.
+          </div>
+
+          <h3 id="family-scrub">A step back with a beat</h3>
+          <p>
+            Everything the finger drags is drawn by whoever draws the line — the crosshair, the time above it, the dot
+            at the head of the trail — because a position that crosses into JavaScript and returns as a re-render
+            arrives after the finger has gone. What the app keeps is the price in the header, which sits still.
+          </p>
+          <p>
+            The rest of the trace steps back to <code>dimOpacity</code> over <code>dimDuration</code> rather than at the
+            touch, so a finger landing reads as the lights coming down. The lighting on the reading is put down with
+            that ramp and not with the touch: dropped when the finger lifts, the stretch of trace it was lighting would
+            come back up with everything else, and the part that was never dimmed would flash along with the part that
+            was.
+          </p>
+          <CodeBlock>{`const scrubbing = (stamps: readonly string[]) =>
+  interaction({
+    crosshair: 'x',
+    crosshairStyle: {
+      color: color.crosshair,
+      // A chip rather than bare text: a background is what turns the label into one.
+      labelBackground: color.pillActive,
+      labelColor: color.textMuted,
+      labelPadding: { x: 12, y: 5 },
+      // One stamp per reading, in data order. The last one says LIVE.
+      labels: stamps,
+      width: 1,
+    },
+    // The step back takes a beat in both directions instead of cutting.
+    dimDuration: 420,
+    dimOpacity: 0.34,
+    haptics: true,
+    hover: 'nearest',
+    // dot: true puts the reading's own dot at the head of the lit stretch.
+    marker: marker.trail({ color: color.trace, dot: true, size: 11 }),
+    // The web draws a tooltip unless told not to, and the header is the readout.
+    tooltip: false,
+  })`}</CodeBlock>
+
+          <h3 id="family-source">What it uses</h3>
+          <PropsTable
+            rows={[
+              {
+                description:
+                  'The price trace: full-bleed with both axes hidden, a pulsing point on the latest reading, and room kept at the end for it on the two windows that close on now.',
+                name: 'Chart.Line',
+                type: 'feature-charts/family-chart.tsx',
+              },
+              {
+                description:
+                  'Interpolates the resting wave into the window that lands, so the arrival is one curve changing shape rather than a placeholder being replaced.',
+                name: "animation({transition: 'morph'})",
+                type: 'feature-charts/family-chart-style.ts',
+              },
+              {
+                description:
+                  'How long the marks take to step back for a reading, and to come back up when it ends. The lit stretch of trace is held until that ramp is finished.',
+                name: 'interaction.dimDuration',
+                type: 'feature-charts/family-chart-style.ts',
+              },
+              {
+                description:
+                  'Lights the trace up to the reading, with the dot on the reading drawn by the chart rather than fed back through annotations, so it keeps up with the finger.',
+                name: 'marker.trail({dot: true})',
+                type: 'feature-charts/family-chart-style.ts',
+              },
+              {
+                description:
+                  'The time above the crosshair as a chip: one stamp per slot, a background and padding around the one being read, placed by whoever draws the line.',
+                name: 'crosshairStyle.labels',
+                type: 'feature-charts/family-chart-style.ts',
+              },
+              {
+                description:
+                  'The live dot and its bloom, stepped back while a reading is in progress through scrubOpacity so the finger has the plot to itself.',
+                name: 'annotation.point({pulse})',
+                type: 'feature-charts/family-chart-style.ts',
+              },
+              {
+                description:
+                  'Turns the scrub into the price, the delta and the percentage above the plot, and finds the last reading the window actually has for the live dot to sit on.',
+                name: 'useChartScrub · useLastReading',
+                type: 'apps/example/use-family-readout.ts',
+              },
+              {
+                description:
+                  'One screen per platform: SwiftUI through @expo/ui on iOS, Compose on Android, React Native on the web — sharing the data, the theme and the chart.',
+                name: 'Platform files',
+                type: 'family.ios.tsx · family.android.tsx',
+              },
+            ]}
+          />
+          <p>
+            Split the way the other two studies are: the chart, its style, the theme and the generated prices are the
+            shared{' '}
+            <a href={`${REPOSITORY_URL}/tree/main/packages/feature-charts/src/family`}>
+              <code>packages/feature-charts</code>
+            </a>{' '}
+            package, and the screen around it —{' '}
+            <a href={`${REPOSITORY_URL}/tree/main/apps/example/src/family`}>in the example app</a> — is one file per
+            platform. <code>apps/example</code> runs it on a device with <code>yarn ios:example</code> or{' '}
+            <code>yarn android:example</code>.
+          </p>
+          <div className={styles.note()}>
+            <strong>A study, not a product.</strong> The screen is built to test the library against a design people
+            already know by heart. It uses generated data, and it is not affiliated with or endorsed by Family.
+          </div>
+        </section>
+
+        <section className={cn(styles.section(), page !== 'health' && 'hidden')} id="health">
+          <p className={styles.kicker()}>App</p>
+          <h2>Health</h2>
+          <p>
+            A steps screen in the shape Health's has: a bar per day under a headline that becomes a card when a finger
+            lands, a window picker above it, and cards below that are charts in their own right. The three studies
+            before this one are traces. This is the bar chart's turn, and a bar chart asks different questions — it has
+            no direction to be drawn along, no pairs to morph between when the window changes, and a scale that would
+            rather sit inside the plot than beside it.
+          </p>
+          <figure className={styles.screenshot()}>
+            <img
+              alt="The Health-style steps screen running on the web, on Android and on iOS, side by side"
+              className={styles.screenshotLight()}
+              loading="lazy"
+              src="/apps/health/light.png"
+            />
+            <img alt="" className={styles.screenshotDark()} loading="lazy" src="/apps/health/dark.png" />
+            <figcaption className={styles.galleryMeta()}>
+              One bar chart, three renderers, in the appearance you are reading this page in — two gridlines, the counts
+              written inside the plot, and the dates named rather than left to the renderer.
+            </figcaption>
+          </figure>
+
+          <h3 id="health-overlay">The scale inside the plot</h3>
+          <p>
+            Two gridlines and nothing else, at round numbers above the tallest bar, with the counts written inside the
+            plot against its trailing edge rather than in a gutter beside it. The reader is comparing bars with each
+            other, so a third rule only adds ink — and an overlaid label reserves no gutter, which leaves the full width
+            to the bars.
+          </p>
+          <CodeBlock>{`const stepsAxis = (range: StepsRange) => {
+  // A round number above the tallest bar: 10 000 over a week of 8 400s.
+  const tallest = Math.max(...range.values, 1)
+  const step = Math.pow(10, Math.floor(Math.log10(tallest)))
+  const top = Math.ceil(tallest / step) * step
+
+  return axis.overlay({
+    domain: { max: top, min: 0 },
+    format: { decimals: 0, locale: 'en-US' },
+    grid: true,
+    // How far inside the trailing edge the counts sit.
+    labelInset: 4,
+    labelSize: 13,
+    ticks: false,
+    tickValues: [top / 2, top],
+  })
+}`}</CodeBlock>
+          <p>
+            The dates underneath are named for a different reason. Each renderer keeps a gap of its own under the label
+            row — Swift Charts is the tightest of the three — so the row sat at a different distance on every platform
+            until <code>labelInset</code> put all three on one number. The air at the ends of the plot is named too: the
+            overlaid counts give the trailing edge room of its own, so an equal inset on the leading edge reads as less
+            than one.
+          </p>
+          <CodeBlock>{`xAxis={{
+  grid: false,
+  labelInset: 6,
+  // Room for the overlaid counts, and more before the first bar than after the last.
+  plotDimensionEndPadding: 6,
+  plotDimensionStartPadding: 16,
+  ticks: false,
+  // Which days are named — a month names four of thirty.
+  tickValues: range.ticks,
+}}`}</CodeBlock>
+          <div className={styles.note()}>
+            <strong>Bars grow, they do not trace.</strong> The arrival is a <code>reveal.fade</code> with no{' '}
+            <code>transition</code>, so a window switch simply draws the new bars: thirty of them and seven have no
+            pairs to morph between, and holding the outgoing set on screen to dissolve it reads as two charts at once
+            rather than as one changing. No <code>delay</code> either — a window switch is a tap being answered, and the
+            wait that suits a screen being pushed reads as a stall here.
+          </div>
+
+          <h3 id="health-span">Two fingers, one total</h3>
+          <p>
+            A day is worth reading on its own, and a week is a number the bars cannot be added up by eye. So the reading
+            is both: one finger names a bar, two name everything between them, and the card over the plot totals
+            whichever arrived. That is <code>interaction.range</code>, and it is a native gesture — a pointer has no
+            second finger — so the web keeps the chart's own tooltip instead.
+          </p>
+          <CodeBlock>{`const reading = interaction({
+  crosshair: 'x',
+  // One style dresses the single rule and the pair at a span's ends alike.
+  crosshairStyle: { color: color.rule, width: isAndroid ? 1.2 : 1 },
+  haptics: true,
+  range: true,
+  // On the web Chart.Bar reports no scrub for a headline to follow, so the card stays the chart's.
+  tooltip: isWeb,
+})`}</CodeBlock>
+          <p>
+            Only ever one of the two is set, so the screen never has to work out which reading is newer. And a span
+            already knows where both its ends landed, which is what lets the card sit over the middle of what is held
+            rather than over one edge of it.
+          </p>
+          <CodeBlock>{`const { geometry, onInteraction, range: span, selection } = useChartScrub()
+
+// One bar is a span of one, so the readout below has a single shape to total.
+const held = span ?? (selection ? { endIndex: selection.index, startIndex: selection.index } : null)
+const anchor = span ? (span.startX + span.endX) / 2 : (selection?.nativeX ?? null)
+
+// Kept inside the plot the chart reported, so a card near an end squares up rather than hangs off.
+const plot = geometry?.plot
+const left = Math.min(Math.max(anchor - CARD_WIDTH / 2, plot.x), plot.x + plot.width - CARD_WIDTH)`}</CodeBlock>
+
+          <h3 id="health-source">What it uses</h3>
+          <PropsTable
+            rows={[
+              {
+                description:
+                  'The bars: two gridlines at round numbers, the counts overlaid inside the plot, the dates named rather than left to the renderer, and a fade on arrival instead of a trace.',
+                name: 'Chart.Bar',
+                type: 'feature-charts/steps-chart.tsx',
+              },
+              {
+                description:
+                  'Puts the counts inside the plot against its trailing edge and reserves no gutter, so the bars keep the full width. Works on the web as well as on native.',
+                name: 'axis.overlay',
+                type: 'feature-charts/steps-chart-style.ts',
+              },
+              {
+                description:
+                  'Two fingers report the marks under each of them and everything between, which is what the card totals. iOS and Android only.',
+                name: 'interaction.range',
+                type: 'feature-charts/steps-chart-style.ts',
+              },
+              {
+                description:
+                  'The air before the first bar and after the last, named rather than left to each renderer, so the same gutter is kept on all three.',
+                name: 'plotDimensionStartPadding',
+                type: 'feature-charts/steps-chart-style.ts',
+              },
+              {
+                description:
+                  'The highlight card underneath: the day so far against a usual day, smoothed, with no axes of its own, a floor below zero for air under the flat start, and clip off so the end dots sit astride the last reading.',
+                name: 'Chart.Line',
+                type: 'feature-charts/steps-cumulative-chart.tsx',
+              },
+              {
+                description:
+                  'Turns one finger or two into the headline card, and reports the plot box the card is kept inside.',
+                name: 'useChartScrub',
+                type: 'apps/example/use-steps-view.ts',
+              },
+            ]}
+          />
+          <p>
+            Split the way the other studies are: the charts, their style, the theme and the generated counts are the
+            shared{' '}
+            <a href={`${REPOSITORY_URL}/tree/main/packages/feature-charts/src/health`}>
+              <code>packages/feature-charts</code>
+            </a>{' '}
+            package, and the screen around them is{' '}
+            <a href={`${REPOSITORY_URL}/tree/main/apps/example/src/health`}>in the example app</a>. This is the one
+            study that is not one file per platform — its chrome is a segmented picker and a column of cards, which
+            plain React Native draws the same on all three.
+          </p>
+          <div className={styles.note()}>
+            <strong>A study, not a product.</strong> The screen is built to test the library against a design people
+            already know by heart. It uses generated data, and it is not affiliated with or endorsed by Apple.
+          </div>
+        </section>
+
+        <section className={cn(styles.section(), page !== 'stocks' && 'hidden')} id="stocks">
+          <p className={styles.kicker()}>App</p>
+          <h2>Stocks</h2>
+          <p>
+            A quote sheet in the shape Stocks' has: a ticker tape above it, a price ladder down the trailing edge, and a
+            plot with a grid behind it, a row of dates under it and a volume tape under those. Where the other studies
+            put chrome around a plot, this one puts chrome <em>on</em> one — and every piece of it has to line up with
+            the marks to the pixel while none of it is drawn by the chart.
+          </p>
+          <figure className={styles.screenshot()}>
+            <img
+              alt="The Stocks-style quote sheet running on the web, on Android and on iOS, side by side"
+              className={styles.screenshotLight()}
+              loading="lazy"
+              src="/apps/stocks/light.png"
+            />
+            <img alt="" className={styles.screenshotDark()} loading="lazy" src="/apps/stocks/dark.png" />
+            <figcaption className={styles.galleryMeta()}>
+              One trace, three renderers, in the appearance you are reading this page in — the grid, the dates and the
+              volume tape all placed off marks the chart measured and nobody drew.
+            </figcaption>
+          </figure>
+
+          <h3 id="stocks-grid">Measuring the plot box</h3>
+          <p>
+            Everything laid against the plot needs to know where the plot is, and the reported rect is not the same
+            number on every renderer: the web bakes the axis padding into it, the native ones keep it inside the frame.
+            The price ladder makes it worse — it takes a gutter off the trailing edge whose width depends on how many
+            digits a price has.
+          </p>
+          <p>
+            So the chart carries a handful of marks nobody draws. A <code>hidden</code> annotation is still measured and
+            still reported in <code>geometry</code>, and an annotation lands where its <em>data</em> lands on all three
+            renderers — which makes a mark at a known coordinate the one exact answer to where that coordinate is on
+            screen.
+          </p>
+          <CodeBlock>{`const edge = (id: string, category: string, value: number) =>
+  annotation.point({ hidden: true, id, size: 0, x: category, y: value })
+
+// One at each dated tick along the floor, one at each price rule on the leading edge,
+// and one in the far corner that closes the box.
+const annotations = [
+  ...range.axisTicks.map((tick, index) => edge('col-' + index, categories[tick.index], domain.min)),
+  ...priceTicks(domain).map((value, index) => edge('row-' + index, categories[0], value)),
+  edge('col-end', categories[categories.length - 1], domain.min),
+]`}</CodeBlock>
+          <CodeBlock>{`// Read back off the layout the chart reports, and the grid is exact on all three.
+export const plotGrid = (geometry: ChartGeometry | null) => {
+  const at = (id: string) => geometry?.annotations.find(item => item.id === id)
+  const columns = [0, 1, 2, 3].map(index => at('col-' + index)?.x)
+  const rows = [0, 1, 2, 3].map(index => at('row-' + index)?.y)
+  const corner = at('col-end')
+  if (!corner || columns.some(value => value === undefined) || rows.some(value => value === undefined)) {
+    return null
+  }
+  return { columns: [...columns, corner.x], rows: [...rows, corner.y] }
+}`}</CodeBlock>
+          <div className={styles.note()}>
+            <strong>Those numbers are in the chart's space, not the screen's.</strong> The view the rules are placed in
+            has to be the chart's own box — put the screen's gutters on its parent instead, or every offset is a gutter
+            out. It is the same calibration the{' '}
+            <Link href="/docs/hooks/use-chart-scrub#scrub-overlay">scrub overlay</Link> needs, for the same reason.
+          </div>
+          <p>
+            The rules themselves are views rather than annotations, twice over: an annotation is drawn <em>over</em> the
+            marks, and a grid over a trace reads as a cage around it — and the columns carry on past the plot's floor to
+            divide the dates underneath, which is not a thing a chart can be asked for. The volume tape below is views
+            for a third reason: it has to line up with the plot to the pixel, and two charts never do, since each
+            renderer insets its own plot by a different amount.
+          </p>
+          <p>
+            What the chart is asked for is the box itself. Both axes name their plot-dimension paddings as{' '}
+            <code>0</code>, which replaces each renderer's own reserve with the same number and runs the trace corner to
+            corner the way a quote chart's does; the price ladder is an <code>axis.end</code> that draws no rules,
+            because the rules are the screen's; and <code>plot.clip</code> is off, so the trace reaches the floor and
+            the dot under a finger can hang past it.
+          </p>
+
+          <h3 id="stocks-span">A span the chart paints</h3>
+          <p>
+            One finger takes the trace whole: it turns the reading colour, and nothing steps back — a dimmed line under
+            a crosshair reads as disabled when there is only one line to dim. Two fingers are a different reading, and
+            that one the chart paints itself: the stretch between them in its own direction, green if it closed up and
+            red if it closed down, with the rest of the period behind it.
+          </p>
+          <CodeBlock>{`const scrubbing = interaction({
+  crosshair: 'x',
+  crosshairStyle: { color: color.scrub, width: 1 },
+  // One trace takes the reading colour whole, so there is nothing for a dim to mean.
+  dimOpacity: 1,
+  haptics: true,
+  hover: 'nearest',
+  marker: marker.point({ color: color.scrub, size: 15 }),
+  range: true,
+  // The held stretch: its own direction, its own dim for everything outside it, a dot at each end.
+  rangeStyle: { color: color.up, dimOpacity: 0.32, dot: true, downColor: color.down },
+  tooltip: false,
+})`}</CodeBlock>
+          <p>
+            Nothing about a held span reaches the props, so a span moving costs no chart at all — the ends are drawn
+            from the fingers by whoever is drawing the line. What crosses into JavaScript is only what the row above the
+            plot writes: the two dates, the delta and the percentage, which sit still.
+          </p>
+          <div className={styles.note()}>
+            <strong>The dot under one finger is web-only here.</strong> The web's scrub overlay draws the crosshair and
+            skips a <code>'point'</code> marker, so the reading would have a line and no mark. It gets an{' '}
+            <code>annotation.point</code> with a <code>halo</code> instead, on the web alone — on iOS and Android{' '}
+            <code>marker.point</code> is already drawing it.
+          </div>
+          <p>
+            Nothing else moves. The animation is off in all three of its parts: the sheet opens on a price that is
+            already true, and a tap on another range is a request to see that range, not to watch a month become a year.
+          </p>
+          <CodeBlock>{`arrival: animation({ enabled: false, initial: false, updates: false })`}</CodeBlock>
+
+          <h3 id="stocks-source">What it uses</h3>
+          <PropsTable
+            rows={[
+              {
+                description:
+                  'The price trace: a fill that gathers under the line and lets go of the floor, no time axis at all, both plot-dimension paddings named 0, and the marks allowed out of the plot.',
+                name: 'Chart.Line',
+                type: 'feature-charts/stocks-chart.tsx',
+              },
+              {
+                description:
+                  'Marks nobody draws, measured and reported in geometry. The grid, the row of dates and the volume tape are all placed off where they landed.',
+                name: 'annotation.point({hidden})',
+                type: 'feature-charts/stocks-chart-style.ts',
+              },
+              {
+                description:
+                  'The price ladder in a gutter on the trailing edge, four rules down from the high and evenly across the data — a ladder is read as distance from the extremes, not as a decimal scale. It draws no grid of its own.',
+                name: 'axis.end',
+                type: 'feature-charts/stocks-chart-style.ts',
+              },
+              {
+                description:
+                  'The held stretch in its own direction with the rest of the period stepped back behind it, drawn from the fingers so a span moving costs no re-render. Separate from dimOpacity, and it reaches the area fill too.',
+                name: 'interaction.rangeStyle',
+                type: 'feature-charts/stocks-chart-style.ts',
+              },
+              {
+                description:
+                  'The dot under one finger: the marker on iOS and Android, and a haloed annotation on the web, whose scrub overlay draws the crosshair but skips a point marker.',
+                name: 'marker.point · halo',
+                type: 'feature-charts/stocks-chart-style.ts',
+              },
+              {
+                description:
+                  'One line per row of the tape with the opening level dashed across it. A line rather than Chart.Sparkline, whose axes cannot be turned off — its web props carry none at all and iOS defaults both to drawn.',
+                name: 'Chart.Line',
+                type: 'feature-charts/stocks-ticker-spark.tsx',
+              },
+              {
+                description:
+                  "One finger's price and date, two fingers' delta and percentage, and the plot geometry everything on the plot is placed from.",
+                name: 'useChartScrub',
+                type: 'apps/example/use-stocks-readout.ts',
+              },
+              {
+                description:
+                  'One screen per platform: SwiftUI through @expo/ui on iOS, Compose on Android, React Native on the web — sharing the data, the theme and the chart.',
+                name: 'Platform files',
+                type: 'stocks.ios.tsx · stocks.android.tsx',
+              },
+            ]}
+          />
+          <p>
+            Split the way the other studies are: the chart, its style, the theme and the generated prices are the shared{' '}
+            <a href={`${REPOSITORY_URL}/tree/main/packages/feature-charts/src/stocks`}>
+              <code>packages/feature-charts</code>
+            </a>{' '}
+            package, and the screen around it —{' '}
+            <a href={`${REPOSITORY_URL}/tree/main/apps/example/src/stocks`}>in the example app</a> — is one file per
+            platform. <code>apps/example</code> runs it on a device with <code>yarn ios:example</code> or{' '}
+            <code>yarn android:example</code>.
+          </p>
+          <div className={styles.note()}>
+            <strong>A study, not a product.</strong> The screen is built to test the library against a design people
+            already know by heart. It uses generated data, and it is not affiliated with or endorsed by Apple.
           </div>
         </section>
 

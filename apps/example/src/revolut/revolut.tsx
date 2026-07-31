@@ -7,13 +7,13 @@ import {
   quoteTabs,
   RevolutChart,
 } from '@zyplot/feature-charts/revolut'
-import {useRouter} from 'expo-router'
 import {useState} from 'react'
 import {StyleSheet, View} from 'react-native'
 import {useSafeAreaInsets} from 'react-native-safe-area-context'
+import {AppHeader} from '../components/app-header'
 import {contentWidth} from '../theme/tokens'
 import {QuoteChartOverlay} from './components/quote-chart-overlay'
-import {QuoteNavBar, QuoteSymbolHeader} from './components/quote-nav-bar'
+import {QuoteSymbolHeader} from './components/quote-nav-bar'
 import {QuotePageScroll} from './components/quote-page-scroll'
 import {QuotePriceReadout} from './components/quote-price-readout'
 import {QuoteRangeSelector} from './components/quote-range-selector'
@@ -26,7 +26,6 @@ const TOP = 16
 
 export const RevolutScreen = () => {
   const insets = useSafeAreaInsets()
-  const router = useRouter()
   const {color, scheme} = useQuoteTheme()
   const [tabId, setTabId] = useState<QuoteTabId>('Overview')
   const [rangeId, setRangeId] = useState<QuoteRangeId>('1d')
@@ -40,7 +39,7 @@ export const RevolutScreen = () => {
       {}
       <View style={styles.bar}>
         <View style={[styles.column, styles.header]}>
-          <QuoteNavBar onBack={() => (router.canGoBack() ? router.back() : router.replace('/'))} />
+          <AppHeader palette={{pill: color.pill, pillPressed: color.pillPressed, text: color.text}} />
           <QuoteSymbolHeader />
           <QuoteTabRow onSelect={setTabId} selected={tabId} />
         </View>

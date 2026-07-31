@@ -16,6 +16,7 @@ import {
   buildValueAxis,
   plotInnerHeight,
 } from '../shared/option'
+import {skeletonAxis} from '../shared/skeleton'
 import {emphasisSeriesColor, useChartTokens} from '../shared/tokens'
 import type {ChartBaseProps, ChartNumberFormat, ChartSeries} from '../shared/types'
 import {AreaChartSkeleton} from './area-chart-skeleton'
@@ -79,7 +80,7 @@ export const AreaChart: FC<AreaChartProps> = ({
 
     return {
       ...buildChartBaseOption(tokens, texture, animation),
-      grid: buildChartGrid(true, plot),
+      grid: buildChartGrid({down: yAxis, hasCategoryGutter: true, plot}),
       series: series.map((item, index) => {
         const style = seriesStyles?.[item.id]
         const color = style?.color ?? emphasisSeriesColor(tokens, item, index, emphasisId)
@@ -90,7 +91,7 @@ export const AreaChart: FC<AreaChartProps> = ({
             style?.fill,
             color,
             style?.fillOpacity ?? fillOpacity,
-            plotInnerHeight(height, true, plot)
+            plotInnerHeight(height, {down: yAxis, hasCategoryGutter: true, plot})
           ) ?? {opacity: style?.fillOpacity ?? fillOpacity},
           clip: plot?.clip ?? true,
           connectNulls: false,
@@ -161,16 +162,19 @@ export const AreaChart: FC<AreaChartProps> = ({
       annotations={annotations}
       className={className}
       height={height}
+      interaction={interaction}
       legend={legend}
       option={option}
       isLoading={isLoading}
       onInteraction={onInteraction}
       skeleton={
         <AreaChartSkeleton
+          categories={categories}
+          format={format}
           height={height}
           legendCount={series.length}
-          xAxis={(xAxis?.visible ?? axis?.x) !== false}
-          yAxis={(yAxis?.visible ?? axis?.y) !== false}
+          xAxis={skeletonAxis(axis?.x, xAxis)}
+          yAxis={skeletonAxis(axis?.y, yAxis)}
         />
       }
     />

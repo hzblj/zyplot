@@ -1,4 +1,4 @@
-import type {ChartGeometry, ChartInteractionEvent} from '@hzblj/zyplot-core'
+import type {ChartGeometry, ChartInteractionEvent, ChartInteractionRange} from '@hzblj/zyplot-core'
 import {useCallback, useMemo, useState} from 'react'
 
 /** The datum being read. `index` is its position in the chart's data. */
@@ -21,6 +21,11 @@ export type ChartScrub = {
   geometry: ChartGeometry | null
   /** Hand this straight to a chart's `onInteraction`. */
   onInteraction: (event: ChartInteractionEvent) => void
+  /**
+   * The span under two fingers, or `null` when one finger is reading and when nothing is.
+   * Needs `interaction.range`, and iOS or Android to be the one drawing.
+   */
+  range: ChartInteractionRange | null
   /** Drops the selection, for a caller that has its own reason to. */
   reset: () => void
   /** What is being read, or `null` when nothing is being scrubbed. */
@@ -32,14 +37,18 @@ export type ChartScrub = {
  * selection goes back to `null` when the finger lifts or the pointer leaves the plot.
  *
  * The same hook on all three platforms: a finger on iOS and Android, a pointer on the web.
+ * A second finger on native moves the reading from `selection` to `range`, so only ever one
+ * of the two is set and a readout can show a value or a total without deciding which arrived
+ * last.
  *
  * @example
- * const {onInteraction, selection} = useChartScrub()
- * const shown = selection ? prices[selection.index] : prices.at(-1)
+ * const {onInteraction, range, selection} = useChartScrub()
+ * const shown = range ? total(steps.slice(range.startIndex, range.endIndex + 1)) : selection ? prices[selection.index] : prices.at(-1)
  * return <Chart.Line ... onInteraction={onInteraction} />
  */
 export const useChartScrub = (): ChartScrub => {
   const [selection, setSelection] = useState<ChartScrubSelection | null>(null)
+  const [range, setRange] = useState<ChartInteractionRange | null>(null)
   const [geometry, setGeometry] = useState<ChartGeometry | null>(null)
 
   const onInteraction = useCallback((event: ChartInteractionEvent) => {
@@ -51,11 +60,22 @@ export const useChartScrub = (): ChartScrub => {
     }
     if (event.phase === 'ended') {
       setSelection(null)
+      setRange(null)
+      return
+    }
+    if (event.range) {
+      setSelection(null)
+      setRange(current =>
+        current?.startIndex === event.range?.startIndex && current?.endIndex === event.range?.endIndex
+          ? current
+          : (event.range as ChartInteractionRange)
+      )
       return
     }
     if (event.index === undefined) {
       return
     }
+    setRange(null)
     setSelection(current =>
       current?.index === event.index && current?.nativeX === event.nativeX
         ? current
@@ -69,7 +89,13 @@ export const useChartScrub = (): ChartScrub => {
     )
   }, [])
 
-  const reset = useCallback(() => setSelection(null), [])
+  const reset = useCallback(() => {
+    setSelection(null)
+    setRange(null)
+  }, [])
 
-  return useMemo(() => ({geometry, onInteraction, reset, selection}), [geometry, onInteraction, reset, selection])
+  return useMemo(
+    () => ({geometry, onInteraction, range, reset, selection}),
+    [geometry, onInteraction, range, reset, selection]
+  )
 }

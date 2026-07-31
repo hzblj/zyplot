@@ -88,6 +88,23 @@ export const useChartScrubLayer = (
     overlayRef.current = overlay
     let frame: number | null = null
     let pending: {x: number; y: number} | null = null
+    let dimFrame: number | null = null
+    let dimValue = 1
+    let lit: number | null = null
+
+    /**
+     * How far the lighting has come up, which is how far the rest of the trace has stepped back. The
+     * lit stroke walks to the trace's own colour as the step back comes up, so the reading it belongs
+     * to can be let go of at the end of the ramp without anything showing.
+     */
+    const litStrength = () => {
+      const dimOpacity = configRef.current?.interaction?.dimOpacity
+      if (dimOpacity === undefined || dimOpacity >= 1) {
+        return 1
+      }
+
+      return Math.min(1, Math.max(0, (1 - dimValue) / (1 - dimOpacity)))
+    }
 
     const drawn = (isScrubbing: boolean) => {
       const current = configRef.current
@@ -99,10 +116,43 @@ export const useChartScrubLayer = (
       return {
         annotations: current.annotations ?? [],
         isScrubbing,
+        litStrength: litStrength(),
         marks: current.marks,
         plot,
         style: overlayStyle(current),
       }
+    }
+
+    /**
+     * Ramps the trace towards `dimOpacity` a frame at a time. ECharts does not transition a style
+     * merged into a live series, so the steps are made here — from wherever the last one got to,
+     * which is what keeps a finger that lands and lifts again from snapping.
+     */
+    const rampDim = (from: number, to: number, duration: number) => {
+      if (dimFrame !== null) {
+        cancelAnimationFrame(dimFrame)
+        dimFrame = null
+      }
+
+      const seriesId = configRef.current?.seriesId
+      const started = performance.now()
+      const step = () => {
+        dimFrame = null
+        const elapsed = (performance.now() - started) / duration
+        const progress = elapsed >= 1 ? 1 : elapsed
+        const eased = progress < 0.5 ? 4 * progress ** 3 : 1 - (-2 * progress + 2) ** 3 / 2
+        dimValue = from + (to - from) * eased
+        instance.setOption({series: [{id: seriesId, lineStyle: {opacity: dimValue}}]})
+        const layer = drawn(selectedRef.current !== null)
+        if (layer) {
+          overlay.drawLighting(selectedRef.current ?? lit, layer)
+        }
+        if (progress < 1) {
+          dimFrame = requestAnimationFrame(step)
+        }
+      }
+
+      step()
     }
 
     const patchScrubState = (isScrubbing: boolean) => {
@@ -113,14 +163,20 @@ export const useChartScrubLayer = (
 
       const patch: Record<string, unknown> = {id: current.seriesId}
       const dimOpacity = current.interaction?.dimOpacity
-      if (current.markerTarget === 'line' && dimOpacity !== undefined) {
+      const dims = current.markerTarget === 'line' && dimOpacity !== undefined
+      const duration = dims ? (current.interaction?.dimDuration ?? 0) : 0
+      if (dims && duration <= 0) {
         patch.lineStyle = {opacity: isScrubbing ? dimOpacity : 1}
+        dimValue = isScrubbing ? (dimOpacity as number) : 1
       }
       if (current.annotations?.some(item => item.type === 'line' || item.type === 'point')) {
         Object.assign(patch, current.annotationOption?.(isScrubbing) ?? {})
       }
       if (Object.keys(patch).length > 1) {
         instance.setOption({series: [patch]})
+      }
+      if (dims && duration > 0) {
+        rampDim(dimValue, isScrubbing ? (dimOpacity as number) : 1, duration)
       }
     }
 
@@ -153,14 +209,17 @@ export const useChartScrubLayer = (
 
       if (index !== previous) {
         selectedRef.current = index
-        const layer = drawn(true)
+        lit = index
+        // The step back is patched in first, so the lighting drawn under this reading is put up at
+        // the strength the trace has actually reached rather than at the one it is leaving.
         if (previous === null) {
           patchScrubState(true)
-          if (layer) {
+        }
+        const layer = drawn(true)
+        if (layer) {
+          if (previous === null) {
             overlay.drawAnnotations(layer)
           }
-        }
-        if (layer) {
           overlay.drawSelection(index, layer)
         }
         if (current.markerTarget === 'mark') {
@@ -222,6 +281,9 @@ export const useChartScrubLayer = (
       zr.off('globalout', onLeave)
       if (frame !== null) {
         window.cancelAnimationFrame(frame)
+      }
+      if (dimFrame !== null) {
+        window.cancelAnimationFrame(dimFrame)
       }
       selectedRef.current = null
       overlayRef.current = null

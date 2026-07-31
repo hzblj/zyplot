@@ -14,6 +14,7 @@ import {
   firstTooltipParam,
   renderChartTooltip,
 } from '../shared/option'
+import {skeletonAxis} from '../shared/skeleton'
 import {useChartTokens} from '../shared/tokens'
 import type {ChartBaseProps, ChartNumberFormat} from '../shared/types'
 import {HistogramChartSkeleton} from './histogram-chart-skeleton'
@@ -91,7 +92,7 @@ export const HistogramChart: FC<HistogramChartProps> = ({
 
     return {
       ...buildChartBaseOption(tokens, texture, animation),
-      grid: buildChartGrid(),
+      grid: buildChartGrid({}),
       series: [
         {
           barCategoryGap: 0,
@@ -138,7 +139,12 @@ export const HistogramChart: FC<HistogramChartProps> = ({
       option={option}
       isLoading={isLoading}
       skeleton={
-        <HistogramChartSkeleton height={height} legendCount={0} xAxis={axis?.x !== false} yAxis={axis?.y !== false} />
+        <HistogramChartSkeleton
+          height={height}
+          legendCount={0}
+          xAxis={skeletonAxis(axis?.x)}
+          yAxis={skeletonAxis(axis?.y)}
+        />
       }
     />
   )

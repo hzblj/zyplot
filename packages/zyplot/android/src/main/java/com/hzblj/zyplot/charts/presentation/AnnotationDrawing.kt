@@ -63,7 +63,7 @@ private fun DrawScope.drawAnnotationLine(
   measurer: TextMeasurer?,
 ) {
   if (annotation.axis == "x") {
-    xPosition(annotation.value, config, plot.left, plot.width)?.let { x ->
+    xPosition(annotation.value, config, plot.left, plot.width, annotation.align)?.let { x ->
       val top = if (annotation.badge != null) {
         plot.top + (BADGE_RADIUS * 2f + BADGE_GAP) * density
       } else {

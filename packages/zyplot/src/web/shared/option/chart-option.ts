@@ -16,20 +16,40 @@ import type {
 
 const AXIS_GUTTER = 26
 const AXIS_GUTTER_BARE = 6
+/**
+ * What the plot keeps clear of the container's sides when the axis asks for nothing. A
+ * `plotDimensionStartPadding` or `plotDimensionEndPadding` replaces it rather than adding to it, so
+ * a `0` runs the marks to the edge the way it does on native.
+ */
+const PLOT_SIDE = {end: 8, start: 4} as const
 const OVERLAY_LABEL_INSET = 8
+/**
+ * The dotted axis row: a dot at every category, and the longer mark that caps a named one. The dot
+ * is a stroke of almost no length, since a round cap on a short one is a circle of its own width —
+ * `0` is dropped before it reaches the canvas, so it has to be a hair longer than nothing.
+ *
+ * The row hangs from the plot's bottom edge here. An axis `offset` would move it down, but the grid
+ * gives up the same height to pay for it, which moves the marks up by as much as the row went down.
+ */
+const AXIS_ROW = {cap: 6, capWidth: 1.6, dot: 2, dotLength: 0.5, labelGap: 4} as const
 const ANNOTATION_LABEL_SIZE = 11
 const PLOT_TOP = 8
 const UPDATE_DURATION = 320
 export const CROSSHAIR_LABEL_SIZE = 13
 export const CROSSHAIR_LABEL_LIFT = 8
+export const CROSSHAIR_LABEL_PADDING_ACROSS = 10
+export const CROSSHAIR_LABEL_PADDING_DOWN = 5
 
 export const crosshairHeadroom = (interaction?: NativeChartInteraction): number => {
-  const labels = interaction?.crosshairStyle?.labels
-  if (!labels?.length || interaction?.crosshair === 'none' || interaction?.hover === 'none') {
+  const style = interaction?.crosshairStyle
+  if (!style?.labels?.length || interaction?.crosshair === 'none' || interaction?.hover === 'none') {
     return 0
   }
 
-  return (interaction?.crosshairStyle?.labelSize ?? CROSSHAIR_LABEL_SIZE) + CROSSHAIR_LABEL_LIFT
+  const padding = typeof style.labelPadding === 'number' ? style.labelPadding : style.labelPadding?.y
+  const down = style.labelBackground ? (padding ?? CROSSHAIR_LABEL_PADDING_DOWN) : 0
+
+  return (style.labelSize ?? CROSSHAIR_LABEL_SIZE) + down * 2 + (style.labelLift ?? CROSSHAIR_LABEL_LIFT)
 }
 
 export type ChartAxisPointerKind = 'line' | 'none' | 'shadow'
@@ -96,56 +116,74 @@ export const buildChartTooltip = (tokens: ChartTokens, pointer: ChartAxisPointer
   transitionDuration: 0.15,
 })
 
-export const buildChartGrid = (
-  hasCategoryGutter = true,
-  plot?: ChartPlotStyle,
-  dimension?: Pick<NativeChartAxisOptions, 'plotDimensionEndPadding' | 'plotDimensionStartPadding'>,
-  headroom = 0
-) => {
-  let bottom = AXIS_GUTTER_BARE
-  if (hasCategoryGutter) {
-    bottom = AXIS_GUTTER
-  }
+type ChartDimensionPadding = Pick<NativeChartAxisOptions, 'plotDimensionEndPadding' | 'plotDimensionStartPadding'>
 
-  const padding =
-    typeof plot?.padding === 'number'
-      ? {
-          bottom: plot.padding,
-          left: plot.padding,
-          right: plot.padding,
-          top: plot.padding,
-        }
-      : plot?.padding
+/**
+ * Where the plot sits in its container. The x axis' plot-dimension paddings are the room at the
+ * sides, the y axis' the room above the highest reading and below the lowest — whichever of the two
+ * carries the values. What an axis names replaces the reserve rather than adding to it.
+ */
+export type ChartGridInsets = {
+  across?: ChartDimensionPadding
+  down?: ChartDimensionPadding
+  hasCategoryGutter?: boolean
+  headroom?: number
+  plot?: ChartPlotStyle
+}
+
+/** The room under the marks: the label row when there is one, and the reserve either way. */
+const gridFloor = ({down, hasCategoryGutter = true}: ChartGridInsets) =>
+  down?.plotDimensionStartPadding ?? (hasCategoryGutter ? AXIS_GUTTER : AXIS_GUTTER_BARE)
+
+const gridHeadroom = ({down, headroom = 0}: ChartGridInsets) => (down?.plotDimensionEndPadding ?? PLOT_TOP) + headroom
+
+const plotPadding = (plot?: ChartPlotStyle) =>
+  typeof plot?.padding === 'number'
+    ? {bottom: plot.padding, left: plot.padding, right: plot.padding, top: plot.padding}
+    : plot?.padding
+
+export const buildChartGrid = (insets: ChartGridInsets = {}) => {
+  const {across, plot} = insets
+  const padding = plotPadding(plot)
 
   return {
     backgroundColor: plot?.backgroundColor,
     borderColor: plot?.borderColor,
     borderWidth: plot?.borderWidth,
-    bottom: bottom + (padding?.bottom ?? 0),
-    left: 4 + (padding?.left ?? 0) + (dimension?.plotDimensionStartPadding ?? 0),
+    bottom: gridFloor(insets) + (padding?.bottom ?? 0),
+    left: (across?.plotDimensionStartPadding ?? PLOT_SIDE.start) + (padding?.left ?? 0),
     outerBoundsContain: 'all' as const,
     outerBoundsMode: 'same' as const,
-    right: 8 + (padding?.right ?? 0) + (dimension?.plotDimensionEndPadding ?? 0),
+    right: (across?.plotDimensionEndPadding ?? PLOT_SIDE.end) + (padding?.right ?? 0),
     show: Boolean(plot?.backgroundColor || plot?.borderColor || (plot?.borderWidth ?? 0) > 0),
-    top: PLOT_TOP + (padding?.top ?? 0) + headroom,
+    top: gridHeadroom(insets) + (padding?.top ?? 0),
   }
 }
 
-export const plotInnerHeight = (height?: number, hasCategoryGutter = true, plot?: ChartPlotStyle, headroom = 0) => {
+export const plotInnerHeight = (height: number | undefined, insets: ChartGridInsets = {}) => {
   if (!height) {
     return 0
   }
 
-  const padding = typeof plot?.padding === 'number' ? {bottom: plot.padding, top: plot.padding} : plot?.padding
-  const bottom = (hasCategoryGutter ? AXIS_GUTTER : AXIS_GUTTER_BARE) + (padding?.bottom ?? 0)
-  return Math.max(0, height - bottom - PLOT_TOP - (padding?.top ?? 0) - headroom)
+  const padding = plotPadding(insets.plot)
+  const bottom = gridFloor(insets) + (padding?.bottom ?? 0)
+  return Math.max(0, height - bottom - gridHeadroom(insets) - (padding?.top ?? 0))
 }
 
 const customValues = (options?: NativeChartAxisOptions) =>
   options?.tickValues?.length ? [...options.tickValues] : undefined
 
-export const axisLabelMargin = (options?: NativeChartAxisOptions) =>
-  options?.position === 'overlay' ? {margin: options.labelInset ?? OVERLAY_LABEL_INSET} : undefined
+/**
+ * How far the labels sit off the plot's edge. An overlaid axis has a default of its own because it
+ * is reaching back inside the plot; a gutter axis takes ECharts' own spacing unless it was told a
+ * distance, so the labels land where `frame-skeleton` already draws its placeholders.
+ */
+export const axisLabelMargin = (options?: NativeChartAxisOptions) => {
+  if (options?.labelInset !== undefined) {
+    return {margin: options.labelInset}
+  }
+  return options?.position === 'overlay' ? {margin: OVERLAY_LABEL_INSET} : undefined
+}
 
 export const buildCategoryAxis = (
   tokens: ChartTokens,
@@ -157,10 +195,16 @@ export const buildCategoryAxis = (
   if (isRotated) {
     rotate = 40
   }
+  const capsRow = (options?.ticks ?? false) && options?.minorTicks === true
+  const edgeAlign = options?.labelEdgeAlign === true
 
   return {
     axisLabel: {
+      // Room for the row of marks, which the default margin is drawn straight through.
+      ...(capsRow ? {margin: AXIS_ROW.cap + AXIS_ROW.labelGap} : {}),
       ...axisLabelMargin(options),
+      alignMaxLabel: edgeAlign ? ('right' as const) : undefined,
+      alignMinLabel: edgeAlign ? ('left' as const) : undefined,
       color: tokens.label,
       customValues: customValues(options),
       fontFamily: tokens.fontFamily,
@@ -168,8 +212,18 @@ export const buildCategoryAxis = (
       hideOverlap: true,
       rotate,
     },
-    axisLine: {lineStyle: {color: tokens.grid}},
-    axisTick: {customValues: customValues(options), show: options?.ticks ?? false},
+    // A domain line is the one thing neither native renderer draws, and the row of marks is the
+    // axis where it is asked for.
+    axisLine: {lineStyle: {color: tokens.grid}, show: !capsRow},
+    axisTick: {
+      // Under the label rather than on the seam between two bands, the way both native renderers
+      // draw it.
+      alignWithLabel: true,
+      customValues: customValues(options),
+      length: capsRow ? AXIS_ROW.cap : undefined,
+      lineStyle: capsRow ? {cap: 'round' as const, color: tokens.axis, width: AXIS_ROW.capWidth} : undefined,
+      show: options?.ticks ?? false,
+    },
     data: categories,
     inverse: options?.reversed,
     name: options?.label,
@@ -182,6 +236,51 @@ export const buildCategoryAxis = (
       show: options?.grid ?? false,
     },
     type: options?.scale === 'time' ? ('time' as const) : ('category' as const),
+  }
+}
+
+/**
+ * The dense row of dots, which rides a second axis over the same grid: a renderer keeps one tick
+ * style per axis, and the row and the longer marks capping it are two. The named ticks stay on the
+ * category axis and this one draws nothing but the dots between them. Undefined — nothing to lay
+ * out — unless the axis asked for both `ticks` and `minorTicks`.
+ */
+export const buildMinorTickAxis = (
+  tokens: ChartTokens,
+  categories: readonly string[],
+  options?: NativeChartAxisOptions
+) => {
+  if (!(options?.ticks ?? false) || options?.minorTicks !== true || !categories.length) {
+    return undefined
+  }
+
+  return {
+    axisLabel: {show: false},
+    /**
+     * A line of no width, drawn for its end symbol alone: the mark that closes the row sits on the
+     * trailing edge of the last band, where a band scale has no category left to hang a tick on.
+     */
+    axisLine: {
+      lineStyle: {color: tokens.axis, width: 0},
+      show: true,
+      symbol: ['none', 'rect'],
+      symbolSize: [AXIS_ROW.cap, AXIS_ROW.capWidth],
+    },
+    axisPointer: {show: false},
+    axisTick: {
+      alignWithLabel: true,
+      // Every category. Left to itself the axis thins a dense row out to every second one.
+      interval: 0,
+      length: AXIS_ROW.dotLength,
+      lineStyle: {cap: 'round' as const, color: tokens.axis, width: AXIS_ROW.dot},
+      show: true,
+    },
+    data: [...categories],
+    // Down onto the middle of the caps, so the row reads as one line of marks and not as two.
+    offset: (AXIS_ROW.cap - AXIS_ROW.dotLength) / 2,
+    position: 'bottom' as const,
+    splitLine: {show: false},
+    type: 'category' as const,
   }
 }
 
@@ -251,7 +350,10 @@ export const buildCartesianAxes = (
     return {xAxis: valueAxis, yAxis: categoryAxis}
   }
 
-  return {xAxis: categoryAxis, yAxis: valueAxis}
+  // The dot row is a second axis under the same grid, and only a horizontal category axis has one.
+  const minorTicks = buildMinorTickAxis(tokens, categories, xAxis)
+
+  return {xAxis: minorTicks ? [categoryAxis, minorTicks] : categoryAxis, yAxis: valueAxis}
 }
 
 export const chartUpdateAnimation = (animation?: ChartAnimation) => ({

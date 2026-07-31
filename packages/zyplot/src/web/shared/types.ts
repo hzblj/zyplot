@@ -1,6 +1,8 @@
 import type {
   ChartAxes,
   ChartInteractionEvent,
+  ChartNumberFormat,
+  ChartOrientation,
   ChartPlotStyle,
   ChartSurface,
   ChartTheme,
@@ -113,10 +115,21 @@ export type ChartBaseProps = {
   yAxis?: NativeChartAxisOptions
 }
 
+/**
+ * What a placeholder is told about an axis: `false` for one the chart hides, or the options the
+ * chart itself was given, so the gutter the plot will keep is the gutter the placeholder keeps.
+ */
+export type ChartSkeletonAxis = boolean | NativeChartAxisOptions
+
 export type ChartSkeletonProps = {
+  /** The names the category axis will write, which is also how many marks the plot will hold. */
+  categories?: readonly string[]
   className?: string
+  /** How the value labels will read, since what they will need is what their gutter has to be. */
+  format?: ChartNumberFormat
   height?: number
   legendCount?: number
-  xAxis?: boolean
-  yAxis?: boolean
+  orientation?: ChartOrientation
+  xAxis?: ChartSkeletonAxis
+  yAxis?: ChartSkeletonAxis
 }

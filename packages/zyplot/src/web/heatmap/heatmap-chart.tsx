@@ -14,6 +14,7 @@ import {
   firstTooltipParam,
   renderChartTooltip,
 } from '../shared/option'
+import {skeletonAxis} from '../shared/skeleton'
 import {useChartTokens} from '../shared/tokens'
 import type {ChartBaseProps, ChartHeatmapCell, ChartNumberFormat} from '../shared/types'
 import {HeatmapChartSkeleton} from './heatmap-chart-skeleton'
@@ -61,7 +62,7 @@ export const HeatmapChart: FC<HeatmapChartProps> = ({
 
     return {
       ...buildChartBaseOption(tokens, texture, animation),
-      grid: buildChartGrid(),
+      grid: buildChartGrid({}),
       series: [
         {
           data: present.map(cell => [cell.columnIndex, cell.rowIndex, cell.value]),
@@ -114,7 +115,12 @@ export const HeatmapChart: FC<HeatmapChartProps> = ({
       option={option}
       isLoading={isLoading}
       skeleton={
-        <HeatmapChartSkeleton height={height} legendCount={0} xAxis={axis?.x !== false} yAxis={axis?.y !== false} />
+        <HeatmapChartSkeleton
+          height={height}
+          legendCount={0}
+          xAxis={skeletonAxis(axis?.x)}
+          yAxis={skeletonAxis(axis?.y)}
+        />
       }
     />
   )

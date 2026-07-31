@@ -27,9 +27,11 @@ struct ZyplotHighlightCanvas: View {
           indices: lit
         )
         guard let path = curve.path else { return }
+        let base = context.seriesColor(series, index: 0)
+        let lighting = marker.color.map(Color.init(hex:)) ?? .white
         graphics.stroke(
           path,
-          with: .color(marker.color.map(Color.init(hex:)) ?? .white),
+          with: .color(base.blended(with: lighting, amount: context.litStrength)),
           style: StrokeStyle(
             lineWidth: context.strokeWidth(series.id),
             lineCap: .round,

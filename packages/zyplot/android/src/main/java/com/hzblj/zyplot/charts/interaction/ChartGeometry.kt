@@ -18,7 +18,7 @@ internal fun geometryPayload(
       val value = (annotation.value as? Number)?.toDouble() ?: return@mapNotNull null
       plot.left to normalizedY(value, extent.first, extent.second, plot)
     } else {
-      val x = xPosition(annotation.value ?: annotation.x, config, plot.left, plot.width)
+      val x = xPosition(annotation.value ?: annotation.x, config, plot.left, plot.width, annotation.align)
         ?: return@mapNotNull null
       val y = annotation.y?.let { normalizedY(it, extent.first, extent.second, plot) } ?: plot.top
       x to y

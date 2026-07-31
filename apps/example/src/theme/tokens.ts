@@ -1,4 +1,4 @@
-import {StyleSheet, type TextStyle} from 'react-native'
+import {Platform, StyleSheet, type TextStyle, type ViewStyle} from 'react-native'
 
 export type ColorScheme = 'dark' | 'light'
 
@@ -305,7 +305,15 @@ export const borderWidth = {
 export const iconSize = {lg: 20, md: 16, sm: 13, xl: 28, xs: 11} as const
 export const chartHeight = {lg: 320, md: 280, sm: 160} as const
 export const contentWidth = 720
-export const contentInset = (width: number) => Math.max(0, (width - contentWidth) / 2)
+
+/** Eases hover and press feedback on the web, where a colour that snaps reads as a repaint. */
+export const hoverTransition = Platform.select({
+  default: {},
+  web: {
+    transitionDuration: '150ms',
+    transitionProperty: 'background-color, border-color, color, transform',
+  },
+}) as TextStyle & ViewStyle
 
 export const alpha = (color: string, opacity: number) => {
   const clamped = Math.min(Math.max(opacity, 0), 1)

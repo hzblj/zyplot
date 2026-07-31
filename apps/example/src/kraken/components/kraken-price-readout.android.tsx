@@ -3,7 +3,7 @@ import {background, clip, size} from '@expo/ui/jetpack-compose/modifiers'
 import type {KrakenCoin} from '@zyplot/feature-charts/kraken'
 import {useKrakenTheme} from '../data/kraken-theme'
 import type {KrakenReadout} from '../hooks/use-kraken-readout'
-import {composeCircle} from './kraken-nav.android'
+import {composeCircle} from './kraken-shapes.android'
 import {KrakenText} from './kraken-text.android'
 
 const MARK = 44

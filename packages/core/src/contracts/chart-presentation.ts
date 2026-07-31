@@ -108,6 +108,12 @@ export type ChartSelectionMode = 'multiple' | 'none' | 'single'
 /** Everything about how a chart responds to a pointer or a finger. */
 export type ChartInteraction = {
   crosshair?: ChartCrosshairMode
+  /**
+   * How long the marks take to step back to `dimOpacity` when a reading starts, and to come back up
+   * when it ends, in ms. Default 0, which is instant — give it a beat when the dimming is the whole
+   * gesture's feedback, so a finger landing reads as the lights coming down rather than as a cut.
+   */
+  dimDuration?: number
   /** How far the other marks fade while one is hovered. */
   dimOpacity?: number
   /** Native only. The web has no equivalent. */
@@ -126,6 +132,15 @@ export type ChartInteraction = {
   highlightScale?: number
   hover?: ChartHoverMode
   pan?: boolean
+  /**
+   * Reads a span rather than a mark: two fingers on the plot report the marks under each of
+   * them, and everything between. iOS and Android only — a pointer has no second finger.
+   *
+   * The span arrives as `range` on the interaction event, beside the single `index` one
+   * finger reports, so the same `onInteraction` serves both and the readout decides which
+   * of the two it is showing.
+   */
+  range?: boolean
   selection?: ChartSelectionMode
   tooltip?: boolean
   zoom?: boolean
@@ -134,8 +149,20 @@ export type ChartInteraction = {
 /** A position on an axis: a number, or a category name. */
 export type ChartCoordinate = number | string
 
+/**
+ * Where in a category's band a rule sits. A band is a width, not a line, so a rule placed on
+ * one has to pick: `'center'` runs through the mark, `'start'` and `'end'` run along the band's
+ * own edges — which is where a rule that means "up to here" belongs, since the mark it names is
+ * inside the span rather than the end of it.
+ *
+ * Only means anything on a category axis. Default `'center'`.
+ */
+export type ChartBandAlign = 'center' | 'end' | 'start'
+
 /** A reference line across the plot: a target, a threshold, a launch date. */
 export type ChartLineAnnotation = {
+  /** Where in a category's band the rule sits. Ignored on a numeric axis. Default `'center'`. */
+  align?: ChartBandAlign
   axis: 'x' | 'y'
   color?: string
   /**
@@ -211,6 +238,25 @@ export type ChartGeometry = {
   plot: {height: number; width: number; x: number; y: number}
 }
 
+/**
+ * The span two fingers are reading, in data order: `startIndex` is always the lower of the
+ * two, however the fingers are placed, and both ends are inclusive.
+ *
+ * The edge positions come with it because the chart is the one that knows where a category
+ * landed — a card centred over the span needs them, and an app cannot compute them from the
+ * plot's width without also knowing the axis padding and the bar inset.
+ */
+export type ChartInteractionRange = {
+  endCategory?: string
+  endIndex: number
+  /** Where the mark at `endIndex` sits, in the chart's own coordinate space. */
+  endX?: number
+  startCategory?: string
+  startIndex: number
+  /** Where the mark at `startIndex` sits, in the chart's own coordinate space. */
+  startX?: number
+}
+
 /** What `onInteraction` receives. Fields are filled in as the chart form allows. */
 export type ChartInteractionEvent = {
   category?: string
@@ -222,6 +268,8 @@ export type ChartInteractionEvent = {
   nativeX?: number
   nativeY?: number
   phase?: ChartInteractionPhase
+  /** The span under two fingers, when `interaction.range` is on and both are down. */
+  range?: ChartInteractionRange
   seriesId?: string
   /** Unix seconds, on the time-based forms. */
   timestamp?: number

@@ -13,6 +13,7 @@ import {
   buildChartInteraction,
   buildChartLegendItems,
 } from '../shared/option'
+import {skeletonAxis} from '../shared/skeleton'
 import {emphasisSeriesColor, useChartTokens} from '../shared/tokens'
 import type {ChartBaseProps, ChartNumberFormat, ChartSeries} from '../shared/types'
 import {BarChartSkeleton} from './bar-chart-skeleton'
@@ -79,7 +80,7 @@ export const BarChart: FC<BarChartProps> = ({
     return {
       ...buildChartBaseOption(tokens, texture, animation),
       ...buildCartesianAxes(tokens, categories, format, isHorizontal, axis, xAxis, yAxis),
-      grid: buildChartGrid(!isHorizontal, plot),
+      grid: buildChartGrid({across: xAxis, down: yAxis, hasCategoryGutter: !isHorizontal, plot}),
       series: series.map((item, index) => ({
         ...(index === 0 ? buildChartAnnotationOption(annotations) : {}),
         barGap: '12%',
@@ -136,17 +137,20 @@ export const BarChart: FC<BarChartProps> = ({
       annotations={annotations}
       className={className}
       height={height}
+      interaction={interaction}
       legend={legend}
       option={option}
       isLoading={isLoading}
       onInteraction={onInteraction}
       skeleton={
         <BarChartSkeleton
+          categories={categories}
+          format={format}
           height={height}
           legendCount={series.length}
           orientation={orientation}
-          xAxis={(xAxis?.visible ?? axis?.x) !== false}
-          yAxis={(yAxis?.visible ?? axis?.y) !== false}
+          xAxis={skeletonAxis(axis?.x, xAxis)}
+          yAxis={skeletonAxis(axis?.y, yAxis)}
         />
       }
     />

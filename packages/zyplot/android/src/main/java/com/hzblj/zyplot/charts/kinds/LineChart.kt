@@ -3,6 +3,7 @@ package com.hzblj.zyplot.charts.kinds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
@@ -11,6 +12,7 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.TextMeasurer
 import com.hzblj.zyplot.charts.appendLine
 import com.hzblj.zyplot.charts.drawAxisText
@@ -46,10 +48,16 @@ internal fun DrawScope.drawLineOrArea(
 
   val entrance = config.animation.reveal
   val marker = config.interaction.marker
-  val dim = if (selection != null) config.interaction.dimOpacity else 1f
+  val dim = config.scrubDimming
+  // The reading the lighting belongs to, which is the live one while a finger is down and the one it
+  // left behind while the step back comes back up.
+  val lit = selection ?: config.scrubLit
 
   config.series.forEachIndexed { seriesIndex, series ->
-    val denominator = max(1, series.values.lastIndex)
+    // A mark stands on its own category's slot rather than on a share of however many readings there
+    // are: a window that ends before its period does keeps the empty slots after it, and a trace
+    // spread over the whole plot regardless would run out from under its own annotations.
+    val denominator = max(1, max(series.values.lastIndex, config.categories.size - 1))
     val points = series.values.mapIndexedNotNull { index, value ->
       value?.let {
         Offset(
@@ -70,7 +78,10 @@ internal fun DrawScope.drawLineOrArea(
     val dash = style?.dashPattern?.let { PathEffect.dashPathEffect(it.toFloatArray()) }
 
     if (config.type == "area" || style?.fill != null) {
-      drawSeriesFill(config, points, style, base, minimum, maximum, plot)
+      // A span is a spotlight, so what is outside it steps back whole; a single reading dims the
+      // strokes and leaves the areas where they are.
+      val area = if (config.scrubRange == null) base else base.copy(alpha = base.alpha * dim)
+      drawSeriesFill(config, points, style, area, minimum, maximum, plot)
     }
 
     if (reveal.isTracing && entrance?.trackColor != null) {
@@ -94,14 +105,18 @@ internal fun DrawScope.drawLineOrArea(
       flashOpacity = entrance?.flashOpacity,
     )
 
-    if (selection != null && marker != null && marker.lightsStroke && seriesIndex == 0) {
+    if (seriesIndex == 0) {
+      drawRangeSpotlight(config, points, style, base, minimum, maximum, plot, strokeWidth)
+    }
+
+    if (lit != null && marker != null && marker.lightsStroke && seriesIndex == 0) {
       val reach = max(1, marker.span - 1)
       drawHighlightWindow(
         config,
         points,
-        from = if (marker.isTrail) 0 else selection - reach,
-        to = if (marker.isTrail) selection + 1 else selection + reach + 1,
-        color = parseColor(marker.color ?: DEFAULT_HIGHLIGHT_COLOR),
+        from = if (marker.isTrail) 0 else lit - reach,
+        to = if (marker.isTrail) lit + 1 else lit + reach + 1,
+        color = lerp(base, parseColor(marker.color ?: DEFAULT_HIGHLIGHT_COLOR), config.scrubLitStrength),
         width = strokeWidth,
       )
     }
@@ -110,6 +125,45 @@ internal fun DrawScope.drawLineOrArea(
       points.forEach { drawCircle(color, style.symbolSize, it) }
     }
   }
+}
+
+/**
+ * The stretch of trace between two fingers, drawn whole over a plot that has stepped back around it:
+ * one trace over the other rather than the outside cut out of it, which is the only way a curve can
+ * be painted in two colours and still be one line.
+ */
+private fun DrawScope.drawRangeSpotlight(
+  config: ChartConfiguration,
+  points: List<Offset>,
+  style: SeriesStyle?,
+  base: Color,
+  minimum: Double,
+  maximum: Double,
+  plot: Rect,
+  strokeWidth: Float,
+) {
+  val rangeStyle = config.interaction.rangeStyle ?: return
+  val span = config.scrubRange ?: return
+  if (points.isEmpty()) return
+  val from = span.first.coerceIn(0, points.lastIndex)
+  val to = span.last.coerceIn(from, points.lastIndex)
+  val held = points.subList(from, to + 1)
+  val tint = config.rangeTint(from, to)?.let(::parseColor) ?: base.copy(alpha = 1f)
+
+  if (held.size > 1) {
+    if (config.type == "area" || style?.fill != null) {
+      drawSeriesFill(config, held, style, tint, minimum, maximum, plot)
+    }
+    drawPath(
+      linePath(held, config.isSmooth),
+      tint,
+      style = Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round),
+    )
+  }
+
+  if (!rangeStyle.dot) return
+  val radius = (config.interaction.marker?.size ?: 9f) / 2f * density
+  listOf(from, to).forEach { drawCircle(tint, radius, points[it]) }
 }
 
 private fun DrawScope.drawHighlightWindow(
@@ -153,7 +207,20 @@ private fun DrawScope.drawSeriesFill(
   val paint = base.copy(alpha = base.alpha * (style?.fillOpacity ?: 0.16f))
 
   if (fill == null || !fill.isDotted) {
-    drawPath(area, paint)
+    val fadeTo = fill?.fadeTo ?: 1f
+    if (fadeTo >= 1f || plot.height <= 0f) {
+      drawPath(area, paint)
+    } else {
+      drawPath(
+        area,
+        Brush.verticalGradient(
+          0f to paint,
+          1f to paint.copy(alpha = paint.alpha * fadeTo),
+          startY = plot.top,
+          endY = plot.bottom,
+        ),
+      )
+    }
     return
   }
 

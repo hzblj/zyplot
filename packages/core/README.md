@@ -1,6 +1,6 @@
 # @hzblj/zyplot-core
 
-The platform-neutral half of [Zyplot](https://zyplot.janblazej.dev): the chart
+The platform-neutral half of [Zyplot](https://www.zyplot.janblazej.dev): the chart
 contract, with no renderer attached.
 
 **Application code should not install this package.** Everything here is

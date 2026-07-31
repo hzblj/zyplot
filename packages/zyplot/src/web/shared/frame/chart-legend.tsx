@@ -1,5 +1,8 @@
+'use client'
+
 import type {FC} from 'react'
 import {Typography} from '../primitives'
+import {useChartFontFallback} from '../tokens'
 import type {ChartLegendItem} from '../types'
 import {cn} from '../utils'
 
@@ -8,15 +11,19 @@ type ChartLegendProps = {
   items: ChartLegendItem[]
 }
 
-export const ChartLegend: FC<ChartLegendProps> = ({className, items}) => (
-  <ul className={cn('flex list-none flex-wrap items-center gap-x-4 gap-y-1.5', className)}>
-    {items.map(item => (
-      <li className="flex items-center gap-1.5" key={item.id}>
-        <span aria-hidden className="size-2 shrink-0 rounded-[2px]" style={{background: item.color}} />
-        <Typography as="span" color="secondary" variant="footnote">
-          {item.label}
-        </Typography>
-      </li>
-    ))}
-  </ul>
-)
+export const ChartLegend: FC<ChartLegendProps> = ({className, items}) => {
+  const fontFamily = useChartFontFallback()
+
+  return (
+    <ul className={cn('flex list-none flex-wrap items-center gap-x-4 gap-y-1.5', className)} style={{fontFamily}}>
+      {items.map(item => (
+        <li className="flex items-center gap-1.5" key={item.id}>
+          <span aria-hidden className="size-2 shrink-0 rounded-[2px]" style={{background: item.color}} />
+          <Typography as="span" color="secondary" variant="footnote">
+            {item.label}
+          </Typography>
+        </li>
+      ))}
+    </ul>
+  )
+}

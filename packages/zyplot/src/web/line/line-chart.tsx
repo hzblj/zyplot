@@ -14,6 +14,7 @@ import {
   buildChartGrid,
   buildChartInteraction,
   buildChartLegendItems,
+  buildMinorTickAxis,
   buildValueAxis,
   chartUpdateAnimation,
   crosshairHeadroom,
@@ -21,6 +22,7 @@ import {
 } from '../shared/option'
 import {buildChartReveal} from '../shared/reveal'
 import type {ChartScrubConfig} from '../shared/scrub'
+import {skeletonAxis} from '../shared/skeleton'
 import {emphasisSeriesColor, useChartTokens} from '../shared/tokens'
 import type {ChartBaseProps, ChartNumberFormat, ChartSeries, NativeChartInteraction} from '../shared/types'
 import {LineChartSkeleton} from './line-chart-skeleton'
@@ -125,10 +127,11 @@ export const LineChart: FC<LineChartProps> = ({
 
     const hasCategoryAxis = (xAxis?.visible ?? axis?.x) !== false
     const headroom = crosshairHeadroom(interaction)
+    const minorTicks = hasCategoryAxis ? buildMinorTickAxis(tokens, categories, xAxis) : undefined
 
     return {
       ...buildChartBaseOption(tokens, texture, animation),
-      grid: buildChartGrid(hasCategoryAxis, plot, xAxis, headroom),
+      grid: buildChartGrid({across: xAxis, down: yAxis, hasCategoryGutter: hasCategoryAxis, headroom, plot}),
       series: [
         ...reveal.extraSeries,
         ...series.map((item, index) => {
@@ -150,7 +153,7 @@ export const LineChart: FC<LineChartProps> = ({
               style?.fill,
               color,
               style?.fillOpacity,
-              plotInnerHeight(height, hasCategoryAxis, plot, headroom)
+              plotInnerHeight(height, {down: yAxis, hasCategoryGutter: hasCategoryAxis, headroom, plot})
             ),
             clip: plot?.clip ?? true,
             connectNulls: false,
@@ -180,10 +183,13 @@ export const LineChart: FC<LineChartProps> = ({
         ...buildChartInteraction(tokens, interaction, isScrubbable),
         formatter: buildAxisTooltipFormatter(format),
       },
-      xAxis: {
-        ...buildCategoryAxis(tokens, categories, false, xAxis),
-        show: hasCategoryAxis,
-      },
+      xAxis: [
+        {
+          ...buildCategoryAxis(tokens, categories, false, xAxis),
+          show: hasCategoryAxis,
+        },
+        ...(minorTicks ? [minorTicks] : []),
+      ],
       yAxis: {
         ...buildValueAxis(tokens, yAxis?.format ?? format, yAxis),
         show: (yAxis?.visible ?? axis?.y) !== false,
@@ -254,6 +260,7 @@ export const LineChart: FC<LineChartProps> = ({
     <ChartShell
       className={className}
       height={height}
+      interaction={interaction}
       legend={legend}
       option={option}
       isLoading={isLoading}
@@ -263,10 +270,12 @@ export const LineChart: FC<LineChartProps> = ({
       scrub={scrub}
       skeleton={
         <LineChartSkeleton
+          categories={categories}
+          format={format}
           height={height}
           legendCount={series.length}
-          xAxis={(xAxis?.visible ?? axis?.x) !== false}
-          yAxis={(yAxis?.visible ?? axis?.y) !== false}
+          xAxis={skeletonAxis(axis?.x, xAxis)}
+          yAxis={skeletonAxis(axis?.y, yAxis)}
         />
       }
     />

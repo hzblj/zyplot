@@ -13,6 +13,7 @@ import {
   firstTooltipParam,
   renderChartTooltip,
 } from '../shared/option'
+import {skeletonAxis} from '../shared/skeleton'
 import {useChartTokens} from '../shared/tokens'
 import type {ChartBaseProps, ChartBoxplotGroup, ChartNumberFormat} from '../shared/types'
 import {BoxplotChartSkeleton} from './boxplot-chart-skeleton'
@@ -72,7 +73,7 @@ export const BoxplotChart: FC<BoxplotChartProps> = ({
     return {
       ...buildChartBaseOption(tokens, texture, animation),
       ...buildCartesianAxes(tokens, categories, format, isHorizontal, axis),
-      grid: buildChartGrid(!isHorizontal),
+      grid: buildChartGrid({hasCategoryGutter: !isHorizontal}),
       series: [
         {
           boxWidth: [8, 34],
@@ -132,7 +133,12 @@ export const BoxplotChart: FC<BoxplotChartProps> = ({
       option={option}
       isLoading={isLoading}
       skeleton={
-        <BoxplotChartSkeleton height={height} legendCount={0} xAxis={axis?.x !== false} yAxis={axis?.y !== false} />
+        <BoxplotChartSkeleton
+          height={height}
+          legendCount={0}
+          xAxis={skeletonAxis(axis?.x)}
+          yAxis={skeletonAxis(axis?.y)}
+        />
       }
     />
   )

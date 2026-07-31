@@ -25,20 +25,22 @@ internal fun DrawScope.drawSelectionMarker(
   val centre = Offset(at.x, y)
 
   if (marker.lightsStroke) {
-    val glow = marker.glow ?: return
-    val glowColor = (glow.color?.let(::parseColor) ?: color).copy(alpha = glow.opacity)
-    val spread = glow.radius * density
-    drawCircle(
-      brush = Brush.radialGradient(
-        colors = listOf(glowColor, glowColor.copy(alpha = 0f)),
-        center = centre,
+    marker.glow?.let { glow ->
+      val glowColor = (glow.color?.let(::parseColor) ?: color).copy(alpha = glow.opacity)
+      val spread = glow.radius * density
+      drawCircle(
+        brush = Brush.radialGradient(
+          colors = listOf(glowColor, glowColor.copy(alpha = 0f)),
+          center = centre,
+          radius = spread,
+        ),
         radius = spread,
-      ),
-      radius = spread,
-      center = centre,
-    )
-    return
+        center = centre,
+      )
+    }
   }
+
+  if (!marker.drawsDot) return
 
   marker.glow?.let { glow ->
     val glowColor = (glow.color?.let(::parseColor) ?: color).copy(alpha = glow.opacity)

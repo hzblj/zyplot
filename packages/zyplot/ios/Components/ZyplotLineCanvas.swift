@@ -39,7 +39,15 @@ struct ZyplotLineCanvas: View {
     let entrance = configuration.animation?.reveal
 
     if configuration.type == "area" || style?.fill != nil {
-      fill(curve, style: style, base: base, dim: emphasis, in: frame, with: graphics)
+      ZyplotCurveFill.paint(
+        curve,
+        style: style,
+        base: base,
+        strength: (style?.fillOpacity ?? 0.16) * emphasis * context.rangeDimming,
+        to: ZyplotCurveFill.floor(style, proxy: proxy, in: frame),
+        in: frame,
+        with: graphics
+      )
     }
 
     if configuration.isTracing == true, let track = entrance?.trackColor {
@@ -75,58 +83,4 @@ struct ZyplotLineCanvas: View {
     )
   }
 
-  private func fill(
-    _ curve: ZyplotChartCurve,
-    style: ZyplotSeriesStyle?,
-    base: Color,
-    dim: Double,
-    in frame: CGRect,
-    with graphics: GraphicsContext
-  ) {
-    let floor = style?.fill?.baseline
-      .flatMap { proxy.position(forY: $0) }
-      .map { frame.minY + $0 } ?? frame.maxY
-    guard let shape = curve.filled(to: floor) else { return }
-    let strength = (style?.fillOpacity ?? 0.16) * dim
-
-    guard let fill = style?.fill, fill.isDotted else {
-      graphics.fill(shape, with: .color(base.opacity(strength)))
-      return
-    }
-
-    graphics.drawLayer { layer in
-      layer.clip(to: shape)
-      Self.paintDots(over: frame, fill: fill, base: base, strength: strength, into: layer)
-    }
-  }
-
-  private static func paintDots(
-    over rect: CGRect,
-    fill: ZyplotSeriesFill,
-    base: Color,
-    strength: Double,
-    into graphics: GraphicsContext
-  ) {
-    guard rect.width > 0, rect.height > 0,
-          rect.minX.isFinite, rect.minY.isFinite, rect.maxX.isFinite, rect.maxY.isFinite
-    else {
-      return
-    }
-    let step = fill.resolvedSpacing
-    let size = fill.resolvedDotSize
-    let fadeTo = fill.resolvedFadeTo
-    var y = (rect.minY / step).rounded(.down) * step
-
-    while y <= rect.maxY {
-      var row = Path()
-      var x = (rect.minX / step).rounded(.down) * step
-      while x <= rect.maxX {
-        row.addEllipse(in: CGRect(x: x - size / 2, y: y - size / 2, width: size, height: size))
-        x += step
-      }
-      let depth = ((y - rect.minY) / rect.height).clamped()
-      graphics.fill(row, with: .color(base.opacity(strength * (1 + (fadeTo - 1) * depth))))
-      y += step
-    }
-  }
 }

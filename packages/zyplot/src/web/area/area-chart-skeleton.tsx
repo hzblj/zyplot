@@ -10,14 +10,8 @@ export type AreaChartSkeletonProps = ChartSkeletonProps
  * The placeholder for `Chart.Area`: the same shape at the same height, so nothing
  * moves when the data lands.
  */
-export const AreaChartSkeleton: FC<AreaChartSkeletonProps> = ({
-  className,
-  height,
-  legendCount = 0,
-  xAxis = true,
-  yAxis = true,
-}) => (
-  <ChartSkeletonFrame className={className} height={height} legendCount={legendCount} xAxis={xAxis} yAxis={yAxis}>
+export const AreaChartSkeleton: FC<AreaChartSkeletonProps> = props => (
+  <ChartSkeletonFrame {...props}>
     <SkeletonArea />
   </ChartSkeletonFrame>
 )

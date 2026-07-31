@@ -14,6 +14,7 @@ import {
   firstTooltipParam,
   renderChartTooltip,
 } from '../shared/option'
+import {skeletonAxis} from '../shared/skeleton'
 import {seriesColor, useChartTokens} from '../shared/tokens'
 import {
   CHART_ALL_PAIRS_SERIES_LIMIT,
@@ -78,7 +79,7 @@ export const ScatterChart: FC<ScatterChartProps> = ({
 
     return {
       ...buildChartBaseOption(tokens, texture, animation),
-      grid: buildChartGrid(),
+      grid: buildChartGrid({}),
       series: plotted.map((item, index) => ({
         data: item.points.map(point => [point.x, point.y, point.size ?? 0, point.label ?? '']),
         emphasis: {focus: 'series'},
@@ -142,8 +143,8 @@ export const ScatterChart: FC<ScatterChartProps> = ({
         <ScatterChartSkeleton
           height={height}
           legendCount={plotted.length}
-          xAxis={axis?.x !== false}
-          yAxis={axis?.y !== false}
+          xAxis={skeletonAxis(axis?.x)}
+          yAxis={skeletonAxis(axis?.y)}
         />
       }
     />

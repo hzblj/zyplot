@@ -1,12 +1,12 @@
 import {Host, VStack} from '@expo/ui/swift-ui'
 import {padding} from '@expo/ui/swift-ui/modifiers'
 import {type QuoteRangeId, type QuoteTabId, quoteRange, quoteTabs, RevolutChart} from '@zyplot/feature-charts/revolut'
-import {useRouter} from 'expo-router'
 import {useState} from 'react'
 import {StyleSheet, View} from 'react-native'
 import {useSafeAreaInsets} from 'react-native-safe-area-context'
+import {AppHeader} from '../components/app-header'
 import {QuoteChartOverlay} from './components/quote-chart-overlay'
-import {QuoteNavBar, QuoteSymbolHeader} from './components/quote-nav-bar.ios'
+import {QuoteSymbolHeader} from './components/quote-nav-bar.ios'
 import {QuotePageView} from './components/quote-page-view'
 import {QuotePriceReadout} from './components/quote-price-readout.ios'
 import {QuoteRangeSelector} from './components/quote-range-selector.ios'
@@ -17,7 +17,6 @@ import {useQuoteReadout} from './hooks/use-quote-readout'
 
 export const RevolutScreen = () => {
   const insets = useSafeAreaInsets()
-  const router = useRouter()
   const {color, scheme} = useQuoteTheme()
   const [tabId, setTabId] = useState<QuoteTabId>('Overview')
   const [rangeId, setRangeId] = useState<QuoteRangeId>('1d')
@@ -28,9 +27,12 @@ export const RevolutScreen = () => {
 
   return (
     <View style={[styles.screen, {backgroundColor: color.background, paddingTop: insets.top}]}>
+      <View style={styles.nav}>
+        <AppHeader palette={{pill: color.pill, pillPressed: color.pillPressed, text: color.text}} />
+      </View>
+
       <Host matchContents style={styles.host}>
         <VStack alignment="leading" modifiers={[padding({horizontal: quoteLayout.gutter})]} spacing={16}>
-          <QuoteNavBar onBack={() => router.back()} />
           <QuoteSymbolHeader />
           <QuoteTabRow onSelect={setTabId} selected={tabId} />
         </VStack>
@@ -90,6 +92,7 @@ const styles = StyleSheet.create({
   chart: {marginTop: quoteLayout.chartTop},
   controls: {marginTop: quoteLayout.controlsTop, width: '100%'},
   host: {width: '100%'},
+  nav: {paddingBottom: 16, paddingHorizontal: quoteLayout.gutter},
   readout: {marginTop: quoteLayout.readoutTop, width: '100%'},
   screen: {flex: 1},
 })

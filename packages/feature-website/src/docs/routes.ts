@@ -103,6 +103,24 @@ const guideRoutes: Omit<DocsRoute, 'isGuide'>[] = [
     title: 'Kraken',
   },
   {
+    description:
+      'A Family-style token screen built with Zyplot: a resting wave that morphs into the price window, a step back that takes a beat, and a trail that keeps its lighting after the finger has gone.',
+    href: '/docs/apps/family',
+    title: 'Family',
+  },
+  {
+    description:
+      'A Health-style steps screen built with Zyplot: a bar chart with its value labels inside the plot, two gridlines and no more, and a two-finger span that totals the days it covers.',
+    href: '/docs/apps/health',
+    title: 'Health',
+  },
+  {
+    description:
+      'A Stocks-style quote sheet built with Zyplot: a grid, a date row and a volume tape laid on the plot box the chart reports, and a held span the chart paints in its own direction.',
+    href: '/docs/apps/stocks',
+    title: 'Stocks',
+  },
+  {
     description: 'Where to find every published Zyplot version, its notes and the commits behind it.',
     href: '/docs/releases',
     title: 'Releases',
@@ -256,12 +274,15 @@ export const DOCS_ROUTES: DocsRoute[] = [
 export const docsRouteFor = (href: string) => DOCS_ROUTES.find(route => route.href === href)
 
 const GUIDE_HREFS: Record<string, string> = {
+  family: '/docs/apps/family',
+  health: '/docs/apps/health',
   introduction: '/docs',
   kraken: '/docs/apps/kraken',
   'native-android': '/docs/native/android',
   'native-ios': '/docs/native/ios',
   'native-package': '/docs/native',
   revolut: '/docs/apps/revolut',
+  stocks: '/docs/apps/stocks',
   'use-chart-scrub': '/docs/hooks/use-chart-scrub',
   'use-last-reading': '/docs/hooks/use-last-reading',
   'web-package': '/docs/web',

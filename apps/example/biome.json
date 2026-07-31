@@ -7,7 +7,7 @@
 	},
 	"overrides": [
 		{
-			"includes": ["metro.config.js"],
+			"includes": ["metro.config.js", "plugins/*.js"],
 			"linter": {
 				"rules": {
 					"style": {

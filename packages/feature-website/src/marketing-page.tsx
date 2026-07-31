@@ -50,6 +50,30 @@ const examples = [
     slug: 'kraken',
     title: 'A price trace with no axes at all',
   },
+  {
+    alt: 'The token price example screen running on the web, on Android and on iOS, side by side',
+    copy: 'A resting wave that morphs into the window rather than a skeleton that is swapped for it, a step back that takes a beat when a finger lands, and a lit trail that holds until the rest of the trace has come back up.',
+    href: '/docs/apps/family',
+    kicker: 'Tokens',
+    slug: 'family',
+    title: 'A screen where nothing cuts',
+  },
+  {
+    alt: 'The steps example screen running on the web, on Android and on iOS, side by side',
+    copy: 'Two gridlines and no more, the daily counts written inside the plot against its trailing edge rather than in a gutter beside it, and a two-finger span that totals the days it covers.',
+    href: '/docs/apps/health',
+    kicker: 'Fitness',
+    slug: 'health',
+    title: 'A bar chart wearing its own scale',
+  },
+  {
+    alt: 'The market quote example screen running on the web, on Android and on iOS, side by side',
+    copy: 'A grid, a row of dates and a volume tape all placed off marks the chart measured and nobody drew — and a held span painted in its own direction by whoever is drawing the line.',
+    href: '/docs/apps/stocks',
+    kicker: 'Markets',
+    slug: 'stocks',
+    title: 'Chrome laid on the plot, not around it',
+  },
 ]
 
 export const MarketingPage = () => (
@@ -144,7 +168,7 @@ export const MarketingPage = () => (
       <header className={styles.examplesHeader()}>
         <p className={styles.status()}>Examples</p>
         <h2>The same chart, in a whole screen</h2>
-        <p className={styles.lede()}>Two studies from the example app, on all three platforms.</p>
+        <p className={styles.lede()}>Five studies from the example app, on all three platforms.</p>
       </header>
       <div className={styles.examplesList()}>
         {examples.map(example => (

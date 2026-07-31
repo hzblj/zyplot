@@ -29,18 +29,48 @@ internal fun pointerOnPlot(pointer: Offset, plot: Rect): Offset? {
   )
 }
 
+/** From one mark to the next, which is a band's width on the charts that stand in bands. */
+internal fun categoryStep(config: ChartConfiguration, plotWidth: Float): Float {
+  val count = config.categories.size.coerceAtLeast(1)
+  return if (config.laysMarksOnEdges) plotWidth / (count - 1).coerceAtLeast(1) else plotWidth / count
+}
+
+/**
+ * Where a category sits across the plot, on the same rule the marks were laid on: on the plot's own
+ * edges for a trace, in the middle of its band for a bar. `align` moves off the mark to the edges of
+ * the room it owns — half a step either side — for a rule that means *up to here*.
+ */
+internal fun categoryX(
+  config: ChartConfiguration,
+  index: Int,
+  plotLeft: Float,
+  plotWidth: Float,
+  align: String = "center",
+): Float {
+  val step = categoryStep(config, plotWidth)
+  val mark = if (config.laysMarksOnEdges) {
+    plotLeft + step * index
+  } else {
+    plotLeft + plotWidth * (index + 0.5f) / config.categories.size.coerceAtLeast(1)
+  }
+  return mark + step * when (align) {
+    "start" -> -0.5f
+    "end" -> 0.5f
+    else -> 0f
+  }
+}
+
 internal fun xPosition(
   coordinate: Any?,
   config: ChartConfiguration,
   plotLeft: Float = 20f + config.plot.padding.left,
   plotWidth: Float,
+  align: String = "center",
 ): Float? {
   return when (coordinate) {
     is String -> {
       val index = config.categories.indexOf(coordinate)
-      if (index < 0) null else {
-        plotLeft + plotWidth * (index + 0.5f) / config.categories.size.coerceAtLeast(1)
-      }
+      if (index < 0) null else categoryX(config, index, plotLeft, plotWidth, align)
     }
     is Number -> {
       val minimum = config.xAxis.domain.minimum ?: 0.0

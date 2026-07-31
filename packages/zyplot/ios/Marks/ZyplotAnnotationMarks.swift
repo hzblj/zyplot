@@ -9,9 +9,23 @@ struct ZyplotAnnotationMarks: ChartContent {
   var fontFamily: String?
   var strength: Double = 1
   var valueDomain: ClosedRange<Double>?
+  /// One category's width, so a rule can be moved off the mark and onto the band's own edge.
+  var bandWidth: CGFloat = 0
 
   private var drawn: [ZyplotAnnotation] {
     annotations.filter { $0.hidden != true }
+  }
+
+  /**
+   How far a rule moves off the mark it names. A band is a width and `RuleMark` puts a category
+   at the middle of it, which is the wrong end for a rule that means "up to here".
+   */
+  private func bandShift(_ annotation: ZyplotAnnotation) -> CGFloat {
+    switch annotation.align {
+    case "end": bandWidth / 2
+    case "start": -bandWidth / 2
+    default: 0
+    }
   }
 
   var body: some ChartContent {
@@ -52,6 +66,7 @@ struct ZyplotAnnotationMarks: ChartContent {
         RuleMark(x: .value(annotation.label ?? "Annotation", value))
           .foregroundStyle(color)
           .lineStyle(stroke(for: annotation))
+          .offset(x: bandShift(annotation))
           .annotation(
             position: position(annotation, default: .top),
             alignment: alignment(annotation),

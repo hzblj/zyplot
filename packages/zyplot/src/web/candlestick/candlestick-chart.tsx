@@ -20,6 +20,7 @@ import {
   renderChartTooltip,
 } from '../shared/option'
 import type {ChartScrubConfig} from '../shared/scrub'
+import {skeletonAxis} from '../shared/skeleton'
 import {useChartTokens} from '../shared/tokens'
 import type {ChartBaseProps, ChartNumberFormat} from '../shared/types'
 import {CandlestickChartSkeleton} from './candlestick-chart-skeleton'
@@ -173,10 +174,25 @@ export const CandlestickChart: FC<CandlestickChartProps> = ({
       dataZoom: interaction?.zoom ? [{type: 'inside' as const, xAxisIndex: showVolume ? [0, 1] : [0]}] : undefined,
       grid: showVolume
         ? [
-            {...buildChartGrid(false, plot, xAxis, crosshairHeadroom(interaction)), bottom: '28%'},
-            {...buildChartGrid(true), height: '16%', top: '76%'},
+            {
+              ...buildChartGrid({
+                across: xAxis,
+                down: yAxis,
+                hasCategoryGutter: false,
+                headroom: crosshairHeadroom(interaction),
+                plot,
+              }),
+              bottom: '28%',
+            },
+            {...buildChartGrid({hasCategoryGutter: true}), height: '16%', top: '76%'},
           ]
-        : buildChartGrid(hasCategoryAxis, plot, xAxis, crosshairHeadroom(interaction)),
+        : buildChartGrid({
+            across: xAxis,
+            down: yAxis,
+            hasCategoryGutter: hasCategoryAxis,
+            headroom: crosshairHeadroom(interaction),
+            plot,
+          }),
       series,
       tooltip: {
         ...buildChartInteraction(tokens, interaction, isScrubbable),
@@ -262,6 +278,7 @@ export const CandlestickChart: FC<CandlestickChartProps> = ({
     <ChartShell
       className={className}
       height={height}
+      interaction={interaction}
       isLoading={isLoading}
       onInteraction={onInteraction}
       option={option}
@@ -270,8 +287,8 @@ export const CandlestickChart: FC<CandlestickChartProps> = ({
         <CandlestickChartSkeleton
           height={height}
           legendCount={0}
-          xAxis={(xAxis?.visible ?? axis?.x) !== false}
-          yAxis={(yAxis?.visible ?? axis?.y) !== false}
+          xAxis={skeletonAxis(axis?.x, xAxis)}
+          yAxis={skeletonAxis(axis?.y, yAxis)}
         />
       }
     />

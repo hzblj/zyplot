@@ -4,8 +4,11 @@
 	"version": "0.0.1",
 	"type": "module",
 	"exports": {
+		"./family": "./src/family/index.ts",
+		"./health": "./src/health/index.ts",
 		"./kraken": "./src/kraken/index.ts",
-		"./revolut": "./src/revolut/index.ts"
+		"./revolut": "./src/revolut/index.ts",
+		"./stocks": "./src/stocks/index.ts"
 	},
 	"scripts": {
 		"build": "tsc --noEmit",

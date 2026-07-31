@@ -6,7 +6,7 @@ import {type FC, type ReactNode, useState} from 'react'
 import {useChartHoverEvents, useECharts} from '../engine'
 import {type ChartRevealPlan, useChartReveal} from '../reveal'
 import {type ChartScrubConfig, useChartGeometryReport, useChartScrubLayer} from '../scrub'
-import type {ChartInteractionEvent, ChartLegendItem, NativeChartAnnotation} from '../types'
+import type {ChartInteractionEvent, ChartLegendItem, NativeChartAnnotation, NativeChartInteraction} from '../types'
 import {ChartLegend} from './chart-legend'
 import {ChartReveal} from './chart-reveal'
 
@@ -16,6 +16,8 @@ type ChartShellProps = {
   annotations?: readonly NativeChartAnnotation[]
   className?: string
   height?: number
+  /** What the chart was asked for, read only for whether the plot answers the pointer at all. */
+  interaction?: NativeChartInteraction
   /** An explicit `false` at mount opts out of the placeholder: the plot fades in on its own. */
   isLoading?: boolean
   legend?: ChartLegendItem[]
@@ -31,6 +33,7 @@ export const ChartShell: FC<ChartShellProps> = ({
   annotations,
   className,
   height = DEFAULT_HEIGHT,
+  interaction,
   isLoading,
   legend = [],
   onInteraction,
@@ -55,7 +58,12 @@ export const ChartShell: FC<ChartShellProps> = ({
   useChartReveal(instance, reveal ?? null, !isPending, onRevealed)
 
   return (
-    <ChartReveal className={className} isPending={isPending} skeleton={hasPlaceholder ? skeleton : undefined}>
+    <ChartReveal
+      className={className}
+      isInteractive={interaction?.hover !== 'none'}
+      isPending={isPending}
+      skeleton={hasPlaceholder ? skeleton : undefined}
+    >
       {legend.length > 1 && <ChartLegend items={legend} />}
       <div className="w-full" ref={containerRef} style={{height}} />
     </ChartReveal>

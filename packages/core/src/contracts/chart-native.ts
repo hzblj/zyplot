@@ -115,7 +115,9 @@ export type ChartRevealAnimation = {
 /**
  * How the marks move when the data changes. `'morph'` interpolates between the two datasets;
  * `'crossfade'` dissolves one out and the other in. Read on iOS and Android; the web renderer
- * transitions mark by mark on its own either way.
+ * transitions mark by mark on its own either way, but it pairs the old marks with the new ones
+ * by category — so hold `categories` steady across a data change and let anything that reads as
+ * a moment rather than as a slot go to `crosshairStyle.labels`.
  */
 export type ChartTransition = 'crossfade' | 'morph'
 
@@ -123,6 +125,12 @@ export type ChartTransition = 'crossfade' | 'morph'
 export type NativeChartAnimation = ChartAnimation & {
   reveal?: ChartRevealAnimation
   transition?: ChartTransition
+}
+
+/** How far a label's background reaches past its own text, across and down. */
+export type ChartLabelPadding = {
+  x?: number
+  y?: number
 }
 
 /** The line that follows the finger while scrubbing. */
@@ -135,7 +143,18 @@ export type ChartCrosshairStyle = {
    * it is the one that knows where the finger is.
    */
   labels?: readonly string[]
+  /**
+   * Painted behind the label, which makes the words a chip. Give it `labelPadding` for the
+   * room around them and `labelRadius` for how hard its corners are.
+   */
+  labelBackground?: string
   labelColor?: string
+  /** The gap between the label and the top of the plot. Default 8. */
+  labelLift?: number
+  /** Default 10 across and 5 down, which is a chip a little wider than it is tall. */
+  labelPadding?: number | ChartLabelPadding
+  /** Corner radius of the background. Defaults to half its height, so it ends in a round cap. */
+  labelRadius?: number
   /** Point size of the label. Default 13. */
   labelSize?: number
   width?: number
@@ -157,6 +176,12 @@ export type ChartMarkerStyle = 'point' | 'segment' | 'trail'
  */
 export type ChartSelectionMarker = {
   color?: string
+  /**
+   * Puts the dot of `'point'` on the reading as well, so a `'segment'` or a `'trail'` can light
+   * the line and still say which mark the finger is on. Drawn by the chart, so it keeps up with
+   * the finger in a way an annotation fed back from a scrub handler cannot.
+   */
+  dot?: boolean
   glow?: ChartGlow
   size?: number
   /**
@@ -167,10 +192,42 @@ export type ChartSelectionMarker = {
   style?: ChartMarkerStyle
 }
 
+/**
+ * How the stretch under two fingers is picked out, beside the rule `interaction.range` already
+ * draws at each end of it. The chart paints it from the fingers themselves — a masked second
+ * series fed back through a scrub handler arrives a render late, so its ends trail the touch by
+ * the whole round trip and the reading feels heavier the more of it there is to rebuild.
+ *
+ * iOS and Android only, like `interaction.range` itself.
+ */
+export type ChartRangeStyle = {
+  /**
+   * The held stretch's colour. Defaults to the trace's own. The rules at the span's ends take it
+   * over `crosshairStyle.color` as well — they are the ends of the stretch, and a reading in three
+   * colours reads as three things.
+   */
+  color?: string
+  /**
+   * How far the trace outside the span steps back, 0–1. Default 1, which leaves it all up.
+   * Separate from `dimOpacity` so one finger can read a whole trace and two can still spotlight a
+   * stretch of it — and unlike `dimOpacity` it reaches the area fill as well, because a span picks
+   * out a stretch of the period rather than one mark out of many.
+   */
+  dimOpacity?: number
+  /** A dot at each end of the span, in the stretch's own colour. Default true. */
+  dot?: boolean
+  /**
+   * The stretch's colour when the span closed below where it opened, so it reads as its own
+   * direction rather than as the period's. Defaults to `color`.
+   */
+  downColor?: string
+}
+
 /** `ChartInteraction` plus the crosshair and marker styling native can draw. */
 export type NativeChartInteraction = ChartInteraction & {
   crosshairStyle?: ChartCrosshairStyle
   marker?: ChartSelectionMarker
+  rangeStyle?: ChartRangeStyle
 }
 
 /**
@@ -265,15 +322,45 @@ export type NativeChartAxisPosition = ChartAxisPosition | 'overlay'
 
 /** `ChartAxisOptions` with the overlay position and tick marks native supports. */
 export type NativeChartAxisOptions = Omit<ChartAxisOptions, 'position'> & {
-  /** How far an `'overlay'` label sits from the plot's trailing edge. */
+  /**
+   * Pins the first and last labels to the ends of the axis instead of centring each on its own
+   * mark. What a pair of bookends wants: two hours naming a day read as the ends of the row of
+   * ticks between them rather than as two labels hanging half a band inside it.
+   */
+  labelEdgeAlign?: boolean
+  /**
+   * How far the labels sit off the plot's edge, in points: inside it for `'overlay'`, out in the
+   * gutter for `'start'` and `'end'`, which widens to keep them. Left out, each renderer keeps a
+   * few points of its own.
+   */
   labelInset?: number
   /** Point size of the tick labels. */
   labelSize?: number
-  /** Free space, in points, kept after the last mark. */
+  /**
+   * Free space, in points, kept after the last mark. What you give is the whole gutter, so `0` puts
+   * the last mark on the plot's trailing edge; left out, a renderer keeps a few points of its own so
+   * a mark that sits at the edge is not cut in half.
+   *
+   * The x axis names the room at the plot's sides and the y axis the room above and below the
+   * marks — whichever of the two carries the values. On the y axis this is the headroom over the
+   * highest reading; the label row underneath is not part of it and stays whatever it needs.
+   */
   plotDimensionEndPadding?: number
-  /** Free space, in points, kept before the first mark. */
+  /**
+   * Free space, in points, kept before the first mark. Read like `plotDimensionEndPadding` — on the
+   * y axis, the air under the lowest reading.
+   */
   plotDimensionStartPadding?: number
   position?: NativeChartAxisPosition
   /** Draws the short marks beside each label. Independent of `grid`. */
   ticks?: boolean
+  /**
+   * A shorter mark at every category, not only at the named ones. When two categories are
+   * labelled out of twenty-four, the row of these is what reads as the axis — a rule drawn
+   * inside the plot only looks like one until a line rests on it.
+   *
+   * The named ticks become the longer marks that cap the row, and one more closes it on the
+   * trailing edge of the last band. Needs `ticks`, since it is the same row of marks made denser.
+   */
+  minorTicks?: boolean
 }

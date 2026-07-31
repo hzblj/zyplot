@@ -1,10 +1,7 @@
 import {quote} from '@zyplot/feature-charts/revolut'
 import {Pressable, StyleSheet, View} from 'react-native'
-import {setColorScheme} from '../../theme/color-scheme'
 import {quoteLayout, useQuoteTheme} from '../data/quote-theme'
 import {QuoteText} from './quote-text'
-
-const schemeGlyph = {dark: '☾', light: '☀︎'} as const
 
 export const QuoteCircleButton = ({
   diameter = quoteLayout.navButton,
@@ -35,21 +32,6 @@ export const QuoteCircleButton = ({
   )
 }
 
-export const QuoteNavBar = ({onBack}: {onBack: () => void}) => {
-  const {scheme} = useQuoteTheme()
-  const next = scheme === 'dark' ? 'light' : 'dark'
-
-  return (
-    <View style={styles.bar}>
-      <QuoteCircleButton glyph="‹" onPress={onBack} />
-      <View style={styles.barEnd}>
-        <QuoteCircleButton glyph="○" />
-        <QuoteCircleButton glyph={schemeGlyph[next]} onPress={() => setColorScheme(next)} />
-      </View>
-    </View>
-  )
-}
-
 export const QuoteSymbolHeader = () => {
   const {color} = useQuoteTheme()
 
@@ -75,8 +57,6 @@ export const QuoteSymbolHeader = () => {
 const MARK = 56
 
 const styles = StyleSheet.create({
-  bar: {alignItems: 'center', flexDirection: 'row', height: quoteLayout.navButton, justifyContent: 'space-between'},
-  barEnd: {alignItems: 'center', flexDirection: 'row', gap: 12},
   circle: {alignItems: 'center', cursor: 'pointer', justifyContent: 'center'},
   header: {alignItems: 'center', flexDirection: 'row', gap: 12},
   headerText: {flex: 1, gap: 2},

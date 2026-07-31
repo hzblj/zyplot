@@ -7,6 +7,7 @@ struct ZyplotCandlestickChart: View {
   var onInteraction: ([String: Any?]) -> Void = { _ in }
 
   @State private var selectedCategory: String?
+  @State private var readRange: ZyplotReadRange?
 
   private var candles: [ZyplotCandlestickDatum] {
     configuration.candlesticks ?? []
@@ -88,6 +89,7 @@ struct ZyplotCandlestickChart: View {
       ZyplotChartInteractionModifier(
         configuration: configuration,
         selectedCategory: $selectedCategory,
+        readRange: $readRange,
         onInteraction: onInteraction
       )
     )

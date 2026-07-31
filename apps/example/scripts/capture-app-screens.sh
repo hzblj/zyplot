@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 #
-# Captures the product example screens — the Revolut-style quote screen and the
-# Kraken-style coin screen — on the web, on Android and on iOS, in both
-# appearances, and lays each set out as the triptych the docs pages show.
+# Captures the product example screens — the Revolut-style quote screen, the
+# Kraken-style coin screen, the Family-style token screen, the Health-style
+# steps screen and the Stocks-style quote sheet — on the web, on Android and on
+# iOS, in both appearances, and lays each set out as the triptych the docs pages show.
 #
 # The three panels are photographed the same way every run: a headless Chrome
 # for the web build, `simctl io screenshot` and `adb exec-out screencap` for the
@@ -11,7 +12,8 @@
 #
 # Usage: scripts/capture-app-screens.sh [options]
 #
-#   --demo revolut|kraken|all      which screens to shoot (all)
+#   --demo revolut|kraken|family|health|stocks|all
+#                                  which screens to shoot (all)
 #   --appearance light|dark|both   which appearances (both)
 #   --platform web|android|ios     repeatable; defaults to all three
 #   --out <dir>                    where the composites go
@@ -34,7 +36,12 @@ METRO="http://localhost:8081"
 WEB_WIDTH=760
 WEB_HEIGHT=940
 
-DEMOS="revolut kraken"
+# Every screen the script knows, which is also what `--demo all` means and what
+# a mistyped name is checked against. The name is the route: the web build
+# answers on /<demo> and the deep link is <scheme>://<demo>.
+ALL_DEMOS="revolut kraken family health stocks"
+
+DEMOS="$ALL_DEMOS"
 APPEARANCES="light dark"
 PLATFORMS=""
 OUT_DIR="../website/public/apps"
@@ -43,7 +50,7 @@ KEEP=""
 while [ $# -gt 0 ]; do
 	case "$1" in
 	--demo)
-		DEMOS="$([ "$2" = all ] && echo "revolut kraken" || echo "$2")"
+		DEMOS="$([ "$2" = all ] && echo "$ALL_DEMOS" || echo "$2")"
 		shift 2
 		;;
 	--appearance)
@@ -64,7 +71,7 @@ while [ $# -gt 0 ]; do
 		;;
 	*)
 		echo "unknown option: $1" >&2
-		sed -n '12,19p' "$0" >&2
+		sed -n '12,20p' "$0" >&2
 		exit 2
 		;;
 	esac
@@ -86,7 +93,7 @@ validate() {
 		esac
 	done
 }
-validate demo 'revolut kraken' $DEMOS
+validate demo "$ALL_DEMOS" $DEMOS
 validate appearance 'light dark' $APPEARANCES
 validate platform 'web android ios' $PLATFORMS
 
@@ -157,6 +164,19 @@ fi
 
 shoot_ios() { xcrun simctl io "$SIM" screenshot --type png "$1" > /dev/null 2>&1; }
 
+# How much of a screen's top is left out of the "has it settled" comparison. The
+# stocks tape scrolls on a loop and never stops, so that screen is never still by
+# any measure taken over the whole frame — the band it is in has to be excluded or
+# every attempt fails, forever. The rest of the screen still has to come to rest,
+# which is what the check is for. The fraction covers the tape and the status bar
+# above it on both devices.
+ignore_top() {
+	case "$1" in
+	stocks) echo 0.18 ;;
+	*) echo 0 ;;
+	esac
+}
+
 shoot_android() {
 	# screencap regularly hands back the frame before last, and now and then
 	# nothing at all: take two, keep the second, and retry if it came out empty.
@@ -209,7 +229,8 @@ capture_native() {
 		sleep 2
 		"shoot_${platform}" "$out"
 		# shellcheck disable=SC2086 # the --unlike flags are built as a word list
-		if reason="$(python3 scripts/inspect-panel.py --previous "$previous" --current "$out" $unlike 2>&1)"; then
+		if reason="$(python3 scripts/inspect-panel.py --previous "$previous" --current "$out" \
+			--ignore-top "$(ignore_top "$route")" $unlike 2>&1)"; then
 			return 0
 		fi
 		echo "    ${platform} attempt ${attempt}: ${reason}"

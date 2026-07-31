@@ -73,6 +73,9 @@ const trailingGroups: NavGroup[] = [
     links: [
       ['/docs/apps/revolut', 'Revolut'],
       ['/docs/apps/kraken', 'Kraken'],
+      ['/docs/apps/family', 'Family'],
+      ['/docs/apps/health', 'Health'],
+      ['/docs/apps/stocks', 'Stocks'],
     ],
   },
   {

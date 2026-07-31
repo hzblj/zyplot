@@ -6,13 +6,12 @@ import {
   krakenRange,
   krakenReading,
 } from '@zyplot/feature-charts/kraken'
-import {useRouter} from 'expo-router'
 import {useMemo, useState} from 'react'
 import {ScrollView, StyleSheet, View} from 'react-native'
 import {useSafeAreaInsets} from 'react-native-safe-area-context'
+import {AppHeader} from '../components/app-header'
 import {contentWidth} from '../theme/tokens'
 import {KrakenExtremes} from './components/kraken-extremes'
-import {KrakenNavBar} from './components/kraken-nav'
 import {KrakenPriceReadout} from './components/kraken-price-readout'
 import {KrakenRangeTabs} from './components/kraken-range-tabs'
 import {krakenLayout, useKrakenTheme} from './data/kraken-theme'
@@ -23,7 +22,6 @@ const TOP = 12
 
 export const KrakenCoinScreen = ({coin}: {coin: KrakenCoin}) => {
   const insets = useSafeAreaInsets()
-  const router = useRouter()
   const {color, scheme} = useKrakenTheme()
   const [rangeId, setRangeId] = useState<KrakenRangeId>('24h')
   const isLoading = useChartPlaceholder()
@@ -35,7 +33,7 @@ export const KrakenCoinScreen = ({coin}: {coin: KrakenCoin}) => {
     <ScrollView scrollEnabled={!readout.isScrubbing} style={[styles.screen, {backgroundColor: color.background}]}>
       <View style={[styles.column, {paddingTop: Math.max(insets.top, TOP)}]}>
         <View style={styles.gutter}>
-          <KrakenNavBar onBack={() => (router.canGoBack() ? router.back() : router.replace('/'))} />
+          <AppHeader palette={{pill: color.pill, pillPressed: color.pillPressed, text: color.text}} />
         </View>
 
         <View style={[styles.gutter, styles.readout]}>

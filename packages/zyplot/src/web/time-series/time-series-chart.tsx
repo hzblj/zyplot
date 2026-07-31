@@ -5,6 +5,7 @@ import type uPlot from 'uplot'
 import {useUplot} from '../shared/engine'
 import {formatChartNumber} from '../shared/format'
 import {ChartLegend, ChartReveal} from '../shared/frame'
+import {skeletonAxis} from '../shared/skeleton'
 import {seriesColor, useChartTokens} from '../shared/tokens'
 import type {ChartBaseProps, ChartNumberFormat, ChartSeries, ChartTimePoints} from '../shared/types'
 import {TimeSeriesChartSkeleton} from './time-series-chart-skeleton'
@@ -122,13 +123,14 @@ export const TimeSeriesChart: FC<TimeSeriesChartProps> = ({
   return (
     <ChartReveal
       className={className}
+      isInteractive
       isPending={isLoading || setup === null}
       skeleton={
         <TimeSeriesChartSkeleton
           height={height}
           legendCount={series.length}
-          xAxis={axis?.x !== false}
-          yAxis={axis?.y !== false}
+          xAxis={skeletonAxis(axis?.x)}
+          yAxis={skeletonAxis(axis?.y)}
         />
       }
     >

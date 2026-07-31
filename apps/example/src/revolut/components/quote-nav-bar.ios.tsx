@@ -2,11 +2,8 @@ import {HStack, Image, Spacer, VStack} from '@expo/ui/swift-ui'
 import {background, clipShape, frame, onTapGesture} from '@expo/ui/swift-ui/modifiers'
 import {quote} from '@zyplot/feature-charts/revolut'
 import type {SFSymbol} from 'sf-symbols-typescript'
-import {setColorScheme} from '../../theme/color-scheme'
 import {quoteLayout, useQuoteTheme} from '../data/quote-theme'
 import {QuoteText} from './quote-text.ios'
-
-const schemeSymbol = {dark: 'moon.fill', light: 'sun.max.fill'} as const satisfies Record<string, SFSymbol>
 
 export const QuoteCircleButton = ({
   name,
@@ -29,20 +26,6 @@ export const QuoteCircleButton = ({
       ]}
     >
       <Image color={color.text} size={size * 0.38} systemName={name} />
-    </HStack>
-  )
-}
-
-export const QuoteNavBar = ({onBack}: {onBack: () => void}) => {
-  const {scheme} = useQuoteTheme()
-  const next = scheme === 'dark' ? 'light' : 'dark'
-
-  return (
-    <HStack modifiers={[frame({height: quoteLayout.navButton})]} spacing={12}>
-      <QuoteCircleButton name="chevron.left" onPress={onBack} />
-      <Spacer />
-      <QuoteCircleButton name="bell.badge" />
-      <QuoteCircleButton name={schemeSymbol[next]} onPress={() => setColorScheme(next)} />
     </HStack>
   )
 }

@@ -1,6 +1,16 @@
 @import "@zyplot/core-tailwind-config";
 @source ".";
 
+/*
+ * A plot that answers the pointer says so. The rule has to land on what the pointer is actually
+ * over — zrender writes `cursor: default` inline onto the div it owns, and uPlot puts a bare
+ * overlay above its canvas — so styling the container would lose to both.
+ */
+[data-zyplot-interactive] canvas,
+[data-zyplot-interactive] .u-over {
+  cursor: pointer;
+}
+
 :root {
   --zyplot-font-family: inherit;
   --zyplot-color-categorical-1: #4400fc;

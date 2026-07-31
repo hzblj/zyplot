@@ -7,12 +7,11 @@ import {
   krakenRange,
   krakenReading,
 } from '@zyplot/feature-charts/kraken'
-import {useRouter} from 'expo-router'
 import {useMemo, useState} from 'react'
 import {ScrollView, StyleSheet, View} from 'react-native'
 import {useSafeAreaInsets} from 'react-native-safe-area-context'
+import {AppHeader} from '../components/app-header'
 import {KrakenExtremes} from './components/kraken-extremes.ios'
-import {KrakenNavBar} from './components/kraken-nav.ios'
 import {KrakenPriceReadout} from './components/kraken-price-readout.ios'
 import {KrakenRangeTabs} from './components/kraken-range-tabs.ios'
 import {krakenLayout, useKrakenTheme} from './data/kraken-theme'
@@ -21,7 +20,6 @@ import {useKrakenReadout} from './hooks/use-kraken-readout'
 
 export const KrakenCoinScreen = ({coin}: {coin: KrakenCoin}) => {
   const insets = useSafeAreaInsets()
-  const router = useRouter()
   const {color, scheme} = useKrakenTheme()
   const [rangeId, setRangeId] = useState<KrakenRangeId>('24h')
   const isLoading = useChartPlaceholder()
@@ -34,11 +32,9 @@ export const KrakenCoinScreen = ({coin}: {coin: KrakenCoin}) => {
       scrollEnabled={!readout.isScrubbing}
       style={[styles.screen, {backgroundColor: color.background, paddingTop: insets.top}]}
     >
-      <Host matchContents style={styles.host}>
-        <VStack alignment="leading" modifiers={[padding({horizontal: krakenLayout.gutter})]} spacing={0}>
-          <KrakenNavBar onBack={() => router.back()} />
-        </VStack>
-      </Host>
+      <View style={styles.nav}>
+        <AppHeader palette={{pill: color.pill, pillPressed: color.pillPressed, text: color.text}} />
+      </View>
 
       <Host matchContents style={[styles.host, styles.readout]}>
         <VStack alignment="leading" modifiers={[padding({horizontal: krakenLayout.gutter})]}>
@@ -76,6 +72,7 @@ const styles = StyleSheet.create({
   chart: {marginTop: krakenLayout.chartTop},
   extremes: {marginBottom: krakenLayout.extremesBottom, marginTop: krakenLayout.extremesTop},
   host: {width: '100%'},
+  nav: {paddingHorizontal: krakenLayout.gutter},
   readout: {marginTop: krakenLayout.readoutTop},
   screen: {flex: 1},
 })

@@ -1,8 +1,13 @@
 import type {EChartsType} from 'echarts/core'
 import {graphic} from 'echarts/core'
 import {isHiddenAnnotation} from '../../../shared/annotation-views'
-import {fadeChartColor} from '../color'
-import {CROSSHAIR_LABEL_LIFT, CROSSHAIR_LABEL_SIZE} from '../option'
+import {blendChartColor, fadeChartColor} from '../color'
+import {
+  CROSSHAIR_LABEL_LIFT,
+  CROSSHAIR_LABEL_PADDING_ACROSS,
+  CROSSHAIR_LABEL_PADDING_DOWN,
+  CROSSHAIR_LABEL_SIZE,
+} from '../option'
 import type {
   ChartCrosshairMode,
   ChartCrosshairStyle,
@@ -40,6 +45,11 @@ export type OverlayEasing = 'cubicIn' | 'cubicInOut' | 'cubicOut' | 'elasticOut'
 export type ScrubOverlayInput = {
   annotations: readonly NativeChartAnnotation[]
   isScrubbing?: boolean
+  /**
+   * How far the lighting has come up, 0–1, which tracks the step back the rest of the trace is
+   * making. At 0 the lit stroke is the trace's own colour and is not drawn at all.
+   */
+  litStrength?: number
   marks: readonly ChartScrubMark[]
   plot: ChartPlotRect
   style: ScrubOverlayStyle
@@ -47,6 +57,7 @@ export type ScrubOverlayInput = {
 
 const PULSE = {duration: 450, interval: 1550, opacity: 0.9, scale: 2.2}
 const DEFAULT_POINT_SIZE = 8
+const DEFAULT_MARKER_SIZE = 9
 const DEFAULT_BADGE_SIZE = 18
 const DEFAULT_SPAN = 2
 const FRONT_Z = 20
@@ -55,14 +66,14 @@ const BADGE_Z = FRONT_Z + 2
 
 type Timers = Set<number>
 
-const glowStyle = (glow: ChartGlow | undefined, fallback: string) => {
+const glowStyle = (glow: ChartGlow | undefined, fallback: string, strength = 1) => {
   if (!glow) {
     return {}
   }
 
   return {
     shadowBlur: glow.radius ?? 6,
-    shadowColor: fadeChartColor(glow.color ?? fallback, glow.opacity ?? 0.35),
+    shadowColor: fadeChartColor(glow.color ?? fallback, (glow.opacity ?? 0.35) * strength),
   }
 }
 
@@ -100,6 +111,22 @@ const startPulse = (
   bloom()
 }
 
+/** Room around a crosshair label, which only a chip has: without a background the label is the text. */
+const labelPadding = (style: ChartCrosshairStyle | undefined) => {
+  if (!style?.labelBackground) {
+    return {across: 0, down: 0}
+  }
+  const padding = style.labelPadding
+  if (typeof padding === 'number') {
+    return {across: padding, down: padding}
+  }
+
+  return {
+    across: padding?.x ?? CROSSHAIR_LABEL_PADDING_ACROSS,
+    down: padding?.y ?? CROSSHAIR_LABEL_PADDING_DOWN,
+  }
+}
+
 const annotationFade = (scrubOpacity: number | undefined, isScrubbing: boolean | undefined): number =>
   isScrubbing ? (scrubOpacity ?? 1) : 1
 
@@ -121,9 +148,12 @@ const pixelAt = (instance: EChartsType, index: number, value: number): number[] 
 export const createScrubOverlay = (instance: EChartsType) => {
   const marks = new graphic.Group({silent: true})
   const decorations = new graphic.Group({silent: true})
+  /** Its own group, because the lighting outlives the reading: it leaves with the step back. */
+  const lighting = new graphic.Group({silent: true})
   const timers: Timers = new Set()
   const zr = instance.getZr()
   zr.add(decorations)
+  zr.add(lighting)
   zr.add(marks)
 
   const clearTimers = () => {
@@ -318,29 +348,45 @@ export const createScrubOverlay = (instance: EChartsType) => {
       return
     }
 
-    const size = style.crosshairStyle?.labelSize ?? CROSSHAIR_LABEL_SIZE
+    const crosshair = style.crosshairStyle
+    const {across, down} = labelPadding(crosshair)
     const text = new graphic.Text({
       silent: true,
       style: {
         align: 'center',
-        fill: style.crosshairStyle?.labelColor ?? style.axisColor,
-        fontSize: size,
+        fill: crosshair?.labelColor ?? style.axisColor,
+        fontSize: crosshair?.labelSize ?? CROSSHAIR_LABEL_SIZE,
         fontWeight: 500,
         text: label,
         verticalAlign: 'top',
         x,
-        y: Math.max(0, plot.y - CROSSHAIR_LABEL_LIFT - size),
+        y: 0,
       },
-      z: FRONT_Z,
+      z: FRONT_Z + 1,
     })
-    const centre = pinnedLabelCentre(x, text.getBoundingRect().width, instance.getWidth())
-    if (centre !== x) {
-      text.attr({style: {x: centre}})
+
+    const measured = text.getBoundingRect()
+    const width = measured.width + across * 2
+    const height = measured.height + down * 2
+    const top = Math.max(0, plot.y - (crosshair?.labelLift ?? CROSSHAIR_LABEL_LIFT) - height)
+    const centre = pinnedLabelCentre(x, width, instance.getWidth())
+    text.attr({style: {x: centre, y: top + down}})
+
+    if (crosshair?.labelBackground) {
+      marks.add(
+        new graphic.Rect({
+          shape: {height, r: [crosshair.labelRadius ?? height / 2], width, x: centre - width / 2, y: top},
+          silent: true,
+          style: {fill: crosshair.labelBackground},
+          z: FRONT_Z,
+        })
+      )
     }
     marks.add(text)
   }
 
   const drawSegment = (index: number, input: ScrubOverlayInput, marker: ChartSelectionMarker) => {
+    const strength = input.litStrength ?? 1
     const isTrail = marker.style === 'trail'
     const from = isTrail ? 0 : index - (marker.span ?? DEFAULT_SPAN)
     const to = isTrail ? index : index + (marker.span ?? DEFAULT_SPAN)
@@ -361,7 +407,7 @@ export const createScrubOverlay = (instance: EChartsType) => {
       return
     }
 
-    marks.add(
+    lighting.add(
       new graphic.Polyline({
         shape: {points, smooth: input.style.isSmooth ? 0.35 : 0},
         silent: true,
@@ -369,9 +415,40 @@ export const createScrubOverlay = (instance: EChartsType) => {
           fill: 'none',
           lineCap: 'round',
           lineWidth: input.style.strokeWidth,
-          stroke: marker.color ?? input.style.color,
-          ...glowStyle(marker.glow, input.style.color),
+          stroke: blendChartColor(input.style.color, marker.color ?? input.style.color, strength),
+          ...glowStyle(marker.glow, input.style.color, strength),
         },
+        z: FRONT_Z,
+      })
+    )
+  }
+
+  /**
+   * The lit stroke on its own. It is put up and taken down with the step back rather than with the
+   * finger: dropped at the touch lifting, the length of trace that was never dimmed would come back
+   * up with the rest of it and the whole chart would flash.
+   */
+  const drawLighting = (index: number | null, input: ScrubOverlayInput) => {
+    lighting.removeAll()
+    const marker = input.style.marker
+    const lightsStroke = marker?.style === 'segment' || marker?.style === 'trail'
+    if (index !== null && marker && lightsStroke && input.style.markerTarget === 'line') {
+      if ((input.litStrength ?? 1) > 0) {
+        drawSegment(index, input, marker)
+      }
+    }
+    zr.refresh()
+  }
+
+  /** The dot on the reading, drawn here rather than fed back as an annotation, so it keeps up. */
+  const drawMarkerDot = (x: number, y: number, input: ScrubOverlayInput, marker: ChartSelectionMarker) => {
+    const color = marker.color ?? input.style.color
+
+    marks.add(
+      new graphic.Circle({
+        shape: {cx: x, cy: y, r: (marker.size ?? DEFAULT_MARKER_SIZE) / 2},
+        silent: true,
+        style: {fill: color, ...glowStyle(marker.glow, color)},
         z: FRONT_Z,
       })
     )
@@ -415,18 +492,23 @@ export const createScrubOverlay = (instance: EChartsType) => {
     marks.removeAll()
 
     const value = index === null ? null : input.marks[index]?.value
-    if (index !== null && value !== null && value !== undefined) {
-      const point = pixelAt(instance, index, value)
+    const reading = index !== null && value !== null && value !== undefined ? index : null
+    drawLighting(reading, input)
+
+    if (reading !== null && value !== null && value !== undefined) {
+      const point = pixelAt(instance, reading, value)
       if (point && point[0] !== undefined && point[1] !== undefined) {
-        drawCrosshair(point[0], point[1], input.plot, input.style, index)
+        drawCrosshair(point[0], point[1], input.plot, input.style, reading)
       }
 
       const marker = input.style.marker
-      if (marker && marker.style !== 'point') {
-        if (input.style.markerTarget === 'line') {
-          drawSegment(index, input, marker)
-        } else {
-          drawMarkGlow(index, input, marker)
+      if (marker) {
+        const lightsStroke = marker.style === 'segment' || marker.style === 'trail'
+        if (lightsStroke && input.style.markerTarget !== 'line') {
+          drawMarkGlow(reading, input, marker)
+        }
+        if ((!lightsStroke || marker.dot) && point && point[0] !== undefined && point[1] !== undefined) {
+          drawMarkerDot(point[0], point[1], input, marker)
         }
       }
     }
@@ -437,12 +519,14 @@ export const createScrubOverlay = (instance: EChartsType) => {
   const dispose = () => {
     clearTimers()
     decorations.removeAll()
+    lighting.removeAll()
     marks.removeAll()
     zr.remove(decorations)
+    zr.remove(lighting)
     zr.remove(marks)
   }
 
-  return {dispose, drawAnnotations, drawSelection}
+  return {dispose, drawAnnotations, drawLighting, drawSelection}
 }
 
 export type ScrubOverlay = ReturnType<typeof createScrubOverlay>

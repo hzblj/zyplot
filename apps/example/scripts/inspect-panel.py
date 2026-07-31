@@ -36,12 +36,16 @@ MOVED = 3.0
 COLOURS = 200
 
 
-def thumbnail(path: Path) -> Image.Image:
-    return Image.open(path).convert("L").resize(THUMBNAIL, Image.LANCZOS)
+def thumbnail(path: Path, ignore_top: float = 0.0) -> Image.Image:
+    image = Image.open(path).convert("L")
+    if ignore_top > 0:
+        width, height = image.size
+        image = image.crop((0, round(height * ignore_top), width, height))
+    return image.resize(THUMBNAIL, Image.LANCZOS)
 
 
-def difference(first: Path, second: Path) -> float:
-    return ImageStat.Stat(ImageChops.difference(thumbnail(first), thumbnail(second))).mean[0]
+def difference(first: Path, second: Path, ignore_top: float = 0.0) -> float:
+    return ImageStat.Stat(ImageChops.difference(thumbnail(first, ignore_top), thumbnail(second, ignore_top))).mean[0]
 
 
 def main() -> None:
@@ -55,9 +59,19 @@ def main() -> None:
         type=Path,
         help="a screen this one must not be: the gallery it launched on, or a panel already captured",
     )
+    parser.add_argument(
+        "--ignore-top",
+        default=0.0,
+        type=float,
+        help="fraction of the frame's height left out of the stillness comparison, for a screen carrying a band that never stops",
+    )
     arguments = parser.parse_args()
 
-    if difference(arguments.previous, arguments.current) > STILL:
+    # Only the stillness comparison takes the crop. A screen with something on it
+    # that never settles — the stocks tape scrolls on a loop — would otherwise fail
+    # this forever, while the rest of it still has to come to rest. The checks below
+    # read the whole frame: what a screen must not be is judged by all of it.
+    if difference(arguments.previous, arguments.current, arguments.ignore_top) > STILL:
         sys.exit("still moving")
 
     # getcolors() returns None once the image has more colours than it was asked

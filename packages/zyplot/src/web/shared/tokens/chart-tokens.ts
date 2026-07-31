@@ -52,11 +52,16 @@ const uaFontFamily = (): string => {
   return untouchedFontFamily
 }
 
-const readFontFamily = (styles: CSSStyleDeclaration): string => {
+const fontFallback = (styles: CSSStyleDeclaration): string | undefined => {
   const inherited = styles.fontFamily.trim()
 
-  return !inherited || inherited === uaFontFamily() ? SYSTEM_FONT_STACK : inherited
+  return !inherited || inherited === uaFontFamily() ? SYSTEM_FONT_STACK : undefined
 }
+
+const readFontFamily = (styles: CSSStyleDeclaration): string => fontFallback(styles) ?? styles.fontFamily.trim()
+
+const tokenRoot = (theme: {rootRef: {current: HTMLElement | null}} | null): Element =>
+  theme?.rootRef.current ?? document.body ?? document.documentElement
 
 export const readChartTokens = (element: Element = document.documentElement): ChartTokens => {
   const styles = getComputedStyle(element)
@@ -107,7 +112,7 @@ export const useChartTokens = (chartTheme?: ChartTheme): ChartTokens | null => {
   const theme = useContext(ChartThemeContext)
 
   useEffect(() => {
-    const sync = () => setTokens(readChartTokens(theme?.rootRef.current ?? document.body ?? document.documentElement))
+    const sync = () => setTokens(readChartTokens(tokenRoot(theme)))
     sync()
 
     const observer = new MutationObserver(sync)
@@ -134,6 +139,20 @@ export const useChartTokens = (chartTheme?: ChartTheme): ChartTokens | null => {
   }, [theme])
 
   return useMemo(() => (tokens && chartTheme ? withChartTheme(tokens, chartTheme) : tokens), [chartTheme, tokens])
+}
+
+/**
+ * The family the chart's own DOM text has to carry, or `undefined` where inheriting is enough.
+ * A page that sets no font leaves a legend in the UA serif beside a canvas already falling back
+ * to the system stack, so the DOM resolves the fallback the same way the canvas does.
+ */
+export const useChartFontFallback = (): string | undefined => {
+  const [fallback, setFallback] = useState<string>()
+  const theme = useContext(ChartThemeContext)
+
+  useEffect(() => setFallback(fontFallback(getComputedStyle(tokenRoot(theme)))), [theme])
+
+  return fallback
 }
 
 export const seriesColor = (tokens: ChartTokens, entry: {color?: string; slot?: number}, index: number): string => {

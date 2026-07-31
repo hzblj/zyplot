@@ -37,6 +37,16 @@ extension ZyplotConfiguration {
     series?.values?[safe: index] ?? nil
   }
 
+  /**
+   The colour a held span is drawn in, or nil where the chart named none. The span's own direction
+   rather than the period's, off the first series the way every other reading is — so a fortnight
+   down inside a year up is drawn as the fortnight.
+   */
+  func rangeTint(from: Int, to: Int) -> String? {
+    guard let style = interaction?.rangeStyle else { return nil }
+    return style.tint(rose: (value(atIndex: to) ?? 0) >= (value(atIndex: from) ?? 0))
+  }
+
   func candleClose(at index: Int) -> Double? {
     candlesticks?[safe: index]?.close
   }

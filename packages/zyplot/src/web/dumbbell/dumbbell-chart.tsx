@@ -14,6 +14,7 @@ import {
   firstTooltipParam,
   renderChartTooltip,
 } from '../shared/option'
+import {skeletonAxis} from '../shared/skeleton'
 import {useChartTokens} from '../shared/tokens'
 import type {ChartBaseProps, ChartDumbbellRow, ChartNumberFormat} from '../shared/types'
 import {DumbbellChartSkeleton} from './dumbbell-chart-skeleton'
@@ -60,7 +61,7 @@ export const DumbbellChart: FC<DumbbellChartProps> = ({
 
     return {
       ...buildChartBaseOption(tokens, texture, animation),
-      grid: buildChartGrid(false),
+      grid: buildChartGrid({hasCategoryGutter: false}),
       series: [
         {
           data: rows.map((row, index) => [index, row.before, row.after]),
@@ -160,7 +161,12 @@ export const DumbbellChart: FC<DumbbellChartProps> = ({
       option={option}
       isLoading={isLoading}
       skeleton={
-        <DumbbellChartSkeleton height={height} legendCount={2} xAxis={axis?.x !== false} yAxis={axis?.y !== false} />
+        <DumbbellChartSkeleton
+          height={height}
+          legendCount={2}
+          xAxis={skeletonAxis(axis?.x)}
+          yAxis={skeletonAxis(axis?.y)}
+        />
       }
     />
   )

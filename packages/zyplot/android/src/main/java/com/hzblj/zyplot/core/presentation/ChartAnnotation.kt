@@ -7,6 +7,8 @@ import com.hzblj.zyplot.core.json.nullableString
 import org.json.JSONObject
 
 data class ChartAnnotation(
+  /** Where in a category's band a rule sits: `center`, `start` or `end`. */
+  val align: String,
   val axis: String?,
   val badge: String?,
   val color: String?,
@@ -35,6 +37,7 @@ data class ChartAnnotation(
 
   companion object {
     fun from(json: JSONObject): ChartAnnotation = ChartAnnotation(
+      align = json.optString("align", "center").ifEmpty { "center" },
       axis = json.nullableString("axis"),
       badge = json.nullableString("badge"),
       color = json.nullableString("color"),

@@ -1,7 +1,10 @@
+'use client'
+
 import type {FC} from 'react'
 import {formatChartNumber} from '../shared/format'
 
 import {Typography} from '../shared/primitives'
+import {useChartFontFallback} from '../shared/tokens'
 import type {ChartNumberFormat, ChartSurface} from '../shared/types'
 import {cn} from '../shared/utils'
 
@@ -27,9 +30,10 @@ export type MeterBarProps = {
 export const MeterBar: FC<MeterBarProps> = ({className, format, label, max, showValue = true, value}) => {
   const ratio = Math.max(0, Math.min(1, value / max))
   const percent = Math.max(MIN_VISIBLE_PERCENT, ratio * 100)
+  const fontFamily = useChartFontFallback()
 
   return (
-    <div className={cn('flex w-full flex-col gap-1.5', className)}>
+    <div className={cn('flex w-full flex-col gap-1.5', className)} style={{fontFamily}}>
       <div className="flex items-baseline justify-between gap-3">
         <Typography color="secondary" variant="footnote">
           {label}

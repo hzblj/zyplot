@@ -3,6 +3,7 @@ package com.hzblj.zyplot.charts.interaction
 import androidx.compose.ui.geometry.Offset
 import com.hzblj.zyplot.charts.plotLeft
 import com.hzblj.zyplot.charts.plotRight
+import com.hzblj.zyplot.charts.presentation.categoryX
 import com.hzblj.zyplot.core.ChartConfiguration
 
 internal data class ChartSelection(
@@ -13,6 +14,37 @@ internal data class ChartSelection(
   val detail: List<String> = emptyList(),
   val rows: List<Pair<String, String>> = emptyList(),
 )
+
+/** The span two fingers are on, in data order rather than in the order they landed. */
+internal data class ChartRange(
+  val startIndex: Int,
+  val endIndex: Int,
+)
+
+internal fun chartRange(
+  config: ChartConfiguration,
+  first: Offset,
+  second: Offset,
+  width: Float,
+  density: Float = 1f,
+): ChartRange? {
+  val start = chartSelection(config, first, width, density).index ?: return null
+  val end = chartSelection(config, second, width, density).index ?: return null
+  return ChartRange(minOf(start, end), maxOf(start, end))
+}
+
+/** Where a category's mark sits, measured off the view rather than off a plot already in hand. */
+internal fun categoryCentre(
+  config: ChartConfiguration,
+  index: Int,
+  width: Float,
+  density: Float = 1f,
+  align: String = "center",
+): Float {
+  val left = plotLeft(config, density)
+  val right = plotRight(config, width, density)
+  return categoryX(config, index, left, right - left, align)
+}
 
 internal fun chartSelection(
   config: ChartConfiguration,
@@ -118,4 +150,26 @@ internal fun interactionPayload(
     put("nativeX", it.x / density)
     put("nativeY", it.y / density)
   }
+}
+
+internal fun rangePayload(
+  config: ChartConfiguration,
+  range: ChartRange,
+  phase: String,
+  width: Float,
+  density: Float = 1f,
+): Map<String, Any> = buildMap {
+  put("phase", phase)
+  put(
+    "range",
+    buildMap {
+      config.categories.getOrNull(range.endIndex)?.let { put("endCategory", it) }
+      put("endIndex", range.endIndex)
+      put("endX", categoryCentre(config, range.endIndex, width, density) / density)
+      config.categories.getOrNull(range.startIndex)?.let { put("startCategory", it) }
+      put("startIndex", range.startIndex)
+      put("startX", categoryCentre(config, range.startIndex, width, density) / density)
+    },
+  )
+  config.series.firstOrNull()?.id?.let { put("seriesId", it) }
 }
