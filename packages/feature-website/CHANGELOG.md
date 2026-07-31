@@ -1,5 +1,13 @@
 # @zyplot/feature-website
 
+## 0.0.5
+
+### Patch Changes
+
+- Updated dependencies [[`3ef135f`](https://github.com/hzblj/zyplot/commit/3ef135f564b7daa67eeb4de4ff058cf41bf0c9f1), [`3ef135f`](https://github.com/hzblj/zyplot/commit/3ef135f564b7daa67eeb4de4ff058cf41bf0c9f1), [`3ef135f`](https://github.com/hzblj/zyplot/commit/3ef135f564b7daa67eeb4de4ff058cf41bf0c9f1), [`3ef135f`](https://github.com/hzblj/zyplot/commit/3ef135f564b7daa67eeb4de4ff058cf41bf0c9f1), [`3ef135f`](https://github.com/hzblj/zyplot/commit/3ef135f564b7daa67eeb4de4ff058cf41bf0c9f1), [`3ef135f`](https://github.com/hzblj/zyplot/commit/3ef135f564b7daa67eeb4de4ff058cf41bf0c9f1), [`3ef135f`](https://github.com/hzblj/zyplot/commit/3ef135f564b7daa67eeb4de4ff058cf41bf0c9f1), [`3ef135f`](https://github.com/hzblj/zyplot/commit/3ef135f564b7daa67eeb4de4ff058cf41bf0c9f1), [`3ef135f`](https://github.com/hzblj/zyplot/commit/3ef135f564b7daa67eeb4de4ff058cf41bf0c9f1), [`3ef135f`](https://github.com/hzblj/zyplot/commit/3ef135f564b7daa67eeb4de4ff058cf41bf0c9f1), [`3ef135f`](https://github.com/hzblj/zyplot/commit/3ef135f564b7daa67eeb4de4ff058cf41bf0c9f1), [`3ef135f`](https://github.com/hzblj/zyplot/commit/3ef135f564b7daa67eeb4de4ff058cf41bf0c9f1), [`3ef135f`](https://github.com/hzblj/zyplot/commit/3ef135f564b7daa67eeb4de4ff058cf41bf0c9f1), [`3ef135f`](https://github.com/hzblj/zyplot/commit/3ef135f564b7daa67eeb4de4ff058cf41bf0c9f1), [`3ef135f`](https://github.com/hzblj/zyplot/commit/3ef135f564b7daa67eeb4de4ff058cf41bf0c9f1), [`3ef135f`](https://github.com/hzblj/zyplot/commit/3ef135f564b7daa67eeb4de4ff058cf41bf0c9f1), [`3ef135f`](https://github.com/hzblj/zyplot/commit/3ef135f564b7daa67eeb4de4ff058cf41bf0c9f1)]:
+  - @hzblj/zyplot@0.4.0
+  - @zyplot/feature-charts@0.0.2
+
 ## 0.0.4
 
 ### Patch Changes

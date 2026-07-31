@@ -1,5 +1,319 @@
 # @hzblj/zyplot
 
+## 0.4.0
+
+### Minor Changes
+
+- [`3ef135f`](https://github.com/hzblj/zyplot/commit/3ef135f564b7daa67eeb4de4ff058cf41bf0c9f1) - Put a rule on a category's edge instead of through its middle.
+
+  A category is a band — a width, not a line — so a rule placed on one has to pick somewhere
+  inside it, and every renderer picked the middle. That is right for a rule that names its mark
+  and wrong for the commoner case: a rule that means _up to here_. A cumulative chart's "now"
+  belongs at the end of the last hour, not halfway through it, and drawn through the middle it
+  reads as cutting the last reading in half.
+
+  `annotation.line({align: 'end'})` moves it to the band's trailing edge, `'start'` to its
+  leading one, and the default stays `'center'`, so nothing already drawn moves. It means nothing
+  on a numeric axis, where a value is already a position.
+
+  Android computes it where it computes every other category position, so the reported geometry
+  agrees with the pixels. iOS offsets the `RuleMark` by half a band, which it now measures off the
+  laid-out plot — a mark cannot ask how wide its own band is. The web renderer still centres:
+  `align` is read on iOS and Android only for now.
+
+- [`3ef135f`](https://github.com/hzblj/zyplot/commit/3ef135f564b7daa67eeb4de4ff058cf41bf0c9f1) - Square the first and last axis labels up with the ends of the row they bracket.
+
+  A label is centred on the mark it names, which is right in a row of them and wrong for a pair of
+  bookends. Two hours naming a day — `0:00` and `23:00` — are read as the ends of the axis rather
+  than as two readings on it, and centred they hang half a label outside it at each end: on a plot
+  that runs to the edges of the screen the first one starts before the data does and the last one
+  finishes after it, which reads as the labels being out of line with everything above them.
+
+  `xAxis.labelEdgeAlign` hangs a corner on the mark instead of the middle: the first label's leading
+  edge on the first mark, the last one's trailing edge on the last, and everything between stays
+  centred where it was. All three renderers read it on the x axis — ECharts through `alignMinLabel`
+  and `alignMaxLabel`, Compose by shifting the two labels by their own measured width, and Swift
+  Charts by anchoring the label to its mark, which it can only do for the labels a `tickValues`
+  named.
+
+- [`3ef135f`](https://github.com/hzblj/zyplot/commit/3ef135f564b7daa67eeb4de4ff058cf41bf0c9f1) - Give an axis a mark at every category, not only at the ones it names.
+
+  `xAxis.tickValues` says which categories are labelled, and the tick came with the label — so an
+  axis naming two hours out of twenty-four had two marks on it and read as nothing. What the eye
+  takes for the axis in that case is the row of small marks between the labels, and there was no
+  way to ask for one.
+
+  `minorTicks: true` draws a shorter mark at every category and leaves the named ones their full
+  tick and their label. It needs `ticks`, being the same row made denser.
+
+  Both native renderers place them where the marks are, so they line up with the bars or with the
+  readings above them. Android draws them at a fixed short length; iOS gives Swift Charts an
+  explicit `AxisTick` length, because the automatic one is as long as the label and a row of those
+  is a comb through the words rather than an axis under them.
+
+- [`3ef135f`](https://github.com/hzblj/zyplot/commit/3ef135f564b7daa67eeb4de4ff058cf41bf0c9f1) - Style the crosshair's label into the chip your design asked for.
+
+  `crosshairStyle` takes `labelBackground` for a fill behind the words, `labelPadding` for the room
+  around them — a number for both ways, or `{x, y}` — `labelRadius` for its corners, defaulting to a
+  round cap, and `labelLift` for the gap above the plot. Without a background nothing changes: the
+  label is the text, lifted 8 as before.
+
+  It is there because the alternative costs more than it looks. A chip of your own placed from a
+  scrub handler crosses into JavaScript and back before it moves, so on a fast drag it lands well
+  behind the crosshair it belongs to — and on release it has already jumped to the latest reading,
+  which is what fades out. The chart draws this one where it draws the line.
+
+- [`3ef135f`](https://github.com/hzblj/zyplot/commit/3ef135f564b7daa67eeb4de4ff058cf41bf0c9f1) - Let the marker put a dot on the reading, so the dot keeps up with the finger.
+
+  `marker.segment({dot: true})` and `marker.trail({dot: true})` draw the dot of `'point'` on the
+  mark under the finger as well as lighting the line, sized by `size` and glowing by `glow`. The
+  chart draws it, which is the whole point: a dot placed from a scrub handler has to cross into
+  JavaScript and back before it moves, so on a fast drag it trails the finger by tens of points
+  while the crosshair beside it does not. Every renderer already knew where the reading was.
+
+  The web catches up on `'point'` at the same time. It drew nothing for the dot styles and only
+  ever lit the stroke, so a chart asking for `marker.point` got a crosshair and no mark.
+
+- [`3ef135f`](https://github.com/hzblj/zyplot/commit/3ef135f564b7daa67eeb4de4ff058cf41bf0c9f1) - Let a chart run its marks to the edge of the plot.
+
+  `plotDimensionStartPadding` and `plotDimensionEndPadding` were read as extra room on top of what
+  the renderer already kept for itself, so a `0` was not zero: the web grid held 4 points at the
+  leading edge and 8 at the trailing one, Android held 20 and 12 wherever no axis was drawn, and
+  iOS — which adds nothing — put the same window a full 20 points further left than Compose did.
+  A padding that cannot say _none_ is no use to a chart that spans the width of the screen.
+
+  What the axis gives is now the whole gutter. `0` puts the first or last mark on the plot's edge on
+  every renderer, and leaving it out keeps the breathing room each one kept before, so nothing that
+  did not ask for a number moves. A chart that did ask gets what it asked for, which on the web and
+  on Android is a few points tighter than it got yesterday.
+
+- [`3ef135f`](https://github.com/hzblj/zyplot/commit/3ef135f564b7daa67eeb4de4ff058cf41bf0c9f1) - Let the chart draw the span under two fingers, so both ends keep up with them.
+
+  `interaction({range: true, rangeStyle: {...}})` and the held stretch is painted by whoever is
+  drawing the line: `color` and `downColor` take the direction the span itself went — a fortnight
+  down inside a year up reads as the fortnight — `dimOpacity` steps the rest of the trace back behind
+  it, and `dot` puts the reading marker on each end. Leave `rangeStyle` off and a span is the rules at
+  its ends, exactly as before.
+
+  It is the same reason `marker.dot` exists, twice over. The way to paint a split before this was to
+  feed the two indices back through a scrub handler as a second series masked to the span — which
+  crosses into JavaScript and back, and comes back as a whole new chart rather than as a moved dot.
+  So the ends trailed the fingers by more the longer the series was, and two fingers cost what one
+  never did: one finger changes nothing in the props and the chart never rebuilds under it. Now
+  nothing about a held span reaches the props at all.
+
+  The step back a span asks for is its own number rather than `interaction.dimOpacity`, so one finger
+  can read a whole trace and two can still spotlight a stretch of it — and unlike `dimOpacity` it
+  reaches the area fill, because a span picks out a stretch of the period rather than one mark out of
+  many. iOS and Android only, like the span it draws.
+
+- [`3ef135f`](https://github.com/hzblj/zyplot/commit/3ef135f564b7daa67eeb4de4ff058cf41bf0c9f1) - Give the step back a duration, so a finger landing reads as the lights coming down.
+
+  `interaction({dimDuration: 420})` and the marks the reader is not on ramp to `dimOpacity` over
+  that many milliseconds instead of cutting to it, in both directions. Default 0, which is the
+  cut every chart has always had — worth a beat where the dimming is the whole feedback for the
+  gesture, and worth leaving alone where a tooltip is doing the talking.
+
+  The lighting on the reading is put up and taken down with the step back rather than with the
+  finger. A trail or a segment dropped the moment a touch lifts leaves the length of trace it was
+  lighting to come back up with everything else, so the part that was never dimmed flashes along
+  with the part that was — the one thing a ramp is supposed to avoid. It stays on the reading the
+  touch left behind until the step back is all the way up, and walks from the marker's colour to
+  the trace's own as it goes, so there is nothing to see when it is finally let go of.
+
+  Android also stops dimming charts that never asked. `dimOpacity` has a default there for the
+  series emphasis to fall back to, and reading it for a scrub meant a chart that only wanted a
+  crosshair stepped its trace back under a finger. Absent now means what it means on the web and
+  on iOS: a reading dims nothing.
+
+  Nothing transitions a value that a renderer only reads while it draws, so each of the three
+  drives its own frames. The web ramps `lineStyle.opacity` with `requestAnimationFrame`, because
+  ECharts does not animate a style merged into a live series. Android collects the reading through
+  a snapshot flow and reads the ramp inside the `Canvas` draw, so neither the finger moving nor the
+  ramp running costs a recomposition; a finger lifting mid-ramp turns it around from where it is
+  rather than queueing behind it. iOS walks the strength on a `TimelineView` the way the reveal and
+  the morph walk theirs, above the chart rather than in the background beside the canvas it feeds,
+  because the state a ramp walks has to outlive every layout of the plot.
+
+- [`3ef135f`](https://github.com/hzblj/zyplot/commit/3ef135f564b7daa67eeb4de4ff058cf41bf0c9f1) - Read a span with two fingers, not just a mark with one.
+
+  `interaction({range: true})` and a chart reports what is under both fingers and everything
+  between: `range` on the interaction event, with `startIndex` and `endIndex` in data order
+  however the fingers are placed. `useChartScrub` returns it beside `selection`, and only ever
+  one of the two is set — so a headline shows a value or a total without having to work out
+  which report arrived last, and a finger lifted from a pair goes back to a single reading with
+  no gesture ending in between.
+
+  The span carries where each end's mark landed as well as which one it is. A total belongs over
+  the bars it covers, and an app cannot work that position out from the plot's width alone
+  without also knowing the axis padding and the bar inset — the chart is the one that knows, so
+  it says.
+
+  iOS and Android only, because a pointer has no second finger; on the web `range` stays `null`.
+  SwiftUI's `DragGesture` reports one location however many fingers are down, and the gesture
+  that would report more is iOS 18, so iOS drops to UIKit's own touch delivery for the charts
+  that ask for a span and keeps the existing drag for every chart that does not. Android reads
+  its pointers in one `awaitEachGesture` loop instead of the tap and drag detectors, on the same
+  condition. Both draw a rule at each end of the span rather than a crosshair through it, placed
+  where the span ends rather than through its last mark, so the outermost bars read as inside it.
+
+### Patch Changes
+
+- [`3ef135f`](https://github.com/hzblj/zyplot/commit/3ef135f564b7daa67eeb4de4ff058cf41bf0c9f1) - Put an Android category where its mark is, not where its band is.
+
+  A trace on Android runs corner to corner — its first mark is the plot's leading edge and its last
+  is the trailing one — but everything placed by category went to the middle of a band, half a step
+  short of the mark at the end of the data. A dot annotating the last reading landed off the end of
+  the line it belonged to, and on a steep close it read as sitting above the trace as well.
+
+  Category positions now follow the marks they are placed against: on the plot's edges for a line,
+  an area, a time series or a sparkline, in the middle of the band for a bar or a candle, where they
+  always were. The reported geometry, `annotation.line({align})` and the rules at the ends of a
+  two-finger span all move with them, so an overlay calibrated off an annotation still lands on the
+  pixels. Axis labels keep naming their band.
+
+- [`3ef135f`](https://github.com/hzblj/zyplot/commit/3ef135f564b7daa67eeb4de4ff058cf41bf0c9f1) - Let an Android category axis name only the ticks it was given.
+
+  `xAxis.tickValues` takes numbers or category names, and Android read the array as numbers only —
+  so every name in it was dropped on the floor and the axis went on drawing all of them. On a
+  month of days that is thirty-one labels in the room for four, each one ellipsised to `...`,
+  which reads as a rendering fault rather than as an axis that was asked for something.
+
+  The values are now kept as written, and a category axis draws the labels and ticks it was told
+  to. The bars are untouched: a category with no label still has its bar, and the label that is
+  drawn is measured against the room the named ones actually have rather than against one band of
+  thirty-one, which is what was cutting them short.
+
+  The y axis has always honoured its own `tickValues` for labels. Its gridlines still do not — a
+  chart that asks for two rules gets the renderer's own count — so that is still worth knowing
+  before matching a design that leans on them.
+
+- [`3ef135f`](https://github.com/hzblj/zyplot/commit/3ef135f564b7daa67eeb4de4ff058cf41bf0c9f1) - Stop an Android trace from stretching over the empty end of its own axis.
+
+  A line or an area spread its marks across the whole plot no matter how many categories the axis
+  had — one step per reading rather than one per slot. A window that ends before its period does,
+  which is what an intraday chart is, therefore drew its last reading at the trailing edge while
+  everything placed by category stayed where the category was: the annotation on the latest price
+  sat in open space with the trace running on past it, and the scrub stopped short of the end of the
+  line it was reading. Marks now stand on their own slot, the way they already did on the web and on
+  iOS, and a trace shorter than its axis runs out where its data does.
+
+- [`3ef135f`](https://github.com/hzblj/zyplot/commit/3ef135f564b7daa67eeb4de4ff058cf41bf0c9f1) - Stop iOS drawing a line across the top of every bar chart.
+
+  The canvas that strokes a series' trace was attached to every form `ZyplotMarksChart` renders,
+  not to the ones that have a trace. On a line or an area that canvas _is_ the chart. On anything
+  drawn as bars or as points it is a second, uninvited chart on top: a polyline through the bar
+  tops, in the series colour, which reads as a rendering fault because it is one.
+
+  It went unseen because it takes a screen built on bars to notice — a gallery example is glanced
+  at, and the line looks almost like an axis until the bars are the point. The trace canvas and
+  the scrub highlight canvas now both check the form first: `line`, `area`, `sparkline` and
+  `time-series` keep them, and the bar, histogram, scatter, heatmap and boxplot families are left
+  to their own marks.
+
+- [`3ef135f`](https://github.com/hzblj/zyplot/commit/3ef135f564b7daa67eeb4de4ff058cf41bf0c9f1) - Thin a solid fill downwards on iOS and Android too, so `fadeTo` means the same thing on all
+  three renderers.
+
+  The SwiftUI and Compose canvases read `fadeTo` only on the way to a dot grid, which is the one
+  place it had to be a per-row alpha. A solid fill went down as one flat wash at full strength, so
+  a quote chart asking for `fill({fadeTo: 0.06})` got a slab of colour with a hard edge along the
+  floor — the exact edge `fadeTo` exists to remove. It is now a vertical gradient over the plot,
+  from the colour at the top to the same colour at `fadeTo` of its alpha at the bottom, with
+  `fillOpacity` still scaling the whole thing.
+
+  Fills that never set `fadeTo`, and dotted ones, draw exactly as they did.
+
+- [`3ef135f`](https://github.com/hzblj/zyplot/commit/3ef135f564b7daa67eeb4de4ff058cf41bf0c9f1) - Draw every placeholder in the plot the chart is about to use, on all three renderers.
+
+  A placeholder is only worth having if nothing moves when the data lands, and none of the three
+  were keeping that promise. The web frame reserved a fixed left gutter for the value labels, six of
+  them however many the axis had been pinned to, eight bars however many categories there were, and
+  a 26 point floor — while the real plot gives up the whole row the category labels hang in below
+  that floor, half a label wherever one is centred on an edge of it, and the width the value labels
+  need on whichever side they are on. An overlaid axis was the worst of it: the placeholder kept a
+  gutter on the left for labels the chart draws on the right, so the bars arrived some thirty points
+  away from where they had been promised, in a plot nearly thirty points shorter than the one they
+  were drawn in.
+
+  `ChartSkeletonFrame` now takes the axis options themselves rather than a pair of booleans — the
+  same objects the chart was given — and works the geometry out of them: the gutter on the side the
+  labels are on and no wider than the widest of them, a label for each `tickValue` at the reading it
+  was pinned to, the category labels on the middle of their own bands, and the plot's own insets
+  including `plotDimension*Padding`. `SkeletonBars` lays its bars out in bands, four fifths of each
+  and never wider than `barMaxWidth`, so a week of seven and a month of thirty are spaced the way
+  they will be. `Chart.Bar` also passes its `xAxis` to the grid, so those paddings are honoured on
+  the web the way they already were on native — the one cartesian chart that was dropping them.
+
+  Native drew across the whole view: eight columns from the bottom edge of it, no matter what the
+  axes were taking or how many categories there were. Android now draws in `plotRect`, the same rect
+  the bars themselves are drawn in, and one band per category. iOS keeps the same gutters as
+  Android — the label row under a visible x axis, a label's width beside one in a gutter, and
+  `overlayAxisGutter` where the labels sit inside the plot.
+
+  All three now also lay down the axis itself: the rules the value axis draws at the readings it was
+  pinned to, and on the web the line the category axis draws along the plot. They are the chart's own
+  furniture rather than a value still to come, so they are drawn once in the grid colour and left to
+  sit — only the marks shimmer. iOS draws no rules for an overlaid axis, since that is a chart with no
+  y axis marks at all: it keeps the same guard `ZyplotChartAxisModifier` does.
+
+  The axes also get their labels: a pill wherever one is about to be written, on the line it will be
+  written on — the readings the value axis names, held inside the plot's trailing edge where the axis is
+  overlaid and clamped the way each renderer clamps them, and the categories the x axis names, each on
+  the middle of its own band.
+
+  iOS was the one renderer whose plot was guessed rather than derived, and it was wrong: Swift Charts
+  gives up only the row its labels are written in, some 21 points for a 13 point label, where the
+  placeholder was keeping Android's 44. Measured off a real chart, its plot starts 13 points down and
+  ends a label row above the bottom, which is what the placeholder keeps now — within a point of the
+  real thing, labels included.
+
+  The standalone `.Skeleton` components take the same things, since a Suspense fallback has no chart
+  above it to fill them in: `xAxis` and `yAxis` are now `boolean | NativeChartAxisOptions` — `false`
+  for an axis the chart hides, `true` for the label row alone, or the options themselves — beside
+  `categories` for the names the axis will write, `format` for how the value labels will read, and
+  `orientation` for the forms that can be turned. `Chart.Bar.Skeleton` keeps a `count` for a fallback
+  that has no categories to count. Everything already written keeps working: the booleans mean what
+  they meant.
+
+  Two smaller things came out of it. A placed label was landing nowhere: `Skeleton` carries its own
+  `relative` for the pulse it holds and `cn` only joins classes, so `absolute` never won and every
+  pinned label was offset from wherever the flow had left it. They are placed by a wrapper now. And the
+  bars reach less far up the plot — an axis rounds its domain up past the tallest bar, so a placeholder
+  that filled the plot arrived taller than the data ever was.
+
+- [`3ef135f`](https://github.com/hzblj/zyplot/commit/3ef135f564b7daa67eeb4de4ff058cf41bf0c9f1) - Put a pointer cursor over a web plot that answers the pointer.
+
+  A chart that reads the pointer — a crosshair following it, a tooltip under it, a readout above the
+  plot moving with it — said nothing about being interactive until it was touched. The arrow stayed
+  an arrow over the one region of the page that behaves like a control, which is the cheapest signal
+  there is and the only one available before the pointer has arrived.
+
+  The chart's own wrapper now carries `data-zyplot-interactive` when its plot reads a pointer at all,
+  and the stylesheet takes the cursor off it. The rule lands on the canvas rather than on the
+  wrapper, because both engines put something between the two: zrender writes `cursor: default`
+  inline onto the div it owns, and uPlot lays a bare overlay over its canvas — a rule on the
+  container loses to the first and is covered by the second. The attribute is part of the CSS
+  contract, so a page that wants its own cursor, outline or hit affordance can hang a selector off
+  the same hook.
+
+  It is on the forms that read `interaction` — `Chart.Line`, `Chart.Area`, `Chart.Bar`,
+  `Chart.StackedBar` and `Chart.Candlestick` — where `interaction.hover: 'none'` takes it off again,
+  and on `Chart.TimeSeries`, which reads a pointer by construction.
+
+- [`3ef135f`](https://github.com/hzblj/zyplot/commit/3ef135f564b7daa67eeb4de4ff058cf41bf0c9f1) - Thin a solid fill downwards on the web, the way `fadeTo` already promises.
+
+  `ChartSeriesFill.fadeTo` says how much of its strength the paint under a line still has at the
+  plot's floor, and nothing in it is about dots. The web read it only when the fill was a dot grid
+  — a solid one took a flat wash at full strength for its whole height, so a quote chart's area
+  arrived as a slab of colour instead of gathering under the trace. A solid fill with `fadeTo`
+  below 1 is now a vertical gradient over the filled shape, from the colour at the top to the same
+  colour at `fadeTo` of its alpha at the bottom, with `fillOpacity` still scaling the whole thing.
+
+  Fills that never set `fadeTo`, and dotted ones, draw exactly as they did.
+
+- Updated dependencies []:
+  - @hzblj/zyplot-core@0.4.0
+
 ## 0.3.0
 
 ### Minor Changes
