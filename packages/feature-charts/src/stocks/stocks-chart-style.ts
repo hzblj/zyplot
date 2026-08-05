@@ -1,6 +1,5 @@
-import {animation, annotation, axis, fill, halo, interaction, marker, theme} from '@hzblj/zyplot'
+import {axis} from '@hzblj/zyplot'
 import type {StocksReading} from './stocks-data'
-import {type StocksScheme, stocksColors} from './stocks-theme'
 
 export type PriceDomain = {max: number; min: number}
 
@@ -58,81 +57,9 @@ export const timeAxis = {plotDimensionEndPadding: 0, plotDimensionStartPadding: 
 /** Where a tick sits across the plot, 0 at the first mark and 1 at the last. */
 export const tickPosition = (index: number, slots: number) => index / (slots - 1)
 
-export const hiddenAxis = {plotDimensionEndPadding: 0, plotDimensionStartPadding: 0, visible: false} as const
-
 /**
  * The marks are allowed out of the plot: the trace runs to the floor, and the dot under a finger
  * is a mark whose own width hangs past it. The vertical box is the price axis' to name — see
  * `priceAxis` — so nothing here has to know what any renderer reserves.
  */
 export const fittedPlot = {clip: false} as const
-
-const chartStyle = (scheme: StocksScheme) => {
-  const color = stocksColors[scheme]
-
-  return {
-    /**
-     * Nothing moves that the data did not. The sheet opens on a price that is already true, and
-     * a tap on another range is a request to see that range — not to watch a month become a
-     * year. Both would be the chart telling a story of its own.
-     */
-    arrival: animation({enabled: false, initial: false, updates: false}),
-
-    /**
-     * Two marks at the ends of the data that nobody draws. The chart still measures them and
-     * reports where they landed, which is the only exact answer to where the plot's sides are:
-     * a rule reports through the axis rather than through the marks, and the two do not agree
-     * on the web.
-     */
-    edge: (id: string, category: string, value: number) =>
-      annotation.point({color: color.sheet, hidden: true, id, size: 0, x: category, y: value}),
-
-    /** The scale's own rules, so the four across match the five down the plot draws itself. */
-    grid: theme({colors: {axis: color.chartGrid, grid: color.chartGrid, label: color.textMuted}}),
-
-    scrubbing: interaction({
-      crosshair: 'x',
-      crosshairStyle: {color: color.scrub, width: 1},
-      // There is only ever one trace, and it takes the reading colour whole while a finger is
-      // down, so nothing steps back — a dimmed line under a crosshair reads as disabled.
-      dimOpacity: 1,
-      haptics: true,
-      hover: 'nearest',
-      marker: marker.point({color: color.scrub, size: 15}),
-      range: true,
-      /**
-       * Two fingers are a different reading: the stretch between them is painted in its own
-       * direction and the rest of the period steps back behind it. The chart draws all of it from
-       * the fingers, so the ends do not have to come back through a scrub handler to move.
-       */
-      rangeStyle: {color: color.up, dimOpacity: 0.32, dot: true, downColor: color.down},
-      tooltip: false,
-    }),
-
-    /**
-     * The dot under one finger, for the web alone: its scrub overlay draws a crosshair and
-     * skips a `'point'` marker, so the reading would otherwise have a line and no mark.
-     */
-    scrubPoint: (category: string, value: number) =>
-      annotation.point({
-        color: color.scrub,
-        halo: halo({color: color.sheet, size: 21}),
-        id: 'scrub',
-        size: 15,
-        x: category,
-        y: value,
-      }),
-
-    /** Gathers under the trace and lets go of the floor, the way a quote chart's fill does. */
-    traceStyle: {fill: fill({fadeTo: 0.06}), fillOpacity: 0.42, strokeWidth: 2},
-  }
-}
-
-export type StocksChartStyle = ReturnType<typeof chartStyle>
-
-const styles: Record<StocksScheme, StocksChartStyle> = {
-  dark: chartStyle('dark'),
-  light: chartStyle('light'),
-}
-
-export const stocksChartStyle = (scheme: StocksScheme): StocksChartStyle => styles[scheme]

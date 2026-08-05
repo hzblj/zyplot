@@ -1,6 +1,5 @@
-import {annotation, Chart, series, seriesProps} from '@hzblj/zyplot'
+import {Chart, zyplot} from '@hzblj/zyplot'
 import {memo, useMemo} from 'react'
-import {hiddenAxis} from './stocks-chart-style'
 import type {StocksTickerQuote} from './stocks-data'
 import {type StocksScheme, stocksColors, stocksLayout} from './stocks-theme'
 
@@ -10,6 +9,9 @@ export type StocksTickerSparkProps = {
 }
 
 const categories = (count: number) => Array.from({length: count}, (_, index) => String(index))
+
+/** No scale on either side: at this size the shape is the whole reading. */
+const hiddenAxis = {plotDimensionEndPadding: 0, plotDimensionStartPadding: 0, visible: false} as const
 
 /**
  * One line on the tape, with the opening level dashed across it. The dash is what makes the
@@ -21,46 +23,32 @@ const categories = (count: number) => Array.from({length: count}, (_, index) => 
  * renderer decides to put that inside the box.
  */
 const TickerSpark = ({quote, scheme}: StocksTickerSparkProps) => {
-  const color = stocksColors[scheme]
-  const tint = quote.change < 0 ? color.down : color.up
-  const {height} = stocksLayout.sparkline
+  const chart = useMemo(() => {
+    const color = stocksColors[scheme]
+    const tint = quote.change < 0 ? color.down : color.up
 
-  const line = useMemo(
-    () =>
-      seriesProps([
-        series({color: tint, id: 'spark', label: quote.id, style: {strokeWidth: 1.5}, values: quote.values}),
-      ]),
-    [quote, tint]
-  )
+    return zyplot(z => ({
+      animation: z.animation({enabled: false}),
+      annotations: [
+        z.annotation.line({
+          axis: 'y',
+          color: tint,
+          dash: [3, 3],
+          id: 'open',
+          value: quote.values[0] as number,
+          width: 1,
+        }),
+      ],
+      categories: categories(quote.values.length),
+      height: stocksLayout.sparkline.height,
+      plot: {clip: false},
+      series: [z.series({color: tint, id: 'spark', label: quote.id, style: {strokeWidth: 1.5}, values: quote.values})],
+      xAxis: hiddenAxis,
+      yAxis: {...hiddenAxis, domain: {padding: 0.12}},
+    }))
+  }, [quote, scheme])
 
-  const slots = useMemo(() => categories(quote.values.length), [quote])
-
-  const annotations = useMemo(
-    () => [
-      annotation.line({
-        axis: 'y',
-        color: tint,
-        dash: [3, 3],
-        id: 'open',
-        value: quote.values[0] as number,
-        width: 1,
-      }),
-    ],
-    [quote, tint]
-  )
-
-  return (
-    <Chart.Line
-      {...line}
-      animation={{enabled: false}}
-      annotations={annotations}
-      categories={slots}
-      height={height}
-      plot={{clip: false}}
-      xAxis={hiddenAxis}
-      yAxis={{...hiddenAxis, domain: {padding: 0.12}}}
-    />
-  )
+  return <Chart.Line {...chart} />
 }
 
 export const StocksTickerSpark = memo(TickerSpark)

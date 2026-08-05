@@ -1,4 +1,3 @@
-import {animation, annotation, type ChartReading, glow, interaction, marker, reveal} from '@hzblj/zyplot'
 import {isAndroid, isWeb} from '../platform'
 import {type FamilyRangeId, familyWave} from './family-data'
 import {type FamilyScheme, familyColors} from './family-theme'
@@ -29,8 +28,6 @@ export const plotInsets = {
   plotDimensionStartPadding: BAND_INSET,
 } as const
 
-export const plotStyle = {clip: false} as const
-
 const DOMAIN_INSET = 0.12
 
 export type PriceDomain = {max: number; min: number}
@@ -46,81 +43,17 @@ export const priceDomain = (values: readonly number[]): PriceDomain => {
 /** What the chip above the crosshair says: the moment being read, and that the last one is now. */
 export const familyStamps = (stamps: readonly string[]) => [...stamps.slice(0, -1), 'LIVE']
 
-const chartStyle = (scheme: FamilyScheme) => {
-  const color = familyColors[scheme]
-  const isDark = scheme === 'dark'
+const chartStyle = (scheme: FamilyScheme) => ({
+  /**
+   * What the plot rests at while the placeholder wave is up. Lower than the dim a scrub falls to,
+   * and lower in light than in dark: a dark trace over white holds its weight as it thins out, so
+   * matching dark's number leaves the placeholder looking like the answer and the fade like nothing
+   * happened. Both schemes rest at about a third of the ink they land on.
+   */
+  resting: scheme === 'dark' ? 0.34 : 0.3,
 
-  return {
-    /**
-     * The placeholder curve is the same line with different values, so the data does not arrive —
-     * the resting wave becomes it. `'morph'` is what interpolates the two on native; the web
-     * renderer moves mark by mark on its own, so long as the slots keep the names they had.
-     */
-    arrival: animation({
-      duration: familyTiming.morph,
-      easing: 'ease-in-out',
-      reveal: reveal.draw({duration: familyTiming.draw, easing: 'ease-in-out'}),
-      transition: 'morph',
-      updates: true,
-    }),
-
-    liveAnnotation: (reading: ChartReading) =>
-      annotation.point({
-        color: color.trace,
-        glow: glow({color: color.trace, opacity: isDark ? 0.3 : 0.16, radius: 6}),
-        id: 'live',
-        pulse: {duration: 620, interval: 1580, opacity: isDark ? 0.55 : 0.3, scale: 2.4},
-        scrubOpacity: isDark ? 0.34 : 0.5,
-        size: 7,
-        x: reading.category,
-        y: reading.value,
-      }),
-
-    /**
-     * What the plot rests at while the placeholder wave is up. Lower than the dim a scrub falls to,
-     * and lower in light than in dark: a dark trace over white holds its weight as it thins out, so
-     * matching dark's number leaves the placeholder looking like the answer and the fade like nothing
-     * happened. Both schemes rest at about a third of the ink they land on.
-     */
-    resting: isDark ? 0.34 : 0.3,
-
-    /**
-     * The story so far stays lit and the rest of the window steps back, so the reading needs no
-     * tooltip. Everything the finger drags is the chart's to draw — the chip above the crosshair
-     * and `dot` at the head of the trail — because a view fed from a scrub handler has to cross
-     * into JavaScript and back before it moves, and arrives after the finger has gone.
-     */
-    scrubbing: (stamps: readonly string[]) =>
-      interaction({
-        crosshair: 'x',
-        crosshairStyle: {
-          color: color.crosshair,
-          labelBackground: color.pillActive,
-          labelColor: color.textMuted,
-          labelLift: 2,
-          labelPadding: {x: 12, y: 5},
-          labels: stamps,
-          width: 1,
-        },
-        dimDuration: familyTiming.dim,
-        dimOpacity: isDark ? 0.34 : 0.5,
-        haptics: true,
-        highlightColor: color.trace,
-        hover: 'nearest',
-        marker: marker.trail({
-          color: color.trace,
-          dot: true,
-          glow: glow({color: color.trace, opacity: isDark ? 0.16 : 0.08, radius: 7}),
-          size: 11,
-        }),
-        tooltip: false,
-      }),
-
-    theme: {colors: {label: color.textMuted}},
-
-    traceStyle: {glow: glow({opacity: isDark ? 0.18 : 0.08, radius: 7}), strokeWidth: 3},
-  }
-}
+  theme: {colors: {label: familyColors[scheme].textMuted}},
+})
 
 const WAVE_HEIGHT = 0.42
 

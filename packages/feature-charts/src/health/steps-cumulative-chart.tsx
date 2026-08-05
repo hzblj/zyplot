@@ -1,7 +1,7 @@
-import {annotation, Chart, series, seriesProps} from '@hzblj/zyplot'
+import {Chart, zyplot} from '@hzblj/zyplot'
 import {memo, useMemo} from 'react'
 import {StyleSheet, Text, View} from 'react-native'
-import {stepsChartStyle} from './steps-chart-style'
+import {stepsArrival, stepsChartStyle} from './steps-chart-style'
 import type {StepsCumulative} from './steps-highlights'
 import {type StepsScheme, stepsColors} from './steps-theme'
 
@@ -90,64 +90,57 @@ const CumulativeAxisRow = ({cumulative, scheme}: {cumulative: StepsCumulative; s
  * one shape — whether the orange line is under the grey one — rather than value by value.
  */
 const CumulativeChart = ({cumulative, height = HEIGHT, scheme}: StepsCumulativeChartProps) => {
-  const color = stepsColors[scheme]
-  const style = stepsChartStyle(scheme)
-  const lines = useMemo(
-    () =>
-      seriesProps([
-        series({
+  const chart = useMemo(() => {
+    const color = stepsColors[scheme]
+    const last = cumulative.categories[cumulative.categories.length - 1]
+    /**
+     * The floor sits below zero on purpose. A day that starts at nothing draws its first hours flat
+     * along the bottom, and the row of marks is right under that stroke rather than clear of it — the
+     * air between the two comes from here, since every renderer keeps a different gap of its own.
+     */
+    const floor = -Math.round(Math.max(cumulative.todayTotal, cumulative.averageTotal) * 0.12)
+
+    return zyplot(z => ({
+      ...stepsArrival,
+      annotations: [
+        // On the last hour, where the reading is: the same band centre the row's last mark sits on.
+        z.annotation.line({axis: 'x', color: color.rule, id: 'now', value: last, width: 1.4}),
+        z.annotation.point({color: color.textMuted, id: 'average-end', size: 7, x: last, y: cumulative.averageTotal}),
+        z.annotation.point({color: color.bar, id: 'today-end', size: 7, x: last, y: cumulative.todayTotal}),
+      ],
+      categories: cumulative.categories,
+      height: Math.max(0, height - ROW_HEIGHT),
+      interaction: z.interaction({crosshair: 'none', hover: 'none'}),
+      // A count only ever climbs, so the corners between hours are joins, not readings.
+      isSmooth: true,
+      // The end dots sit on the last reading, so half of each one is outside the plot.
+      plot: {clip: false},
+      series: [
+        z.series({
           color: color.textMuted,
           id: 'average',
           label: 'Average',
           style: {strokeWidth: 2.4},
           values: cumulative.average,
         }),
-        series({
-          color: color.bar,
-          id: 'today',
-          label: 'Today',
-          style: {strokeWidth: 2.4},
-          values: cumulative.today,
-        }),
-      ]),
-    [color, cumulative]
-  )
-  const last = cumulative.categories[cumulative.categories.length - 1]
-  /**
-   * The floor sits below zero on purpose. A day that starts at nothing draws its first hours flat
-   * along the bottom, and the row of marks is right under that stroke rather than clear of it — the
-   * air between the two comes from here, since every renderer keeps a different gap of its own.
-   */
-  const floor = -Math.round(Math.max(cumulative.todayTotal, cumulative.averageTotal) * 0.12)
+        z.series({color: color.bar, id: 'today', label: 'Today', style: {strokeWidth: 2.4}, values: cumulative.today}),
+      ],
+      theme: stepsChartStyle(scheme).theme,
+      tooltip: false,
+      // The row under the plot is the axis here, so the chart draws none of its own.
+      xAxis: {
+        grid: false,
+        plotDimensionEndPadding: PLOT_INSET,
+        plotDimensionStartPadding: PLOT_INSET,
+        visible: false,
+      },
+      yAxis: {domain: {min: floor}, visible: false},
+    }))
+  }, [cumulative, height, scheme])
 
   return (
     <View>
-      <Chart.Line
-        {...lines}
-        animation={style.arrival}
-        annotations={[
-          // On the last hour, where the reading is: the same band centre the row's last mark sits on.
-          annotation.line({axis: 'x', color: color.rule, id: 'now', value: last, width: 1.4}),
-          annotation.point({color: color.textMuted, id: 'average-end', size: 7, x: last, y: cumulative.averageTotal}),
-          annotation.point({color: color.bar, id: 'today-end', size: 7, x: last, y: cumulative.todayTotal}),
-        ]}
-        categories={cumulative.categories}
-        height={Math.max(0, height - ROW_HEIGHT)}
-        interaction={{crosshair: 'none', hover: 'none', tooltip: false}}
-        // A count only ever climbs, so the corners between hours are joins, not readings.
-        isSmooth
-        // The end dots sit on the last reading, so half of each one is outside the plot.
-        plot={{clip: false}}
-        theme={style.theme}
-        // The row under the plot is the axis here, so the chart draws none of its own.
-        xAxis={{
-          grid: false,
-          plotDimensionEndPadding: PLOT_INSET,
-          plotDimensionStartPadding: PLOT_INSET,
-          visible: false,
-        }}
-        yAxis={{domain: {min: floor}, visible: false}}
-      />
+      <Chart.Line {...chart} />
       <CumulativeAxisRow cumulative={cumulative} scheme={scheme} />
     </View>
   )

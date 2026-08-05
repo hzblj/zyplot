@@ -5,8 +5,6 @@ export {
   priceAxis,
   priceDomain,
   priceTicks,
-  type StocksChartStyle,
-  stocksChartStyle,
   tickPosition,
   timeAxis,
 } from './stocks-chart-style'

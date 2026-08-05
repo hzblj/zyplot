@@ -1,11 +1,12 @@
-import {animation, annotation, axis, glow, halo, interaction, marker, reveal} from '@hzblj/zyplot'
+import {animation, annotation, axis, interaction, reveal} from '@hzblj/zyplot'
 import {isAndroid, isWeb} from '../platform'
 import type {QuoteRange} from './quote-data'
 import {type QuoteScheme, quoteColors} from './quote-theme'
 
 export const priceFormat = {decimals: 2, locale: 'en-US'} as const
 
-const rule = isAndroid
+/** Compose draws a hairline lighter than SwiftUI does, so its rules are given a touch more. */
+export const rule = isAndroid
   ? {baselineDash: [2, 5], eventDash: [3, 5], width: 1.2}
   : {baselineDash: [1, 4], eventDash: [2, 4], width: 1}
 
@@ -17,7 +18,6 @@ const arrivalTiming = isWeb
 export type PriceDomain = {max: number; min: number}
 
 export const plotInsets = {plotDimensionEndPadding: 22, plotDimensionStartPadding: 8} as const
-export const plotStyle = {clip: false} as const
 const DOMAIN_INSET = 0.09
 
 export const priceAxis = (domain: PriceDomain) => {
@@ -29,6 +29,7 @@ export const priceAxis = (domain: PriceDomain) => {
     labelInset: 22,
     labelSize: 13,
     ticks: false,
+    // Only the two prices a reader is actually looking for.
     tickValues: [domain.min, domain.max],
   })
 }
@@ -42,7 +43,8 @@ type Bloom = {
   trace: {opacity: number; radius: number}
 }
 
-const blooms: Record<QuoteScheme, Bloom> = {
+/** How far each glow reaches on each scheme — a bloom over black carries further than over white. */
+export const blooms: Record<QuoteScheme, Bloom> = {
   dark: {
     candle: {opacity: 0.26, radius: 22},
     flash: {glow: 3.4, opacity: 0.85},
@@ -61,6 +63,7 @@ const blooms: Record<QuoteScheme, Bloom> = {
   },
 }
 
+/** What the line chart and the candlestick chart share: the same arrival, rule, scrub and labels. */
 const chartStyle = (scheme: QuoteScheme) => {
   const color = quoteColors[scheme]
   const bloom = blooms[scheme]
@@ -98,41 +101,6 @@ const chartStyle = (scheme: QuoteScheme) => {
         width: rule.width,
       }),
 
-    candleMarker: marker.segment({
-      color: color.chartMark,
-      glow: glow({color: color.down, ...bloom.candle}),
-      span: 1,
-    }),
-
-    eventAnnotations: (range: QuoteRange, hasBadge = false) =>
-      range.event
-        ? [
-            annotation.line({
-              axis: 'x',
-              badge: hasBadge ? range.event.badge : undefined,
-              color: color.label,
-              dash: rule.eventDash,
-              id: 'event',
-              labelPosition: 'top',
-              size: 18,
-              value: range.event.category,
-              width: rule.width,
-            }),
-          ]
-        : [],
-
-    liveAnnotation: (point: {category: string; value: number}) =>
-      annotation.point({
-        color: color.chartLive,
-        glow: glow({color: color.down, ...bloom.live}),
-        halo: halo({color: color.chartLiveHalo, size: 15}),
-        id: 'live',
-        pulse: {duration: 520, interval: 1480, ...bloom.pulse},
-        size: 6.5,
-        x: point.category,
-        y: point.value,
-      }),
-
     scrubbing: interaction({
       crosshair: 'x',
       crosshairStyle: {color: color.chartMark, width: 1},
@@ -143,15 +111,7 @@ const chartStyle = (scheme: QuoteScheme) => {
       hover: 'nearest',
     }),
 
-    scrubMarker: marker.segment({
-      color: color.chartScrub,
-      glow: glow({color: color.down, ...bloom.scrub}),
-      span: 2,
-    }),
-
     theme: {colors: {label: color.label}},
-
-    traceStyle: {glow: glow(bloom.trace), strokeWidth: 2.3},
   }
 }
 
