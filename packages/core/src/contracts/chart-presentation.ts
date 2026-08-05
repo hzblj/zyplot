@@ -131,7 +131,6 @@ export type ChartInteraction = {
   /** How far a hovered mark grows. */
   highlightScale?: number
   hover?: ChartHoverMode
-  pan?: boolean
   /**
    * Reads a span rather than a mark: two fingers on the plot report the marks under each of
    * them, and everything between. iOS and Android only — a pointer has no second finger.
@@ -142,7 +141,6 @@ export type ChartInteraction = {
    */
   range?: boolean
   selection?: ChartSelectionMode
-  tooltip?: boolean
   zoom?: boolean
 }
 
@@ -195,7 +193,6 @@ export type ChartPointAnnotation = {
   color?: string
   id: string
   label?: string
-  symbol?: ChartSymbol
   type: 'point'
   x: ChartCoordinate
   y: number
@@ -242,38 +239,60 @@ export type ChartGeometry = {
  * The span two fingers are reading, in data order: `startIndex` is always the lower of the
  * two, however the fingers are placed, and both ends are inclusive.
  *
- * The edge positions come with it because the chart is the one that knows where a category
- * landed — a card centred over the span needs them, and an app cannot compute them from the
- * plot's width without also knowing the axis padding and the bar inset.
+ * What the span is, not where it reaches. A view centred over it is `rangeView`, which the chart
+ * places itself — see `ChartSlotViewProps`.
  */
 export type ChartInteractionRange = {
   endCategory?: string
   endIndex: number
-  /** Where the mark at `endIndex` sits, in the chart's own coordinate space. */
-  endX?: number
   startCategory?: string
   startIndex: number
-  /** Where the mark at `startIndex` sits, in the chart's own coordinate space. */
-  startX?: number
 }
 
-/** What `onInteraction` receives. Fields are filled in as the chart form allows. */
-export type ChartInteractionEvent = {
+/**
+ * Every field an interaction event can carry. Each is optional here so a handler can read
+ * one without narrowing first; which of them are actually filled in is what
+ * `ChartInteractionEvent` says.
+ *
+ * What is being read, never where the finger is. A reading moves many times a mark, and a position
+ * that crossed into JavaScript to be laid out again would always land a frame after the crosshair it
+ * belongs beside. Views that follow a reading are `ChartSlotViewProps` — the chart mounts them and
+ * moves them in the same pass it draws the reading in.
+ */
+type ChartInteractionFields = {
   category?: string
   /** Where the plot and its annotations sit, on the `'layout'` phase. */
   geometry?: ChartGeometry
   /** Position of the selected mark in the chart's own data order. */
   index?: number
-  /** Pointer position in the chart's own coordinate space. */
-  nativeX?: number
-  nativeY?: number
-  phase?: ChartInteractionPhase
   /** The span under two fingers, when `interaction.range` is on and both are down. */
   range?: ChartInteractionRange
   seriesId?: string
-  /** Unix seconds, on the time-based forms. */
-  timestamp?: number
   value?: number
-  x?: number
-  y?: number
 }
+
+/**
+ * What `onInteraction` receives, discriminated by `phase`. Test the phase and the field that
+ * phase is about stops being optional: `'layout'` carries `geometry`, a reading carries `index`,
+ * a two-finger one carries `range`. Every other field stays readable without narrowing, since a
+ * form fills in what it can.
+ *
+ * The phase is absent on one path alone: a click or a hover on a form that has no scrub layer,
+ * which the web reports as a bare reading.
+ *
+ * @example
+ * const onInteraction = (event: ChartInteractionEvent) => {
+ *   if (event.phase === 'layout') {
+ *     setPlot(event.geometry.plot)
+ *   }
+ * }
+ */
+export type ChartInteractionEvent =
+  | (ChartInteractionFields & {geometry: ChartGeometry; phase: 'layout'})
+  | (ChartInteractionFields & {phase: 'ended'})
+  | (ChartInteractionFields & {index: number; phase: 'began' | 'changed'})
+  | (ChartInteractionFields & {phase: 'began' | 'changed'; range: ChartInteractionRange})
+  | (ChartInteractionFields & {phase?: undefined})
+
+/** What a chart's `onInteraction` takes, as a name an app can hold its own handler in. */
+export type ChartInteractionHandler = (event: ChartInteractionEvent) => void

@@ -1,6 +1,5 @@
 export * from './contracts/chart-data'
 export * from './contracts/chart-finance'
-export * from './contracts/chart-kinds'
 export * from './contracts/chart-native'
 export * from './contracts/chart-presentation'
 export * from './contracts/chart-props'

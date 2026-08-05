@@ -27,7 +27,9 @@ export const series = (options: StyledChartSeries): StyledChartSeries => options
  * Both props are rebuilt on every call, so hold the result across renders — a chart
  * whose props change identity re-serialises its whole dataset.
  */
-export const seriesProps = (list: readonly StyledChartSeries[]) => ({
+export const seriesProps = (
+  list: readonly StyledChartSeries[]
+): {series: readonly ChartSeries[]; seriesStyles: Readonly<Record<string, NativeChartSeriesStyle>>} => ({
   series: list.map(({style: _style, ...rest}) => rest),
   seriesStyles: Object.fromEntries(list.flatMap(({id, style}) => (style ? [[id, style] as const] : []))),
 })

@@ -127,12 +127,6 @@ export type NativeChartAnimation = ChartAnimation & {
   transition?: ChartTransition
 }
 
-/** How far a label's background reaches past its own text, across and down. */
-export type ChartLabelPadding = {
-  x?: number
-  y?: number
-}
-
 /** The line that follows the finger while scrubbing. */
 export type ChartCrosshairStyle = {
   color?: string
@@ -141,22 +135,13 @@ export type ChartCrosshairStyle = {
    * What to write above the crosshair, one entry per slot in data order — a time, a date,
    * whatever the reading is called. The app writes the words; the chart places them, because
    * it is the one that knows where the finger is.
+   *
+   * The label is drawn in the theme's own label colour, at the size the axes use. To make it
+   * anything else — a chip, a pill, two lines — hand the chart your own view with
+   * `tooltip.above({view})` instead: it is placed by the chart the same way this is, and
+   * styling it is then just styling a view.
    */
   labels?: readonly string[]
-  /**
-   * Painted behind the label, which makes the words a chip. Give it `labelPadding` for the
-   * room around them and `labelRadius` for how hard its corners are.
-   */
-  labelBackground?: string
-  labelColor?: string
-  /** The gap between the label and the top of the plot. Default 8. */
-  labelLift?: number
-  /** Default 10 across and 5 down, which is a chip a little wider than it is tall. */
-  labelPadding?: number | ChartLabelPadding
-  /** Corner radius of the background. Defaults to half its height, so it ends in a round cap. */
-  labelRadius?: number
-  /** Point size of the label. Default 13. */
-  labelSize?: number
   width?: number
 }
 
@@ -166,6 +151,44 @@ export type ChartCrosshairStyle = {
  * everything up to the reading, so the line reads as the story so far.
  */
 export type ChartMarkerStyle = 'point' | 'segment' | 'trail'
+
+/**
+ * Where a node of the app's own sits, up and down, in the box the chart lays it in.
+ *
+ * Against a box with a height — the plot, or a rule that runs down it — the three are its head, its
+ * middle and its foot. Against a mark that is only a spot, `'center'` puts the node on it, `'top'`
+ * puts its foot there so it sits above, and `'bottom'` puts its head there so it hangs below.
+ *
+ * Every default is what the place reads as without being asked, so nothing moves unless it is told:
+ * `'top'` for a card beside a reading and for a view on a rule that runs down the plot, where the
+ * chart's own badge goes; `'center'` for a view on a point and on a rule that runs across.
+ */
+export type ChartViewAlign = 'bottom' | 'center' | 'top'
+
+/**
+ * Where the chart puts a node the app gave it for the reading, and how far off it sits. Built with
+ * the `tooltip` factory rather than written out, because the two placements measure against
+ * different boxes and take different fields.
+ */
+export type ChartTooltipAnchor = {
+  /**
+   * Where a card set beside the reading sits down the plot: against its top, its middle or its floor.
+   * `'beside'` only — a chip placed `'above'` is already clear of the plot, so it has no room to sit in.
+   */
+  align?: ChartViewAlign
+  /** Beside the reading. Defaults to 12. */
+  gap?: number
+  /** Clear of the plot's top edge. Defaults to 8, which is what the rule's own chip takes. */
+  lift?: number
+  placement?: ChartTooltipPlacement
+}
+
+/**
+ * `'beside'` sets the node next to the reading inside the plot and flips it at the edge, which is
+ * what a card of rows wants. `'above'` centres it on the reading and lifts it clear of the plot,
+ * which is where the rule's own chip goes.
+ */
+export type ChartTooltipPlacement = 'above' | 'beside'
 
 /**
  * How the data under the finger is picked out. Unlike a tooltip it says only
@@ -337,6 +360,15 @@ export type NativeChartAxisOptions = Omit<ChartAxisOptions, 'position'> & {
   /** Point size of the tick labels. */
   labelSize?: number
   /**
+   * A shorter mark at every category, not only at the named ones. When two categories are
+   * labelled out of twenty-four, the row of these is what reads as the axis — a rule drawn
+   * inside the plot only looks like one until a line rests on it.
+   *
+   * The named ticks become the longer marks that cap the row, and one more closes it on the
+   * trailing edge of the last band. Needs `ticks`, since it is the same row of marks made denser.
+   */
+  minorTicks?: boolean
+  /**
    * Free space, in points, kept after the last mark. What you give is the whole gutter, so `0` puts
    * the last mark on the plot's trailing edge; left out, a renderer keeps a few points of its own so
    * a mark that sits at the edge is not cut in half.
@@ -354,13 +386,4 @@ export type NativeChartAxisOptions = Omit<ChartAxisOptions, 'position'> & {
   position?: NativeChartAxisPosition
   /** Draws the short marks beside each label. Independent of `grid`. */
   ticks?: boolean
-  /**
-   * A shorter mark at every category, not only at the named ones. When two categories are
-   * labelled out of twenty-four, the row of these is what reads as the axis — a rule drawn
-   * inside the plot only looks like one until a line rests on it.
-   *
-   * The named ticks become the longer marks that cap the row, and one more closes it on the
-   * trailing edge of the last band. Needs `ticks`, since it is the same row of marks made denser.
-   */
-  minorTicks?: boolean
 }

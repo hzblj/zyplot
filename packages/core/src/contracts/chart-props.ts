@@ -12,16 +12,14 @@ import type {
   ChartTimePoints,
 } from './chart-data'
 import type {ChartCandlestickDatum, ChartCandlestickLabels, ChartCandlestickStyle} from './chart-finance'
-import type {NativeChartKind} from './chart-kinds'
 import type {
   NativeChartAnimation,
   NativeChartAnnotation,
   NativeChartAxisOptions,
   NativeChartInteraction,
-  NativeChartInteractionEvent,
   NativeChartSeriesStyle,
 } from './chart-native'
-import type {ChartPlotStyle} from './chart-presentation'
+import type {ChartInteractionHandler, ChartPlotStyle} from './chart-presentation'
 import type {ChartSurface} from './chart-surface'
 import type {ChartAxes, ChartColorMode, ChartNumberFormat, ChartOrientation, NativeChartTheme} from './chart-theme'
 
@@ -42,7 +40,7 @@ export type NativeChartBaseProps = {
   interaction?: NativeChartInteraction
   /** Hold true while the data is in flight to show the placeholder. */
   isLoading?: boolean
-  onInteraction?: (event: NativeChartInteractionEvent) => void
+  onInteraction?: ChartInteractionHandler
   plot?: ChartPlotStyle
   /** Keyed by `ChartSeries.id`. */
   seriesStyles?: Readonly<Record<string, NativeChartSeriesStyle>>
@@ -174,33 +172,3 @@ export type SparklineChartProps = NativeChartBaseProps & {
   color?: string
   values: readonly (number | null)[]
 }
-
-/** Looks up a form's props by its `NativeChartKind`. */
-export type NativeChartPropsByKind = {
-  area: AreaChartProps
-  bar: BarChartProps
-  boxplot: BoxplotChartProps
-  candlestick: CandlestickChartProps
-  'diverging-bar': DivergingBarChartProps
-  dumbbell: DumbbellChartProps
-  funnel: FunnelChartProps
-  gauge: GaugeChartProps
-  heatmap: HeatmapChartProps
-  histogram: HistogramChartProps
-  line: LineChartProps
-  meter: MeterChartProps
-  pie: PieChartProps
-  radar: RadarChartProps
-  sankey: SankeyChartProps
-  scatter: ScatterChartProps
-  sparkline: SparklineChartProps
-  'stacked-bar': StackedBarChartProps
-  sunburst: HierarchyChartProps
-  'time-series': TimeSeriesChartProps
-  treemap: HierarchyChartProps
-}
-
-/** Any native chart's props tagged with its `type`, for passing charts as data. */
-export type NativeChartConfiguration = {
-  [K in NativeChartKind]: NativeChartPropsByKind[K] & {type: K}
-}[NativeChartKind]
