@@ -54,13 +54,13 @@ export const docsStyles = tv({
     mobileHeaderActions: 'flex shrink-0 items-center gap-2.5',
     mobileHeaderBrand: 'flex min-w-0 items-baseline gap-2.5',
     navGroup: 'mb-7 grid gap-[3px]',
-    navGroupLabel: 'mb-2 text-xs font-bold tracking-[0.01em] text-content-primary',
+    navGroupLabel: 'mb-2 px-2 text-[10px] font-bold uppercase tracking-[0.12em] text-content-tertiary',
     navLink:
       'rounded-[7px] px-2 py-1.5 text-[13px] leading-tight transition-colors hover:bg-fill-secondary-hover hover:text-content-primary',
     navLinkActive: 'bg-fill-secondary-hover font-semibold text-content-primary hover:bg-fill-secondary-pressed',
     navLinkInactive: 'text-content-tertiary',
     navSubGroup: 'mt-3.5 grid gap-[3px] first:mt-0',
-    navSubGroupLabel: 'mb-1 pl-2 text-[11px] font-semibold text-content-tertiary',
+    navSubGroupLabel: 'mb-1.5 pl-2 text-[9px] font-bold uppercase tracking-[0.1em] text-content-tertiary/70',
     note: 'mt-6 rounded-xl bg-surface-secondary p-5 text-sm leading-relaxed text-content-secondary [&_strong]:mb-1.5 [&_strong]:block [&_strong]:font-semibold [&_strong]:text-content-primary',
     pager:
       'mt-8 flex items-center justify-between gap-4 max-[820px]:fixed max-[820px]:inset-x-0 max-[820px]:bottom-0 max-[820px]:z-30 max-[820px]:mt-0 max-[820px]:border-t max-[820px]:border-border-secondary max-[820px]:bg-surface-base/90 max-[820px]:px-5 max-[820px]:pt-3 max-[820px]:pb-[calc(12px+env(safe-area-inset-bottom))] max-[820px]:backdrop-blur',

@@ -11,6 +11,14 @@ const CHART_GROUPS: {ids: readonly string[]; label: string}[] = [
     ids: ['candlestick', 'boxplot', 'diverging-bar', 'dumbbell', 'heatmap'],
     label: 'Statistical and finance',
   },
+  {
+    ids: ['ios-range', 'ios-rule'],
+    label: 'iOS only',
+  },
+  {
+    ids: ['android-waterfall', 'android-lollipop'],
+    label: 'Android only',
+  },
 ]
 
 const GROUPED_IDS = new Set(CHART_GROUPS.flatMap(group => group.ids))

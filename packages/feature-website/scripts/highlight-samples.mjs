@@ -3,7 +3,10 @@ import {fileURLToPath} from 'node:url'
 import {createHighlighter} from 'shiki'
 import ts from 'typescript'
 
-const DOCS_PAGE = fileURLToPath(new URL('../src/docs/docs-page.tsx', import.meta.url))
+const DOC_FILES = [
+  fileURLToPath(new URL('../src/docs/chart-docs.tsx', import.meta.url)),
+  fileURLToPath(new URL('../src/docs/guide-content.tsx', import.meta.url)),
+]
 const CHART_CODE = fileURLToPath(new URL('../src/docs/chart-code.ts', import.meta.url))
 const INSTALL_COMMANDS = fileURLToPath(new URL('../src/install-commands.ts', import.meta.url))
 const OUTPUT = fileURLToPath(new URL('../src/docs/highlighted-samples.generated.ts', import.meta.url))
@@ -21,9 +24,28 @@ const importPlainModule = async path => {
 const literalText = node =>
   node && (ts.isNoSubstitutionTemplateLiteral(node) || ts.isStringLiteral(node)) ? node.text : undefined
 
-const collectSamples = (source, chartExample) => {
-  const tree = ts.createSourceFile(DOCS_PAGE, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX)
+const collectSamples = (path, chartExample) => {
+  const source = readFileSync(path, 'utf8')
+  const tree = ts.createSourceFile(path, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX)
   const samples = []
+  const literals = new Map()
+
+  const collectLiteral = node => {
+    if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name)) {
+      const value = literalText(node.initializer)
+      if (value !== undefined) {
+        literals.set(node.name.text, value)
+      }
+    }
+    ts.forEachChild(node, collectLiteral)
+  }
+
+  collectLiteral(tree)
+
+  const resolveText = node => {
+    const direct = literalText(node)
+    return direct ?? (node && ts.isIdentifier(node) ? literals.get(node.text) : undefined)
+  }
 
   const visit = node => {
     if (ts.isJsxElement(node) && node.openingElement.tagName.getText() === 'CodeBlock') {
@@ -40,10 +62,28 @@ const collectSamples = (source, chartExample) => {
       }
     }
 
+    if (ts.isJsxSelfClosingElement(node) && node.tagName.getText() === 'AppGuide') {
+      const codeAttribute = node.attributes.properties
+        .filter(ts.isJsxAttribute)
+        .find(attribute => attribute.name.getText() === 'code')
+      const expression =
+        codeAttribute?.initializer && ts.isJsxExpression(codeAttribute.initializer)
+          ? codeAttribute.initializer.expression
+          : undefined
+      const code = resolveText(expression)
+      if (code !== undefined) {
+        samples.push({code, language: 'tsx', origin: 'AppGuide'})
+      }
+    }
+
     if (ts.isCallExpression(node) && ['chartExample', 'code'].includes(node.expression.getText())) {
-      const [name, body] = node.arguments.map(literalText)
+      const [name, body, setup, entryPoint] = node.arguments.map(resolveText)
       if (name !== undefined && body !== undefined) {
-        samples.push({code: chartExample(name, body), language: 'tsx', origin: `chartExample(${name})`})
+        samples.push({
+          code: chartExample(name, body, setup, entryPoint),
+          language: 'tsx',
+          origin: `chartExample(${name})`,
+        })
       }
     }
 
@@ -58,7 +98,7 @@ const {chartExample} = await importPlainModule(CHART_CODE)
 const {INSTALL_COMMANDS: installCommands} = await importPlainModule(INSTALL_COMMANDS)
 
 const samples = [
-  ...collectSamples(readFileSync(DOCS_PAGE, 'utf8'), chartExample),
+  ...DOC_FILES.flatMap(path => collectSamples(path, chartExample)),
   ...Object.entries(installCommands).map(([manager, code]) => ({
     code,
     language: 'bash',
@@ -67,7 +107,7 @@ const samples = [
 ]
 
 if (samples.length === 0) {
-  throw new Error('No code samples found in docs-page.tsx — the extractor is out of step with the source.')
+  throw new Error('No code samples found in the documentation source files.')
 }
 
 const languageFor = new Map()

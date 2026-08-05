@@ -6,7 +6,7 @@ import {cn} from '../../utils'
 import {chartImplementations, sourceUrl} from '../chart-implementations'
 import {HIGHLIGHTED_SAMPLES} from '../highlighted-samples.generated'
 import {CHARTS_VERSION, type DocsPreferences, PLATFORM_COOKIE, VIEW_COOKIE} from '../preferences'
-import type {ChartPlatform} from '../types'
+import type {ChartPlatform, ChartSource} from '../types'
 import {usePreference} from '../use-preference'
 
 const styles = docsStyles()
@@ -30,7 +30,7 @@ export const Example = ({
   chartId?: string
   platforms?: readonly ChartPlatform[]
   preferences: DocsPreferences
-  source: string
+  source: ChartSource
 }) => {
   const available = useMemo(() => (chartId ? (platforms ?? []) : []), [chartId, platforms])
   const [tab, setTab] = usePreference<'code' | 'preview'>(preferences.view, VIEW_COOKIE, VIEWS)
@@ -41,7 +41,9 @@ export const Example = ({
   )
 
   const implementation = chartId ? chartImplementations[chartId]?.[platform] : undefined
-  const highlighted = HIGHLIGHTED_SAMPLES[source]
+  const selectedSource =
+    typeof source === 'string' ? source : (source[platform] ?? source.web ?? source.ios ?? source.android ?? '')
+  const highlighted = HIGHLIGHTED_SAMPLES[selectedSource]
 
   return (
     <div className={styles.example()}>
@@ -79,7 +81,7 @@ export const Example = ({
             ))}
           </div>
         ) : (
-          <span>Web</span>
+          <span>{LABELS[platform]}</span>
         )}
       </div>
 
@@ -88,7 +90,7 @@ export const Example = ({
           <div className={styles.exampleCode()} dangerouslySetInnerHTML={{__html: highlighted}} />
         ) : (
           <pre className={styles.exampleCode()}>
-            <code>{source}</code>
+            <code>{selectedSource}</code>
           </pre>
         )
       ) : platform === 'web' || !chartId ? (

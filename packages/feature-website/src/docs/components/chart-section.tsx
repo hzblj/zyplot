@@ -22,12 +22,11 @@ export const ChartSection = ({chart, preferences}: {chart: ChartDoc; preferences
     <Example chartId={chart.id} platforms={chart.platforms} preferences={preferences} source={chart.code}>
       {chart.preview}
     </Example>
-    <div className={styles.note()}>
-      <strong>When to use</strong>
-      <p>{chart.when}</p>
-    </div>
-    <h3 id={`${chart.id}-props`}>Props</h3>
-    <p className={styles.propsIntro()}>The chart's own props first, then the shared ones this form reads.</p>
+    <p>{chart.when}</p>
+    <h3 id={`${chart.id}-props`}>Configuration</h3>
+    <p className={styles.propsIntro()}>
+      Keys accepted inside <code>zyplot(z =&gt; (&#123;...&#125;))</code>. Required keys are marked with an asterisk.
+    </p>
     <PropsTable rows={chart.props} />
   </section>
 )

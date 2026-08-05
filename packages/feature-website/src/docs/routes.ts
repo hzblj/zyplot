@@ -7,257 +7,145 @@ export type DocsRoute = {
 
 const guideRoutes: Omit<DocsRoute, 'isGuide'>[] = [
   {
-    description:
-      'Native-feeling charts for React and Expo from one API. Twenty-one chart forms that render through ECharts and uPlot on the web, Swift Charts on iOS and Compose on Android.',
+    description: 'Install Zyplot and render your first chart on web, iOS, or Android.',
     href: '/docs',
-    title: 'Documentation',
+    title: 'Zyplot documentation',
   },
   {
-    description:
-      'Install @hzblj/zyplot with npm, yarn, pnpm or bun. One package covers web, iOS and Android, ships its own compiled styles, and needs no Tailwind CSS in your app.',
+    description: 'Install the package and choose the right entry point.',
     href: '/docs/installation',
     title: 'Installation',
   },
   {
-    description:
-      'The serializable data contracts every Zyplot chart takes — ChartSeries, ChartDatum, axis options, number formatting, annotations and interaction events.',
+    description: 'The shared data types used by Zyplot charts.',
     href: '/docs/data-types',
     title: 'Data types',
   },
   {
-    description:
-      'zyplot describes a whole chart as one object, with every builder handed to it — annotation, axis, marker, reveal and series set the discriminant for you and return plain objects.',
+    description: 'Typed helpers for building chart props.',
     href: '/docs/builders',
     title: 'Builders',
   },
   {
-    description:
-      'Hold isLoading while data is in flight and a Zyplot chart shows a placeholder matched to its own shape and height, then cross-fades in with no layout shift.',
+    description: 'Show built-in or custom placeholders while data loads.',
     href: '/docs/loading-states',
     title: 'Loading states',
   },
   {
-    description:
-      'Theme Zyplot charts with CSS custom properties. The colour, surface and palette contract every renderer implements, and how Chart.Provider scopes it.',
+    description: 'Set chart colors, typography, surfaces, and shared defaults.',
     href: '/docs/theming',
     title: 'Theming',
   },
   {
-    description:
-      'How Zyplot resolves light and dark mode, why canvas colours are read off the document, and the --zyplot-* custom properties that drive both.',
+    description: 'Follow the system color scheme or select a fixed mode.',
     href: '/docs/dark-mode',
     title: 'Light and dark mode',
   },
   {
-    description:
-      'The DOM renderer: ECharts draws eighteen forms, uPlot handles dense series and sparklines, and legends stay real HTML that a screen reader can read.',
+    description: 'How Zyplot renders charts in the browser.',
     href: '/docs/web',
     title: 'Web renderer',
   },
   {
-    description:
-      'Chart.Frame gives a chart a titled card with a caption row, and Chart.Legend places series identity yourself for small multiples or a legend that filters.',
+    description: 'Compose web charts with a frame and legend.',
     href: '/docs/composition',
     title: 'Frame and legend',
   },
   {
-    description:
-      'Zyplot ships an Expo module that draws with Swift Charts on iOS and a Jetpack Compose Canvas on Android — the same Chart namespace, and no WebView.',
+    description: 'Set up native charts in an Expo or React Native app.',
     href: '/docs/native',
     title: 'iOS and Android',
   },
   {
-    description:
-      'Charts drawn with SwiftUI and Swift Charts. Chart.Range and Chart.Rule are iOS-only, and xAxis takes the Swift Charts scrolling window on top of the shared options.',
+    description: 'Use Swift Charts and the iOS-only Range and Rule charts.',
     href: '/docs/native/ios',
     title: 'iOS renderer',
   },
   {
-    description:
-      'Charts drawn on a Jetpack Compose Canvas. Chart.Waterfall and Chart.Lollipop are Android-only, and the axes take Compose overflow handling on top of the shared options.',
+    description: 'Use the Compose renderer and Android-only Waterfall and Lollipop charts.',
     href: '/docs/native/android',
     title: 'Android renderer',
   },
   {
-    description:
-      'Tracks the datum being read on all three platforms, so a price, a date and a delta can be real text above the plot while the chart draws no tooltip at all.',
+    description: 'Track the chart value under the pointer or finger.',
     href: '/docs/hooks/use-chart-scrub',
     title: 'useChartScrub',
   },
   {
-    description:
-      'Finds the last reading a series actually has, and the category it sits on — where a "now" marker belongs when the axis runs past the data.',
+    description: 'Read the last non-null value in a series.',
     href: '/docs/hooks/use-last-reading',
     title: 'useLastReading',
   },
   {
-    description:
-      'A Revolut-style quote screen built with Zyplot: a scrubbed price readout, a candlestick toggle, glow and pulse annotations, and the same screen on iOS, Android and the web.',
+    description: 'A complete stock-detail screen built with Zyplot.',
     href: '/docs/apps/revolut',
-    title: 'Revolut',
+    title: 'Revolut example',
   },
   {
-    description:
-      'A Kraken-style crypto price screen built with Zyplot: a full-bleed trace with no axes, a dotted area fill closed against the latest price, and a scrub that lights the line up to the finger.',
+    description: 'A complete crypto-price screen built with Zyplot.',
     href: '/docs/apps/kraken',
-    title: 'Kraken',
+    title: 'Kraken example',
   },
   {
-    description:
-      'A Family-style token screen built with Zyplot: a resting wave that morphs into the price window, a step back that takes a beat, and a trail that keeps its lighting after the finger has gone.',
+    description: 'A complete token-detail screen built with Zyplot.',
     href: '/docs/apps/family',
-    title: 'Family',
+    title: 'Family example',
   },
   {
-    description:
-      'A Health-style steps screen built with Zyplot: a bar chart with its value labels inside the plot, two gridlines and no more, and a two-finger span that totals the days it covers.',
+    description: 'A complete steps screen built with Zyplot.',
     href: '/docs/apps/health',
-    title: 'Health',
+    title: 'Health example',
   },
   {
-    description:
-      'A Stocks-style quote sheet built with Zyplot: a grid, a date row and a volume tape laid on the plot box the chart reports, and a held span the chart paints in its own direction.',
+    description: 'A complete quote sheet built with Zyplot.',
     href: '/docs/apps/stocks',
-    title: 'Stocks',
+    title: 'Stocks example',
   },
   {
-    description: 'Where to find every published Zyplot version, its notes and the commits behind it.',
+    description: 'Published Zyplot versions and release notes.',
     href: '/docs/releases',
     title: 'Releases',
   },
   {
-    description: 'New updates and improvements to Zyplot, version by version.',
+    description: 'Changes in each Zyplot version.',
     href: '/docs/changelog',
     title: 'Changelog',
   },
 ]
 
 const chartRoutes: {description: string; id: string; name: string}[] = [
+  {description: 'Show a trend across ordered categories.', id: 'line', name: 'Line'},
+  {description: 'Show a trend and the magnitude below it.', id: 'area', name: 'Area'},
+  {description: 'Compare values across categories.', id: 'bar', name: 'Bar'},
+  {description: 'Compare totals and their composition.', id: 'stacked-bar', name: 'Stacked bar'},
+  {description: 'Show a small part-to-whole split.', id: 'pie', name: 'Pie'},
+  {description: 'Show one value inside a fixed range.', id: 'gauge', name: 'Gauge'},
+  {description: 'Show one bounded value in a compact row.', id: 'meter', name: 'Meter'},
+  {description: 'Group raw values into bins.', id: 'histogram', name: 'Histogram'},
+  {description: 'Compare distribution summaries.', id: 'boxplot', name: 'Boxplot'},
+  {description: 'Plot open, high, low, and close values.', id: 'candlestick', name: 'Candlestick'},
+  {description: 'Compare positive and negative values around zero.', id: 'diverging-bar', name: 'Diverging bar'},
+  {description: 'Compare a before and after value for each item.', id: 'dumbbell', name: 'Dumbbell'},
+  {description: 'Show drop-off through ordered stages.', id: 'funnel', name: 'Funnel'},
+  {description: 'Map values across a two-dimensional grid.', id: 'heatmap', name: 'Heatmap'},
+  {description: 'Compare profiles across bounded dimensions.', id: 'radar', name: 'Radar'},
+  {description: 'Plot the relationship between two measures.', id: 'scatter', name: 'Scatter'},
+  {description: 'Show weighted flow between named nodes.', id: 'sankey', name: 'Sankey'},
+  {description: 'Show hierarchical values in concentric rings.', id: 'sunburst', name: 'Sunburst'},
+  {description: 'Pack hierarchical values into a rectangle.', id: 'treemap', name: 'Treemap'},
+  {description: 'Render dense time data from parallel arrays.', id: 'time-series', name: 'Time series'},
+  {description: 'Show a tiny trend without axes or a legend.', id: 'sparkline', name: 'Sparkline'},
+  {description: 'Plot a low-to-high interval for each category on iOS.', id: 'ios-range', name: 'Range'},
+  {description: 'Draw standalone reference rules on iOS.', id: 'ios-rule', name: 'Rule'},
   {
-    description:
-      'Plot continuous trends over an ordered category or time axis, with optional smoothing, annotations and a second series to compare against.',
-    id: 'line',
-    name: 'Line',
+    description: 'Show how positive and negative steps build a total on Android.',
+    id: 'android-waterfall',
+    name: 'Waterfall',
   },
   {
-    description:
-      'Show a trend and its magnitude together, stacked to read composition over time or plain to emphasise the volume under one series.',
-    id: 'area',
-    name: 'Area',
-  },
-  {
-    description:
-      'Compare exact values across a small set of categories, vertically or turned horizontal when the labels are too long to fit under an axis.',
-    id: 'bar',
-    name: 'Bar',
-  },
-  {
-    description:
-      'Compare category totals and the composition inside each one, normalized to 100 percent when the mix matters more than the absolute total.',
-    id: 'stacked-bar',
-    name: 'Stacked bar',
-  },
-  {
-    description:
-      'A part-to-whole split for two to five slices, with a folded Other tail so a long list cannot turn into a ring of unreadable slivers.',
-    id: 'pie',
-    name: 'Pie',
-  },
-  {
-    description:
-      'One current value against a fixed range — capacity, progress or utilisation where the maximum means something to the reader.',
-    id: 'gauge',
-    name: 'Gauge',
-  },
-  {
-    description:
-      'A compact accessible scalar for table rows, settings and summaries. Two elements, role="meter" and no charting engine, so its final markup is painted on the server.',
-    id: 'meter',
-    name: 'Meter',
-  },
-  {
-    description:
-      'Bin raw numeric observations to expose the shape of a distribution — its spread, its skew and the outliers at either end.',
-    id: 'histogram',
-    name: 'Histogram',
-  },
-  {
-    description:
-      'Compare five-number summaries and outliers across groups, with the median, quartile and whisker labels in your own wording.',
-    id: 'boxplot',
-    name: 'Boxplot',
-  },
-  {
-    description:
-      'Open, high, low and close per session with an optional volume histogram beneath, plus hollow-up candles for price data.',
-    id: 'candlestick',
-    name: 'Candlestick',
-  },
-  {
-    description:
-      'Positive and negative values around a shared zero — variance, sentiment, gain and loss, or change from a baseline.',
-    id: 'diverging-bar',
-    name: 'Diverging bar',
-  },
-  {
-    description:
-      'Movement between exactly two measurements per row, when the story is the change between two known states rather than the trend between them.',
-    id: 'dumbbell',
-    name: 'Dumbbell',
-  },
-  {
-    description:
-      'Ordered attrition through a sequence of stages, for the case where each stage really is a subset of the one before it.',
-    id: 'funnel',
-    name: 'Funnel',
-  },
-  {
-    description:
-      'Magnitude across two categorical dimensions, to expose the clusters and the patterns a dense matrix of numbers hides.',
-    id: 'heatmap',
-    name: 'Heatmap',
-  },
-  {
-    description:
-      'Compare multivariate profiles on a shared set of bounded axes, for reading the shape of a profile rather than looking up a value.',
-    id: 'radar',
-    name: 'Radar',
-  },
-  {
-    description:
-      'Relationships, clusters and outliers between two measures, with an optional third encoded as point size.',
-    id: 'scatter',
-    name: 'Scatter',
-  },
-  {
-    description:
-      'Weighted flow between named nodes and stages, for when the volume moving between states is the story.',
-    id: 'sankey',
-    name: 'Sankey',
-  },
-  {
-    description:
-      'Hierarchical part-to-whole relationships in concentric rings, for when both the depth of the hierarchy and the split inside it matter.',
-    id: 'sunburst',
-    name: 'Sunburst',
-  },
-  {
-    description:
-      'Hierarchical part-to-whole data packed into a rectangle, for when screen efficiency matters more than reading the depth.',
-    id: 'treemap',
-    name: 'Treemap',
-  },
-  {
-    description:
-      'Ordered time points from parallel arrays, for telemetry too dense to read as one named category per reading.',
-    id: 'time-series',
-    name: 'Time series',
-  },
-  {
-    description:
-      'A tiny trend shape with no axes, tooltip or legend, for a table row or a card where the chart is context rather than the subject.',
-    id: 'sparkline',
-    name: 'Sparkline',
+    description: 'Compare categories with a stem and dot on Android.',
+    id: 'android-lollipop',
+    name: 'Lollipop',
   },
 ]
 

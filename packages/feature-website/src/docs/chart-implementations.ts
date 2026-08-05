@@ -16,6 +16,18 @@ const IOS = 'packages/zyplot/ios'
 const ANDROID = 'packages/zyplot/android/src/main/java/com/hzblj/zyplot/charts'
 
 export const chartImplementations: Record<string, ChartImplementations> = {
+  'android-lollipop': {
+    android: {
+      detail: 'drawLollipop on a Compose Canvas',
+      path: `${ANDROID}/kinds/LollipopChart.kt`,
+    },
+  },
+  'android-waterfall': {
+    android: {
+      detail: 'drawWaterfall on a Compose Canvas',
+      path: `${ANDROID}/kinds/WaterfallChart.kt`,
+    },
+  },
   area: {
     android: {
       detail: 'drawLineOrArea on a Compose Canvas',
@@ -127,6 +139,18 @@ export const chartImplementations: Record<string, ChartImplementations> = {
     web: {
       detail: 'ECharts bar series over computed bins',
       path: `${WEB}/histogram`,
+    },
+  },
+  'ios-range': {
+    ios: {
+      detail: 'Swift Charts RectangleMark',
+      path: `${IOS}/Marks/ZyplotRangeMarks.swift`,
+    },
+  },
+  'ios-rule': {
+    ios: {
+      detail: 'Swift Charts RuleMark',
+      path: `${IOS}/Marks/ZyplotRuleMarks.swift`,
     },
   },
   line: {

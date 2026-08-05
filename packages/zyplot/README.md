@@ -1,22 +1,41 @@
-# Zyplot
++# Zyplot
 
-[![npm version][npm-badge]][npm-url]
-[![License: MIT][license-badge]][license-url]
+Typed React charts for web, iOS, and Android. The web renderer uses ECharts and uPlot; native apps render with Swift Charts and Jetpack Compose.
 
-[npm-badge]: https://img.shields.io/npm/v/@hzblj/zyplot?labelColor=27272a&color=4400fc&label=%40hzblj%2Fzyplot
-[npm-url]: https://www.npmjs.com/package/@hzblj/zyplot
-[license-badge]: https://img.shields.io/badge/license-MIT-4400fc?labelColor=27272a
-[license-url]: https://github.com/hzblj/zyplot/blob/main/LICENSE
+## Install
 
-<a href="https://www.zyplot.janblazej.dev"><img src="https://www.zyplot.janblazej.dev/og.png" alt="Zyplot — one chart API, native everywhere on web, iOS and Android" width="720"></a>
+```sh
+npm install @hzblj/zyplot
+```
 
-## 🚀 Docs
+## Quick start
 
-[Here!](https://www.zyplot.janblazej.dev/docs)
+```tsx
+import { Chart, zyplot } from '@hzblj/zyplot'
 
-## Sponsorship
+const chart = zyplot(z => ({
+  categories: ['Jan', 'Feb', 'Mar', 'Apr'],
+  series: [
+    z.series({ id: 'revenue', label: 'Revenue', values: [42, 56, 51, 72] }),
+  ],
+  format: z.format({ prefix: '$' }),
+}))
 
-<a href="https://www.buymeacoffee.com/hzblj" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+export function RevenueChart() {
+  return <Chart.Line {...chart} />
+}
+```
+
+No stylesheet import is required.
+Build every chart configuration with `zyplot(z => ({ ... }))`, then spread the result into the chart component.
+
+## Documentation
+
+[Read the documentation](https://www.zyplot.janblazej.dev/docs) for installation, platform setup, theming, interaction, and a copy-paste example for every chart.
+
+- 21 shared charts render on web, iOS, and Android.
+- iOS also includes Range and Rule.
+- Android also includes Waterfall and Lollipop.
 
 ## License
 

@@ -64,7 +64,7 @@ export const PropsTable = ({rows}: {rows: PropRow[]}) => (
     <table className={styles.propsTable()}>
       <thead>
         <tr>
-          <th>Prop</th>
+          <th>Name</th>
           <th>Type</th>
           <th>Default</th>
           <th>Description</th>

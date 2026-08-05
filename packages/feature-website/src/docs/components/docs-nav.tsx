@@ -24,52 +24,22 @@ const leadingGroups: NavGroup[] = [
   {
     label: 'Getting started',
     links: [
-      ['/docs', 'Introduction'],
+      ['/docs', 'Quick start'],
       ['/docs/installation', 'Installation'],
     ],
   },
   {
     label: 'Core concepts',
     links: [
-      ['/docs/data-types', 'Data'],
       ['/docs/builders', 'Builders'],
-      ['/docs/loading-states', 'Loading'],
-    ],
-  },
-  {
-    label: 'Theming',
-    links: [
-      ['/docs/theming', 'Overview'],
-      ['/docs/dark-mode', 'Light and dark mode'],
-    ],
-  },
-  {
-    label: 'Web',
-    links: [
-      ['/docs/web', 'Overview'],
-      ['/docs/composition', 'Frame and legend'],
-    ],
-  },
-  {
-    label: 'Native',
-    links: [
-      ['/docs/native', 'Overview'],
-      ['/docs/native/ios', 'iOS'],
-      ['/docs/native/android', 'Android'],
+      ['/docs/theming', 'Theming'],
     ],
   },
 ]
 
 const trailingGroups: NavGroup[] = [
   {
-    label: 'Hooks',
-    links: [
-      ['/docs/hooks/use-chart-scrub', 'useChartScrub'],
-      ['/docs/hooks/use-last-reading', 'useLastReading'],
-    ],
-  },
-  {
-    label: 'Apps',
+    label: 'Complete examples',
     links: [
       ['/docs/apps/revolut', 'Revolut'],
       ['/docs/apps/kraken', 'Kraken'],
@@ -79,8 +49,27 @@ const trailingGroups: NavGroup[] = [
     ],
   },
   {
-    label: 'More',
+    label: 'Guides',
     links: [
+      ['/docs/loading-states', 'Loading states'],
+      ['/docs/web', 'Web renderer'],
+      ['/docs/composition', 'Frame and legend'],
+      ['/docs/native', 'Native setup'],
+      ['/docs/native/ios', 'iOS'],
+      ['/docs/native/android', 'Android'],
+    ],
+  },
+  {
+    label: 'Hooks',
+    links: [
+      ['/docs/hooks/use-chart-scrub', 'useChartScrub'],
+      ['/docs/hooks/use-last-reading', 'useLastReading'],
+    ],
+  },
+  {
+    label: 'Reference',
+    links: [
+      ['/docs/data-types', 'Data types'],
       ['/docs/releases', 'Releases'],
       ['/docs/changelog', 'Changelog'],
     ],

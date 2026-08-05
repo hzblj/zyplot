@@ -1,10 +1,10 @@
-export const chartExample = (name: string, body: string) =>
-  `import { Chart } from '@hzblj/zyplot'
+export const chartExample = (name: string, body: string, setup = '', entryPoint = '@hzblj/zyplot') =>
+  `import { Chart, zyplot } from '${entryPoint}'
+
+${setup ? `${setup}\n\n` : ''}const chart = zyplot(z => ({
+${body}
+}))
 
 export function Example() {
-  return (
-    <Chart.${name}
-${body}
-    />
-  )
+  return <Chart.${name} {...chart} />
 }`

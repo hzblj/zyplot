@@ -11,7 +11,7 @@ const body = [
   `> ${HERO_LEDE}`,
   '',
   'One npm package renders through ECharts and uPlot in the DOM, Swift Charts on iOS and a',
-  'Jetpack Compose Canvas on Android, behind a single serializable props contract. Twenty-one',
+  'Jetpack Compose Canvas on Android, behind one typed builder API. Twenty-one',
   'chart forms exist on all three platforms, and each native platform adds two of its own.',
   '',
   '## Guides',
