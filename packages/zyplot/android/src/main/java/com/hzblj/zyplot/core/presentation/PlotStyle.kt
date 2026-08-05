@@ -35,7 +35,6 @@ data class PlotStyle(
   val borderColor: String?,
   val borderRadius: Float,
   val borderWidth: Float,
-  val clip: Boolean,
   val padding: PlotPadding,
 ) {
   companion object {
@@ -44,7 +43,6 @@ data class PlotStyle(
       borderColor = json?.nullableString("borderColor"),
       borderRadius = json?.optDouble("borderRadius", 0.0)?.toFloat() ?: 0f,
       borderWidth = json?.optDouble("borderWidth", 0.0)?.toFloat() ?: 0f,
-      clip = json?.optBoolean("clip", true) ?: true,
       padding = PlotPadding.from(json?.opt("padding")),
     )
   }

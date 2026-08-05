@@ -7,7 +7,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
 import com.hzblj.zyplot.core.finance.CandlestickStyle
 import com.hzblj.zyplot.core.json.doubles
-import com.hzblj.zyplot.core.json.nullableDouble
 import com.hzblj.zyplot.core.json.nullableString
 import com.hzblj.zyplot.core.json.objects
 import com.hzblj.zyplot.core.json.strings
@@ -15,6 +14,7 @@ import com.hzblj.zyplot.core.presentation.AnimationOptions
 import com.hzblj.zyplot.core.presentation.AxisOptions
 import com.hzblj.zyplot.core.presentation.ChartAnnotation
 import com.hzblj.zyplot.core.presentation.InteractionOptions
+import com.hzblj.zyplot.core.presentation.TooltipAnchor
 import com.hzblj.zyplot.core.presentation.NumberFormat
 import com.hzblj.zyplot.core.presentation.PlotStyle
 import com.hzblj.zyplot.core.presentation.SeriesStyle
@@ -51,7 +51,6 @@ class ChartConfiguration internal constructor(
   val laysMarksOnEdges: Boolean =
     type == "line" || type == "area" || type == "time-series" || type == "sparkline"
   val value: Double = json.optDouble("value", 0.0)
-  val change: Double? = json.nullableDouble("change")
   val minimum: Double = json.optDouble("min", 0.0)
   val maximum: Double = json.optDouble("max", 100.0)
   val label: String? = json.optString("label").takeIf { it.isNotEmpty() }
@@ -63,6 +62,12 @@ class ChartConfiguration internal constructor(
   val binCount: Int = json.optInt("binCount", 8)
   val animation = AnimationOptions.from(json.optJSONObject("animation"))
   val interaction = InteractionOptions.from(json.optJSONObject("interaction"))
+  val tooltipAnchor = TooltipAnchor.from(json.optJSONObject("tooltipAnchor"))
+
+  /** Where the app's own view for an annotation sits on its mark, for the ids that asked. */
+  val annotationViewAlign: Map<String, String> = json.optJSONObject("annotationViewAlign")
+    ?.let { aligns -> aligns.keys().asSequence().associateWith { aligns.optString(it) } }
+    .orEmpty()
   val plot = PlotStyle.from(json.optJSONObject("plot"))
   val xAxis = AxisOptions.from(json.optJSONObject("xAxis"))
   val yAxis = frame?.yAxis ?: AxisOptions.from(json.optJSONObject("yAxis"))

@@ -30,6 +30,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.rememberTextMeasurer
+import com.hzblj.zyplot.charts.interaction.ChartSlots
 import com.hzblj.zyplot.charts.interaction.ChartTooltip
 import com.hzblj.zyplot.charts.interaction.geometryPayload
 import com.hzblj.zyplot.charts.interaction.interactionPayload
@@ -46,6 +47,11 @@ import kotlinx.coroutines.flow.collectLatest
 fun ZyplotChart(
   configuration: String,
   onInteraction: (Map<String, Any>) -> Unit = {},
+  /**
+   * Renders whatever the app mounted for a slot, under the modifier that puts it where it belongs.
+   * Called for every slot the chart knows of, whether or not the app filled it.
+   */
+  slot: @Composable (id: String, modifier: Modifier) -> Unit = { _, _ -> },
 ) {
   val isSystemDark = isSystemInDarkTheme()
   val context = LocalContext.current
@@ -128,12 +134,7 @@ fun ZyplotChart(
     if (!config.interaction.isEnabled) return
     val move = scrub.moveTo(config, position, width, density)
     onInteraction(
-      interactionPayload(
-        move.selection,
-        move.position,
-        if (scrub.isScrubbing) "changed" else "began",
-        density,
-      ),
+      interactionPayload(move.selection, if (scrub.isScrubbing) "changed" else "began"),
     )
     scrub.begin()
     if (config.interaction.haptics && move.previousIndex != move.selection.index) {
@@ -146,13 +147,7 @@ fun ZyplotChart(
     val previous = scrub.range.value
     val next = scrub.moveRange(config, first, second, width, density) ?: return
     onInteraction(
-      rangePayload(
-        config,
-        next,
-        if (scrub.isScrubbing) "changed" else "began",
-        width,
-        density,
-      ),
+      rangePayload(config, next, if (scrub.isScrubbing) "changed" else "began"),
     )
     scrub.begin()
     if (config.interaction.haptics && previous != next) {
@@ -169,7 +164,7 @@ fun ZyplotChart(
       onInteraction(mapOf("phase" to "ended"))
       return
     }
-    selection?.let { onInteraction(interactionPayload(it, null, "ended", density)) }
+    selection?.let { onInteraction(interactionPayload(it, "ended")) }
   }
 
   val onScrub by rememberUpdatedState({ position: Offset, width: Float -> select(position, width) })
@@ -271,5 +266,6 @@ fun ZyplotChart(
     }
 
     ChartTooltip(config, scrub, width)
+    ChartSlots(config, scrub, width, height, density, slot)
   }
 }

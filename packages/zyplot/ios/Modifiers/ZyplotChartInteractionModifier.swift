@@ -35,6 +35,7 @@ struct ZyplotChartInteractionModifier: ViewModifier {
                   height: frame.height,
                   label: configuration.interaction?.crosshairStyle?
                     .label(at: configuration.resolvedCategories.firstIndex(of: category)),
+                  labelColor: configuration.theme?.colors?.label.map(Color.init(hex:)),
                   x: frame.minX + x,
                   viewWidth: geometry.size.width
                 )
@@ -65,12 +66,56 @@ struct ZyplotChartInteractionModifier: ViewModifier {
             key: ZyplotGeometryKey.self,
             value: snapshot(proxy: proxy, plotFrame: frame)
           )
+          .preference(
+            key: ZyplotSlotLayoutKey.self,
+            value: slotLayout(proxy: proxy, plotFrame: frame)
+          )
         }
       }
       .onPreferenceChange(ZyplotGeometryKey.self) { snapshot in
         guard let snapshot else { return }
         onInteraction(snapshot.payload)
       }
+  }
+
+  /**
+   Where the app's own nodes belong. The reading is reported as the bare crosshair position
+   rather than as a placed corner, because what it has to be clamped against is the size of a
+   node this side never measures — the view that mounted it does.
+   */
+  private func slotLayout(proxy: ChartProxy, plotFrame: CGRect?) -> ZyplotSlotLayout? {
+    guard let plotFrame, plotFrame.width > 0, plotFrame.height > 0 else { return nil }
+    var annotations: [String: ZyplotSlotSpot] = [:]
+    for annotation in configuration.annotations ?? [] {
+      guard let position = position(of: annotation, proxy: proxy, in: plotFrame) else { continue }
+      let run: ZyplotSlotSpot.Run = if annotation.type != "line" {
+        .point
+      } else if annotation.axis == "y" {
+        .across
+      } else {
+        .down
+      }
+      annotations[ZyplotSlotLayout.annotationSlot(annotation.id)] = ZyplotSlotSpot(at: position, run: run)
+    }
+
+    let reading: CGPoint? = if readRange == nil,
+                               let category = selectedCategory,
+                               let x = proxy.position(forX: category) {
+      CGPoint(x: plotFrame.minX + x, y: plotFrame.minY)
+    } else {
+      nil
+    }
+
+    let categories = configuration.resolvedCategories
+    let span: ZyplotSlotSpan? = if let readRange,
+                                   let start = position(of: readRange.startIndex, proxy: proxy, in: plotFrame, categories: categories),
+                                   let end = position(of: readRange.endIndex, proxy: proxy, in: plotFrame, categories: categories) {
+      ZyplotSlotSpan(end: end, start: start)
+    } else {
+      nil
+    }
+
+    return ZyplotSlotLayout(annotations: annotations, plot: plotFrame, reading: reading, span: span)
   }
 
   /**
@@ -299,11 +344,11 @@ struct ZyplotChartInteractionModifier: ViewModifier {
       haptics.tick()
     }
 
+    // What is being read, never where. Where it is goes to the views the chart mounted for it,
+    // through a channel that never leaves the process — see `ZyplotSlotLayoutKey`.
     onInteraction([
       "category": category,
       "index": index,
-      "nativeX": location.x,
-      "nativeY": location.y,
       "phase": isScrubbing ? "changed" : "began",
       "seriesId": configuration.resolvedSeries.first?.id,
       "value": reportedValue(at: index, category: category),
@@ -336,7 +381,7 @@ struct ZyplotChartInteractionModifier: ViewModifier {
 
     onInteraction([
       "phase": isScrubbing ? "changed" : "began",
-      "range": rangePayload(next, proxy: proxy, in: plotFrame, categories: categories),
+      "range": rangePayload(next, categories: categories),
       "seriesId": configuration.resolvedSeries.first?.id,
     ])
     isScrubbing = true
@@ -355,19 +400,13 @@ struct ZyplotChartInteractionModifier: ViewModifier {
     return configuration.clampedIndex(of: touched, in: categories)
   }
 
-  private func rangePayload(
-    _ range: ZyplotReadRange,
-    proxy: ChartProxy,
-    in frame: CGRect,
-    categories: [String]
-  ) -> [String: Any?] {
+  /// What the span is, not where it reaches: a view centred over it is one the chart places itself.
+  private func rangePayload(_ range: ZyplotReadRange, categories: [String]) -> [String: Any?] {
     [
       "endCategory": categories[safe: range.endIndex],
       "endIndex": range.endIndex,
-      "endX": position(of: range.endIndex, proxy: proxy, in: frame, categories: categories),
       "startCategory": categories[safe: range.startIndex],
       "startIndex": range.startIndex,
-      "startX": position(of: range.startIndex, proxy: proxy, in: frame, categories: categories),
     ]
   }
 

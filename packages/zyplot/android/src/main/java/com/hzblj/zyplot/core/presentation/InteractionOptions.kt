@@ -19,18 +19,22 @@ data class InteractionOptions(
   val highlightBlend: Float,
   val highlightColor: String?,
   val highlightScale: Float,
-  val hover: String,
+  /** Absent rather than `"none"`: a chart that named neither is not one that asked for no gesture. */
+  val hover: String?,
   val marker: SelectionMarker?,
-  val pan: Boolean,
   val range: Boolean,
   val rangeStyle: RangeStyle?,
   val selection: String,
   val tooltip: Boolean,
   val zoom: Boolean,
 ) {
+  /**
+   * Whether the chart reads the finger at all. `"none"` is an answer rather than a setting: a chart
+   * handed `hover = "none"` asked for no gesture, and nothing else it passes turns one back on.
+   */
   val isEnabled: Boolean
-    get() = hover != "none" || crosshair != "none" || selection != "none" ||
-      marker != null || tooltip || range
+    get() = hover != "none" &&
+      (crosshair != "none" || selection != "none" || marker != null || tooltip || range)
 
   val readsRange: Boolean get() = range
 
@@ -52,8 +56,7 @@ data class InteractionOptions(
       highlightBlend = json?.optDouble("highlightBlend", 1.0)?.toFloat() ?: 1f,
       highlightColor = json?.nullableString("highlightColor"),
       highlightScale = json?.optDouble("highlightScale", 1.0)?.toFloat() ?: 1f,
-      hover = json?.optString("hover", "none") ?: "none",
-      pan = json?.optBoolean("pan", false) ?: false,
+      hover = json?.nullableString("hover"),
       range = json?.optBoolean("range", false) ?: false,
       rangeStyle = RangeStyle.from(json?.optJSONObject("rangeStyle")),
       selection = json?.optString("selection", "none") ?: "none",

@@ -3,11 +3,17 @@ import SwiftUI
 struct ZyplotNativeChart: View {
   let configuration: ZyplotConfiguration
   var onInteraction: ([String: Any?]) -> Void = { _ in }
+  /// Where the app's own nodes belong. Read here rather than sent out, because the view that
+  /// mounted them moves them itself and a reading crossing into JavaScript is what lags.
+  var onSlotLayout: (ZyplotSlotLayout?) -> Void = { _ in }
 
   var body: some View {
     content
       .zyplotSurface(configuration.surface)
       .environment(\.colorScheme, configuration.preferredColorScheme ?? colorScheme)
+      .onPreferenceChange(ZyplotSlotLayoutKey.self) { layout in
+        onSlotLayout(layout)
+      }
   }
 
   @Environment(\.colorScheme) private var colorScheme

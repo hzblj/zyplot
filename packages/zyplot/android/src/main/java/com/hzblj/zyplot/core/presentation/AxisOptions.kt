@@ -1,6 +1,5 @@
 package com.hzblj.zyplot.core.presentation
 
-import com.hzblj.zyplot.core.json.floats
 import com.hzblj.zyplot.core.json.nullableDouble
 import com.hzblj.zyplot.core.json.nullableString
 import org.json.JSONObject
@@ -15,7 +14,6 @@ data class AxisOptions(
   val domain: AxisDomain,
   val format: JSONObject?,
   val grid: Boolean,
-  val gridDash: List<Float>,
   val label: String?,
   /** The first and last labels sit at the ends of the axis rather than centred on their own mark. */
   val labelEdgeAlign: Boolean,
@@ -28,8 +26,6 @@ data class AxisOptions(
   val padEnd: Float?,
   val padStart: Float?,
   val position: String,
-  val reversed: Boolean,
-  val scale: String,
   val tickCount: Int,
   val ticks: Boolean,
   /** A shorter mark at every category, not only at the named ones. */
@@ -53,7 +49,6 @@ data class AxisOptions(
         ),
         format = json?.optJSONObject("format"),
         grid = json?.optBoolean("grid", true) ?: true,
-        gridDash = json?.optJSONArray("gridDash").floats(),
         label = json?.nullableString("label"),
         labelEdgeAlign = json?.optBoolean("labelEdgeAlign", false) ?: false,
         labelInset = json?.nullableDouble("labelInset")?.takeIf(Double::isFinite)?.toFloat(),
@@ -63,8 +58,6 @@ data class AxisOptions(
         padEnd = json?.nullableDouble("plotDimensionEndPadding")?.takeIf(Double::isFinite)?.toFloat(),
         padStart = json?.nullableDouble("plotDimensionStartPadding")?.takeIf(Double::isFinite)?.toFloat(),
         position = json?.optString("position", "start") ?: "start",
-        reversed = json?.optBoolean("reversed", false) ?: false,
-        scale = json?.optString("scale", "auto") ?: "auto",
         tickCount = (json?.optInt("tickCount", 4) ?: 4).coerceAtLeast(1),
         ticks = json?.optBoolean("ticks", true) ?: true,
         minorTicks = json?.optBoolean("minorTicks", false) ?: false,

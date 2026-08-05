@@ -1,63 +1,10 @@
 import Foundation
 
-enum ZyplotLabelPaddingValue: Codable {
-  case edges(ZyplotLabelPadding)
-  case value(Double)
-
-  init(from decoder: Decoder) throws {
-    let container = try decoder.singleValueContainer()
-    if let number = try? container.decode(Double.self) {
-      self = .value(number)
-      return
-    }
-    self = .edges(try container.decode(ZyplotLabelPadding.self))
-  }
-
-  func encode(to encoder: Encoder) throws {
-    var container = encoder.singleValueContainer()
-    switch self {
-    case .edges(let value): try container.encode(value)
-    case .value(let value): try container.encode(value)
-    }
-  }
-
-  var across: Double {
-    switch self {
-    case .edges(let edges): edges.x ?? ZyplotLabelPadding.acrossDefault
-    case .value(let value): value
-    }
-  }
-
-  var down: Double {
-    switch self {
-    case .edges(let edges): edges.y ?? ZyplotLabelPadding.downDefault
-    case .value(let value): value
-    }
-  }
-}
-
-struct ZyplotLabelPadding: Codable {
-  static let acrossDefault: Double = 10
-  static let downDefault: Double = 5
-  var x: Double?
-  var y: Double?
-}
-
 struct ZyplotCrosshairStyle: Codable {
   var color: String?
   var dash: [Double]?
-  var labelBackground: String?
-  var labelColor: String?
-  var labelLift: Double?
-  var labelPadding: ZyplotLabelPaddingValue?
-  var labelRadius: Double?
-  var labelSize: Double?
   var labels: [String]?
   var width: Double?
-
-  var padsLabel: Bool { labelBackground != nil }
-  var labelAcross: Double { padsLabel ? (labelPadding?.across ?? ZyplotLabelPadding.acrossDefault) : 0 }
-  var labelDown: Double { padsLabel ? (labelPadding?.down ?? ZyplotLabelPadding.downDefault) : 0 }
 
   func label(at index: Int?) -> String? {
     guard let index, let labels, index >= 0, index < labels.count else { return nil }
@@ -110,15 +57,20 @@ struct ZyplotInteractionOptions: Codable {
   var highlightScale: Double?
   var hover: String?
   var marker: ZyplotSelectionMarker?
-  var pan: Bool?
   var range: Bool?
   var rangeStyle: ZyplotRangeStyle?
   var selection: String?
   var tooltip: Bool?
   var zoom: Bool?
 
+  /**
+   Whether the chart reads the finger at all. `"none"` is an answer rather than a setting: a chart
+   handed `hover: "none"` asked for no gesture, and nothing else it passes turns one back on. What
+   the option is documented to mean, and what Android reads it as.
+   */
   var isEnabled: Bool {
-    hover != nil || crosshair != nil || selection != nil || marker != nil
+    guard hover != "none" else { return false }
+    return hover != nil || crosshair != nil || selection != nil || marker != nil
       || tooltip == true || range == true
   }
 

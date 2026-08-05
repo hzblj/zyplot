@@ -1,8 +1,6 @@
 package com.hzblj.zyplot.charts.presentation
 
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.text.TextMeasurer
@@ -11,6 +9,7 @@ import androidx.compose.ui.unit.sp
 import com.hzblj.zyplot.charts.interaction.ChartRange
 import com.hzblj.zyplot.charts.interaction.categoryCentre
 import com.hzblj.zyplot.core.ChartConfiguration
+import com.hzblj.zyplot.core.presentation.CrosshairStyle
 import com.hzblj.zyplot.core.parseColor
 
 /**
@@ -82,27 +81,10 @@ internal fun DrawScope.drawCrosshair(
   val label = style.labelAt(index) ?: return
   val text = measurer?.measure(
     label,
-    config.textStyle(
-      fontSize = style.labelSize.sp,
-      color = style.labelColor?.let(::parseColor) ?: config.labelColor,
-    ),
+    config.textStyle(fontSize = CrosshairStyle.LABEL_SIZE.sp, color = config.labelColor),
     maxLines = 1,
   ) ?: return
 
-  val across = style.across * density
-  val down = style.down * density
-  val chip = Size(text.size.width + across * 2f, text.size.height + down * 2f)
-  val left = (at.x - chip.width / 2f).coerceIn(0f, (size.width - chip.width).coerceAtLeast(0f))
-  val top = plot.top - chip.height - style.labelLift * density
-
-  style.labelBackground?.let { background ->
-    val radius = (style.labelRadius?.times(density) ?: (chip.height / 2f))
-    drawRoundRect(
-      parseColor(background),
-      topLeft = Offset(left, top),
-      size = chip,
-      cornerRadius = CornerRadius(radius, radius),
-    )
-  }
-  drawText(text, topLeft = Offset(left + across, top + down))
+  val left = (at.x - text.size.width / 2f).coerceIn(0f, (size.width - text.size.width).coerceAtLeast(0f))
+  drawText(text, topLeft = Offset(left, plot.top - text.size.height - CrosshairStyle.LABEL_LIFT * density))
 }

@@ -135,29 +135,26 @@ private fun boxplotSelection(
   )
 }
 
+/**
+ * What is being read, never where the finger is. Where it is goes to the views the chart mounted for
+ * it, placed in its own layout pass — see `ChartSlots`.
+ */
 internal fun interactionPayload(
   selection: ChartSelection,
-  pointer: Offset?,
   phase: String,
-  density: Float = 1f,
 ): Map<String, Any> = buildMap {
   selection.category?.let { put("category", it) }
   selection.index?.let { put("index", it) }
   selection.seriesId?.let { put("seriesId", it) }
   selection.value?.let { put("value", it) }
   put("phase", phase)
-  pointer?.let {
-    put("nativeX", it.x / density)
-    put("nativeY", it.y / density)
-  }
 }
 
+/** What the span is, not where it reaches: a view centred over it is the chart's `rangeView`. */
 internal fun rangePayload(
   config: ChartConfiguration,
   range: ChartRange,
   phase: String,
-  width: Float,
-  density: Float = 1f,
 ): Map<String, Any> = buildMap {
   put("phase", phase)
   put(
@@ -165,10 +162,8 @@ internal fun rangePayload(
     buildMap {
       config.categories.getOrNull(range.endIndex)?.let { put("endCategory", it) }
       put("endIndex", range.endIndex)
-      put("endX", categoryCentre(config, range.endIndex, width, density) / density)
       config.categories.getOrNull(range.startIndex)?.let { put("startCategory", it) }
       put("startIndex", range.startIndex)
-      put("startX", categoryCentre(config, range.startIndex, width, density) / density)
     },
   )
   config.series.firstOrNull()?.id?.let { put("seriesId", it) }

@@ -24,9 +24,6 @@ struct ZyplotAxisOptions: Codable {
   var position: String?
   var plotDimensionEndPadding: Double?
   var plotDimensionStartPadding: Double?
-  var reversed: Bool?
-  var scale: String?
-  var scrollPosition: ZyplotCoordinate?
   var minorTicks: Bool?
   var tickCount: Int?
   var ticks: Bool?

@@ -2,17 +2,14 @@ import Foundation
 
 struct ZyplotConfiguration: Codable {
   var accessibilityLabel: String?
-  var after: Double?
   var animation: ZyplotAnimationOptions?
   var annotations: [ZyplotAnnotation]?
   var axes: [ZyplotRadarAxis]?
   var axis: ZyplotAxes?
-  var before: Double?
   var binCount: Int?
   var categories: [String]?
   var candlesticks: [ZyplotCandlestickDatum]?
   var cells: [ZyplotHeatmapCell]?
-  var change: Double?
   var color: String?
   var colorMode: String?
   var columns: [String]?
@@ -57,6 +54,9 @@ struct ZyplotConfiguration: Codable {
   var xLabel: String?
   var yLabel: String?
   var interaction: ZyplotInteractionOptions?
+  var tooltipAnchor: ZyplotTooltipAnchor?
+  /// Where the app's own view for an annotation sits on its mark, keyed by the annotation's id.
+  var annotationViewAlign: [String: String]?
   var style: ZyplotCandlestickStyle?
   static let empty = ZyplotConfiguration(type: "line")
 
