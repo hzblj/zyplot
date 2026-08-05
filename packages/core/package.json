@@ -1,6 +1,6 @@
 {
 	"name": "@hzblj/zyplot-core",
-	"version": "0.4.0",
+	"version": "0.5.0",
 	"description": "Platform-neutral chart contracts for Zyplot.",
 	"type": "module",
 	"main": "./build/index.js",
