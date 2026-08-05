@@ -1,5 +1,14 @@
 # @hzblj/zyplot
 
+## 0.5.1
+
+### Patch Changes
+
+- [`03fd235`](https://github.com/hzblj/zyplot/commit/03fd23536452fde9f6518d6baec923a53cc691a9) - Restore the package README to its pre-rewrite form, so the npm page shows the badges, social card, and docs link again instead of the rewritten copy with a stray `+` in the heading.
+
+- Updated dependencies []:
+  - @hzblj/zyplot-core@0.5.1
+
 ## 0.5.0
 
 ### Minor Changes
