@@ -1,5 +1,292 @@
 # @hzblj/zyplot
 
+## 0.5.0
+
+### Minor Changes
+
+- [`10d8276`](https://github.com/hzblj/zyplot/commit/10d8276e288fd6d3e5057d426eaf1144d3bc3aef) - Give measuring a mark its own name, instead of a point annotation dressed down to nothing.
+
+  Lining a view of your own up with the data — a grid, a row of labels, a box around a stretch —
+  already worked: an annotation with `hidden` lands where its data lands and reports back through
+  `geometry`, on all three renderers. But asking for one meant writing `annotation.point({color,
+hidden: true, id, size: 0, x, y})` and hoping the reader saw the intent through the colour and the
+  zero.
+
+  `annotation.measure({id, x, y})` is that, spelled as what it is. Nothing else about it is
+  adjustable, because a measurement has no appearance to set.
+
+  The docs now also say why you would reach for it over `geometry.plot`: the plot rect is the box
+  around the marks, and each renderer puts the axis padding on its own side of that box, so a grid
+  placed off `plot` alone is a few points out on one of the three. A measured mark is exact
+  everywhere.
+
+- [`10d8276`](https://github.com/hzblj/zyplot/commit/10d8276e288fd6d3e5057d426eaf1144d3bc3aef) - An interaction says what is being read, and never where the finger is.
+
+  `ChartScrubSelection` loses `nativeX` and `nativeY`, `ChartInteractionRange` loses `startX` and
+  `endX`, and the interaction event loses the pair with them. Nothing reports where a reading is any
+  more.
+
+  The reason is the thing they were used for. A reading moves many times a mark, and a position that
+  crossed out to be laid out again could only ever land a render after the crosshair it belongs beside —
+  so a card following a finger trailed it, and trailed it further the more the screen had to re-render
+  to move it. Every one of them is a `tooltip` or a `rangeView` instead: the chart mounts the node and
+  moves it in the same pass it draws the reading in, which is what those slots were added for.
+
+  `geometry` stays, and stays the way down for a view that is laid against the plot rather than against
+  a finger — a grid behind the marks, a row of labels under them, a button on a rule. It is a layout
+  report: it arrives when the chart measures itself and moves when the chart does.
+
+  Two things follow from taking the position out:
+
+  - A scrub within one mark now changes nothing. `useChartScrub` compared the position as well as the
+    index, so a finger travelling across a single mark produced a new selection on every touch the
+    platform reported, and every screen reading it re-rendered for a reading that had not changed.
+  - On the web, a form with no scrub layer reports no position on a hover or a click either. It never
+    reported a mark for one to belong to, so a view placed from it had somewhere to sit and nothing to
+    say.
+
+  To migrate, name the view instead of positioning it: `tooltip.above({view})` for a chip over the
+  rule, `tooltip.beside({view})` for a card at the reading, `rangeView` for one over a two-finger span.
+  What each shows is read from your own context rather than passed in, so a reading changes what a view
+  says without changing a prop on the chart — which is the other half of why this is faster.
+
+- [`10d8276`](https://github.com/hzblj/zyplot/commit/10d8276e288fd6d3e5057d426eaf1144d3bc3aef) - Let a slot be a component, and put it where the thing it stands in for is.
+
+  `ChartSlotView` is `ReactNode | ComponentType`: every slot — the reading's view, the span's, an
+  annotation's — takes a component as well as an element, and a component is rendered with no props of
+  its own. That is what puts the app's own views in a `zyplot` config. An element is a new value on
+  every render, so a config holding one is rebuilt on every render with it; a component reference is the
+  same value for the life of the module, so the config is too. What the view shows comes from its own
+  hooks rather than from a prop threaded through the chart, which means a reading changes the chip and
+  nothing else: the chart's props are untouched, `memo` holds, and on iOS and Android the dataset is not
+  serialised again for a finger that moved.
+
+  Both slots now sit with what they belong to rather than beside it. `tooltipAnchor` and `tooltipView`
+  are one `tooltip` prop, built with `tooltip.above({lift, view})` or `tooltip.beside({gap, view})` —
+  one thing to pass, and the placement still decides which fields exist. An annotation's view is written
+  as `view` on the annotation itself, and `zyplot` lifts it into `annotationViews` keyed by that
+  annotation's `id`, the way it already lifts a series' `style` into `seriesStyles`: a record whose keys
+  repeat an id declared elsewhere is now built rather than written.
+
+  The example app is the reference for both. Its reading chips and its quote card are components named
+  in a config, each subscribing to a context the screen provides, and the Revolut event badge rides on
+  the annotation it marks.
+
+  One name for the reading, and one place to set it. `interaction.tooltip` is gone: `tooltip` is the
+  whole answer — left out or `true` the chart writes its own card, `false` draws nothing, and a
+  `tooltip.above({view})` hands over yours. So there is no longer a boolean two levels down that a
+  view has to agree with, and `interaction.scrub()` no longer reaches out of its own group to switch a
+  card off — a chart that wants none says `tooltip: false` where it says everything else. The bridge is
+  untouched: what crosses it is still `interaction.tooltip` and `tooltipAnchor`, resolved from the one
+  prop on the way out.
+
+- [`10d8276`](https://github.com/hzblj/zyplot/commit/10d8276e288fd6d3e5057d426eaf1144d3bc3aef) - Say where a view of yours sits in the box the chart lays it in, instead of taking the one place the
+  chart picked.
+
+  `ChartViewAlign` is `'top' | 'center' | 'bottom'`, and two places read it.
+
+  An `annotationViews` entry can now be `{align, view}` as well as the view itself. What the three mean
+  follows from how the mark runs: a rule down the plot is a mark with a height of its own, so they are
+  its head, its middle and its foot — and its head is still what a view gets unasked, because that is
+  where the chart's own badge goes. A point and a rule across the plot are spots rather than runs, so
+  they read as on the mark, above it and below it, and `'center'` is what those get unasked.
+
+  ```tsx
+  annotationViews={{
+    earnings: {align: 'center', view: EarningsChip},
+    live: {align: 'top', view: LiveBadge},
+  }}
+  ```
+
+  `tooltip.beside` takes the same word for the card it places. That card sat against the plot's top edge
+  whatever it was, which is right for one read as belonging to the reading and wrong for one big enough
+  to want the middle of the plot:
+
+  ```tsx
+  tooltip.beside({ align: "center", view: ReadingCard });
+  ```
+
+  `tooltip.above` does not take it: a chip placed above is already lifted clear of the plot, so it has no
+  room to be placed down, and the builder rejects the field rather than ignoring it.
+
+  Nothing moves that did not ask to — every default is what the place did before. One exception, and it
+  is a fix: a view on a rule down the plot straddled the plot's top edge on the web, with half of it
+  above the chart, where iOS and Android sat it below the edge. All three now do what the two did.
+
+- [`10d8276`](https://github.com/hzblj/zyplot/commit/10d8276e288fd6d3e5057d426eaf1144d3bc3aef) - Put your own views inside the chart, and let the chart place them.
+
+  `tooltip` takes your own view and mounts it in the plot, moving it with the reading itself.
+  `tooltip.beside({view})` sets it next to the finger and flips it at the plot's edge, which is what a
+  card of rows wants; `tooltip.above({view})` centres it on the reading and lifts it clear of the plot,
+  which is where the rule's own chip goes. An annotation's `view` mounts the same way, so a badge on an
+  annotation is placed by the chart rather than by a render.
+
+  A rule's view is laid along the rule rather than centred on a point: a `line` annotation's spot is
+  where it starts, so a view for one runs from the plot's edge and is centred only across the rule.
+  Centring it would hang half of it outside the plot, which is what a `point`'s view wants and a
+  rule's never does. Size it from `geometry.plot`, which arrives on layout rather than on every step
+  of the finger.
+
+  What the chart gives up for a view depends on what the view can stand in for. A point _is_ its mark,
+  so one with a view is not drawn at all. A rule is not: the view caps it the way the chart's own badge
+  would, so the rule stays and the badge and label it would have worn come off — hiding the rule as
+  well would take the line out from under the head the app just put on it.
+
+  The point is what it costs, which is nothing. A view placed from a scrub handler crosses into
+  JavaScript and back before it moves, so on a fast drag it lands well behind the crosshair it belongs
+  to. These are moved where the crosshair is moved — in the chart's own layout pass, on iOS and
+  Android — so JavaScript never sees the position at all. What is inside the view is still yours to
+  render from `useChartScrub`, and that part arrives when React gets to it.
+
+  `rangeView` does the same for the span under two fingers, centred on it and lifted clear of the
+  plot. The chart writes nothing for a span of its own, so that one adds rather than replaces.
+
+  The chart drops whatever the view stands in for: one placed `'above'` replaces the rule's label, one
+  beside the reading replaces the card. Nothing else the app asked for changes.
+
+  `crosshairStyle` loses `labelBackground`, `labelColor`, `labelLift`, `labelPadding`, `labelRadius`
+  and `labelSize`. The label is the theme's own label colour at the size the axes use, and anything
+  past that is a view now — describing a pill twice was the thing worth removing.
+
+- [`10d8276`](https://github.com/hzblj/zyplot/commit/10d8276e288fd6d3e5057d426eaf1144d3bc3aef) - Discriminate the interaction event by its phase, so the field a phase is about stops being optional.
+
+  `ChartInteractionEvent` was thirteen optional fields, `phase` included, which left every reader
+  checking for something the chart had always sent: a `'layout'` event has a `geometry`, a reading
+  has an `index`, a two-finger one has a `range`. Now testing the phase narrows to the variant that
+  carries it, and the rest of the fields stay readable without narrowing, since a form fills in what
+  it can. The one path with no phase — a click or a hover on a form with no scrub layer — is a
+  variant of its own rather than a gap in the middle of the others.
+
+  Nothing changes at runtime; the events are the ones the renderers were already sending.
+
+- [`10d8276`](https://github.com/hzblj/zyplot/commit/10d8276e288fd6d3e5057d426eaf1144d3bc3aef) - Give the reading under a finger a preset, and the handler a name to be held in.
+
+  `interaction.scrub()` returns the shape a scrub almost always takes — an x crosshair, haptics,
+  the nearest mark rather than the axis slice, and no built-in tooltip — with anything you pass
+  winning over it. Every chart in the examples had been writing those four out by hand, which is
+  four chances to leave one off and no signal when you do.
+
+  `ChartInteractionHandler` names what `onInteraction` takes, so an app declaring its own handler
+  no longer reaches for `Parameters<typeof Chart.Line>[0]['onInteraction']` to spell it.
+
+- [`10d8276`](https://github.com/hzblj/zyplot/commit/10d8276e288fd6d3e5057d426eaf1144d3bc3aef) - Describe a whole chart as one object.
+
+  `zyplot(z => ({…}))` calls the builder with every factory the package exports as `z` and returns the
+  props a chart takes, so its data, its axes, its arrival and the styling of each series are one
+  expression behind one import rather than a page of props assembled from six of them. That is what
+  makes a sample liftable: the object is the chart, so it copies into an app whole. It is on all four
+  entry points, and `ZyplotFactories` and `ZyplotChartProps` name what goes in and what comes out.
+
+  The `style` declared on a series is split into `seriesStyles` on the way out, so `zyplot` is
+  `seriesProps` as well — the id is written once, and an explicit `seriesStyles` entry still wins over
+  the `style` on the series it names. Nothing has to be in the object: one that leaves the data out is
+  a preset, and the props it is spread under fill in the rest.
+
+  Naming the form checks the config where it is written rather than where it is spread:
+  `zyplot<LineChartProps>(…)` for a whole chart, `zyplot<Partial<LineChartProps>>(…)` for a preset that
+  expects its data at the call site.
+
+  Every chart in the example app is built this way now, the five design studies included, so each one
+  is a config to read and the JSX beside it is a spread. Only the app's own nodes — the tooltip view,
+  the annotation views — are still passed as props, since a React element is new on every render and
+  folding one into the config would rebuild the dataset with it.
+
+- [`10d8276`](https://github.com/hzblj/zyplot/commit/10d8276e288fd6d3e5057d426eaf1144d3bc3aef) - Take out the options no renderer ever drew, rather than keep promising them.
+
+  `interaction.pan` was decoded on both native platforms and read by neither, and the docs said so
+  in as many words. `ChartPointAnnotation.symbol` typechecked everywhere and changed nothing
+  anywhere — the web draws a fixed dot and neither native side has the field at all.
+  `xAxis.scrollPosition` was advertised as an iOS extra, and the scrollable-axis modifier only ever
+  read `visibleDomain` beside it. An option that compiles and does nothing is worse than one that
+  is missing: it reads as a setting that did not take.
+
+  Gone with them are the names nothing referenced — `NATIVE_CHART_KINDS`, `NativeChartKind`,
+  `NativeChartPropsByKind`, `NativeChartConfiguration`, `ChartExtensionKindIos` and
+  `ChartExtensionKindAndroid`. `ChartSeriesStyle.symbol` stays; that one is drawn.
+
+- [`10d8276`](https://github.com/hzblj/zyplot/commit/10d8276e288fd6d3e5057d426eaf1144d3bc3aef) - Narrow the web props to the ones each form actually answers.
+
+  `ChartBaseProps` carried `annotations`, `interaction`, `onInteraction`, `plot`, `seriesStyles`,
+  `xAxis`, `yAxis` and the overlay slots onto all twenty-one forms, and five of them read those:
+  line, area, bar, stacked bar and candlestick. On the other sixteen they typechecked and vanished
+  — an `interaction` handed to `Chart.Pie` compiled, ran, and did nothing, which reads as a setting
+  that did not take rather than as one the form has no use for.
+
+  The base now splits three ways. `ChartBaseProps` is what every form takes; `ChartAxesProps` adds
+  the `axis` switch for the forms that draw a pair; `ChartPlotProps` and `ChartSeriesPlotProps` add
+  the plot, the axes options, the annotations and the scrub slots for the forms with a layer that
+  reads the pointer. The native props are untouched — the native renderers do read these on every
+  form, so a `.ios.tsx` or `.android.tsx` file keeps the wider surface.
+
+  `ChartInteractionEvent` loses `timestamp`, `x` and `y` in the same pass: no renderer on any
+  platform ever filled them in.
+
+- [`10d8276`](https://github.com/hzblj/zyplot/commit/10d8276e288fd6d3e5057d426eaf1144d3bc3aef) - Export the types the props already had you holding, and stop shipping one name for two shapes.
+
+  `ChartTooltipAnchor`, `ChartTooltipPlacement`, `ChartInteractionRange`, `ChartRangeStyle` and
+  `ChartBandAlign` were all reachable through an exported type and none of them could be imported,
+  so a web app could hold one of these values but never annotate it. `Chart.Provider` on
+  `@hzblj/zyplot/ios` and `@hzblj/zyplot/android` now exports its `ChartProviderProps` as well.
+
+  `ChartColorMode` meant two different unions depending on the entry point — the core one on native,
+  and a web one that added `'inherit'` for the provider. The web entry now exports the core union
+  under that name and the wider one as `ChartProviderColorMode`, so the same import means the same
+  thing everywhere. `ChartOrientation` likewise replaces the five inline copies of
+  `'horizontal' | 'vertical'`.
+
+### Patch Changes
+
+- [`10d8276`](https://github.com/hzblj/zyplot/commit/10d8276e288fd6d3e5057d426eaf1144d3bc3aef) - Close a web reading when the finger lifts, rather than waiting for a pointer that never leaves.
+
+  Everything a reading puts up comes down on zrender's `globalout`: the tooltip, the axis pointer, the
+  crosshair and marker the scrub layer draws, and the step back on the rest of the trace. Under a
+  mouse that event arrives the moment the pointer leaves the plot. Under a finger it never arrives at
+  all — zrender turns `touchend` into a `mouseup` and nothing behind it, and does not listen for
+  `touchcancel` in the first place. So a reading taken by touch stayed up after the touch was over,
+  and `onInteraction` never reported the `ended` phase that closes a readout of your own.
+
+  The leave the browser declines to send is now raised on the chart itself, which is the one event all
+  of them are already watching, so one line closes the lot. It goes up a frame after the touch rather
+  than inside it: a touch under the click delay makes zrender fire a synthetic `click` of its own, and
+  a leave landing before that would only be undone by it.
+
+  `Chart.TimeSeries` is drawn by uPlot and is not reached by this. uPlot binds mouse events only, so
+  its cursor is placed on a touch screen by the browser's compatibility `mousemove` and there is no
+  gesture to end — a tap leaves it where it landed, as it did before.
+
+- [`10d8276`](https://github.com/hzblj/zyplot/commit/10d8276e288fd6d3e5057d426eaf1144d3bc3aef) - Say which renderer reads which axis and plot option, and stop decoding the ones nobody draws.
+
+  `scale` and `reversed` were parsed on both native platforms and read on neither; `gridDash` and
+  `plot.clip` were parsed on Android and read nowhere. Decoding an option you do not draw is a trap
+  for whoever reads the module next, so those four are gone from the Swift and Kotlin side — the
+  contract keeps them, because the web does draw them.
+
+  What is left is a real gap rather than dead code, and the axis docs now name each one: `scale` and
+  `reversed` are the web's alone, `gridDash` is the web and iOS, `position: 'end'` moves the web and
+  iOS axes while Android honours it on the y axis only, `plot.clip` is iOS and four web forms, and
+  `plot.borderRadius` rounds a native plot and does nothing on the web.
+
+- [`10d8276`](https://github.com/hzblj/zyplot/commit/10d8276e288fd6d3e5057d426eaf1144d3bc3aef) - Let `hover: 'none'` actually switch the gesture off, on both native platforms.
+
+  It is documented as the off switch and was read as neither. iOS tested whether `hover` had been
+  set at all, so passing `'none'` announced a gesture rather than declining one; Android compared it
+  against `'none'` but let the tooltip's own default turn the gesture back on behind it. A chart
+  handed `hover: 'none'` — a chart mid-placeholder, say, where there is nothing to read yet — kept
+  following the finger on both.
+
+  Now `'none'` is decisive on each: nothing else the chart passes turns a gesture back on. A chart
+  that names no `hover` at all is untouched, so this only reaches the ones that asked.
+
+- [`10d8276`](https://github.com/hzblj/zyplot/commit/10d8276e288fd6d3e5057d426eaf1144d3bc3aef) - Give every range annotation on the web its own colour again.
+
+  The band styling was set once on the series from the first annotation in the list, so a second
+  `annotation.range` was drawn in the first one's colour and opacity however it was declared — a
+  quarter shaded green next to an incident window that had asked for red came out green as well.
+  The styling now travels with each band, which is where iOS and Android had it all along.
+
+- Updated dependencies [[`10d8276`](https://github.com/hzblj/zyplot/commit/10d8276e288fd6d3e5057d426eaf1144d3bc3aef), [`10d8276`](https://github.com/hzblj/zyplot/commit/10d8276e288fd6d3e5057d426eaf1144d3bc3aef), [`10d8276`](https://github.com/hzblj/zyplot/commit/10d8276e288fd6d3e5057d426eaf1144d3bc3aef), [`10d8276`](https://github.com/hzblj/zyplot/commit/10d8276e288fd6d3e5057d426eaf1144d3bc3aef), [`10d8276`](https://github.com/hzblj/zyplot/commit/10d8276e288fd6d3e5057d426eaf1144d3bc3aef), [`10d8276`](https://github.com/hzblj/zyplot/commit/10d8276e288fd6d3e5057d426eaf1144d3bc3aef), [`10d8276`](https://github.com/hzblj/zyplot/commit/10d8276e288fd6d3e5057d426eaf1144d3bc3aef), [`10d8276`](https://github.com/hzblj/zyplot/commit/10d8276e288fd6d3e5057d426eaf1144d3bc3aef), [`10d8276`](https://github.com/hzblj/zyplot/commit/10d8276e288fd6d3e5057d426eaf1144d3bc3aef)]:
+  - @hzblj/zyplot-core@0.5.0
+
 ## 0.4.0
 
 ### Minor Changes
