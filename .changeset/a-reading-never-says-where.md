@@ -1,6 +1,6 @@
 ---
-'@hzblj/zyplot-core': major
-'@hzblj/zyplot': major
+'@hzblj/zyplot-core': minor
+'@hzblj/zyplot': minor
 ---
 
 An interaction says what is being read, and never where the finger is.
