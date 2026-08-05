@@ -1,6 +1,6 @@
 {
 	"name": "@hzblj/zyplot",
-	"version": "0.5.0",
+	"version": "0.5.1",
 	"description": "Native-feeling cross-platform charts for React and Expo.",
 	"type": "module",
 	"main": "./build/index.js",
