@@ -58,8 +58,8 @@ are how you reach forms only one renderer has.
 | `@hzblj/zyplot/ios` | iOS | Shared forms plus `Chart.Range` and `Chart.Rule`, and the Swift Charts scrolling options on `xAxis`. |
 | `@hzblj/zyplot/android` | Android | Shared forms plus `Chart.Lollipop` and `Chart.Waterfall`, and Compose label overflow on both axes. |
 
-All four carry the builders and `useLastReading`, so a helper that assembles chart props is
-not tied to a platform. `useChartScrub` is on all four too: a finger on the native entries,
+All four carry `zyplot`, the builders it hands out and `useLastReading`, so a helper that
+assembles chart props is not tied to a platform. `useChartScrub` is on all four too: a finger on the native entries,
 a pointer on the web one, reported as the same phases.
 
 ### Quick start
@@ -355,6 +355,14 @@ mark carries its own rule; the web and Android space theirs evenly off `tickCoun
 wherever the named readings happen to fall. So a plot that leans on exactly two rules asks for them
 with `tickCount`, or switches `grid` off and draws them as annotations.
 
+**Four of these are the web renderer's alone.** `scale` and `reversed` are read on the web and
+nowhere else; `gridDash` is read on the web and iOS, and Android draws a solid rule whatever it is
+given; `position: 'end'` moves the web and iOS axes, while Android honours it on the y axis alone.
+Going the other way, `plot.borderRadius` rounds a native plot and does nothing on the web, and
+`plot.clip` is read on iOS and by the web's line, area, bar and stacked bar — not by Android. The
+type accepts all of them everywhere; these are the places it is writing a cheque the renderer does
+not cash.
+
 ### Annotations
 
 A union discriminated on `type`. Coordinates are `number | string`: a category name on a
@@ -432,10 +440,8 @@ type ChartInteraction = {
   /** "both" | "x" | "y" | "none" */
   crosshair?: ChartCrosshairMode
   /** Default true: every renderer draws its own card unless it is told not to. */
-  tooltip?: boolean
   /** "single" | "multiple" | "none" */
   selection?: ChartSelectionMode
-  pan?: boolean
   zoom?: boolean
   /** Whether a hovered mark grows. Read on the web candlestick, which scales by its own amount. */
   highlightScale?: number
@@ -472,26 +478,31 @@ type ChartInteraction = {
   rangeStyle?: ChartRangeStyle
 }
 
-type ChartInteractionEvent = {
+/** Every field an event can carry. Each is optional, so one can be read without narrowing first. */
+type ChartInteractionFields = {
   seriesId?: string
   category?: string
   value?: number
-  x?: number
-  y?: number
-  /** Unix seconds, on the time-based forms. */
-  timestamp?: number
-  /** Pointer position in the chart's own coordinate space. */
-  nativeX?: number
-  nativeY?: number
   /** Position of the read mark in the chart's own data order. */
   index?: number
-  /** "began" | "changed" | "ended" | "layout" */
-  phase?: ChartInteractionPhase
   /** Where the plot and its annotations sit, on the "layout" phase. */
   geometry?: ChartGeometry
   /** The span under two fingers, when interaction.range is on and both are down. */
   range?: ChartInteractionRange
 }
+
+/**
+ * Discriminated by phase: test it and the field that phase is about stops being optional.
+ * The phase is absent on one path alone — a click or a hover on a form with no scrub layer.
+ */
+type ChartInteractionEvent =
+  | (ChartInteractionFields & { phase: 'layout'; geometry: ChartGeometry })
+  | (ChartInteractionFields & { phase: 'ended' })
+  | (ChartInteractionFields & { phase: 'began' | 'changed'; index: number })
+  | (ChartInteractionFields & { phase: 'began' | 'changed'; range: ChartInteractionRange })
+  | (ChartInteractionFields & { phase?: undefined })
+
+type ChartInteractionHandler = (event: ChartInteractionEvent) => void
 ```
 
 **A handler is a client boundary.** Everything else on a chart is serializable data, so a
@@ -503,14 +514,13 @@ file that passes it needs `"use client"`.
 | Field | Where it is read |
 | --- | --- |
 | `crosshair` | Web and Android draw `x`, `y` and `both`; iOS draws the vertical rule only. |
-| `tooltip` | All three, and on by default — pass `false` whenever a readout of your own is the answer. |
-| `hover` | The web picks the tooltip's trigger and the emphasis from it. iOS and Android read only whether it is `"none"`, as an off switch for the whole gesture. |
+| `tooltip` (prop) | The reading itself is the `tooltip` prop, not part of this group. The web and Android draw a card by default; iOS draws one once the chart has asked for a gesture at all. Pass `tooltip: false` whenever a readout of your own is the answer. |
+| `hover` | The web picks the tooltip's trigger and the emphasis from it. iOS and Android read only whether it is `"none"`, which switches the whole gesture off — nothing else the chart passes turns one back on. |
 | `selection` | The same off switch on native, and nothing on the web: no renderer tells `"single"` from `"multiple"` yet. |
 | `dimOpacity` · `dimDuration` · `marker` · `crosshairStyle` | All three. |
 | `highlightColor` · `highlightBlend` | `Chart.Candlestick` alone, on all three. |
 | `highlightScale` | The web candlestick, as an on/off — the number is not a factor, and the engine scales by its own amount. Native decodes it and draws nothing. |
 | `zoom` | `Chart.Candlestick` on the web. Native decodes it and does nothing. |
-| `pan` | Nowhere yet. `Chart.TimeSeries` drag-zooms its x range on its own, which is uPlot's default rather than either flag being read. |
 | `haptics` | iOS and Android. |
 | `range` | iOS and Android. |
 
@@ -868,11 +878,14 @@ compose, spread and serialize.
 
 ```ts
 import {
+  // A whole chart as one object, with every builder below handed to it.
+  zyplot,
   // Builders with variants, one function per variant.
   annotation,
   axis,
   marker,
   reveal,
+  tooltip,
   // A series and its styling, declared together.
   series,
   seriesProps,
@@ -895,12 +908,82 @@ They are on every entry point, and every renderer draws what they describe: `glo
 includes the `axis` builders — `NativeChartAxisOptions` is what `xAxis` and `yAxis` take
 everywhere, so an overlaid axis works on a web chart too.
 
+### zyplot
+
+`zyplot` takes a builder and hands it every one of these functions as `z`, so a whole chart —
+its data, its axes, its arrival, the styling of each series — is one object with one import
+behind it. What comes back is the props that chart takes, ready to spread, which is what makes
+a sample something you can lift into an app as it stands.
+
+```tsx
+import {Chart, zyplot} from '@hzblj/zyplot'
+
+const chart = zyplot(z => ({
+  animation: z.animation({ duration: 420, reveal: z.reveal.draw({ duration: 240 }) }),
+  annotations: [
+    z.annotation.line({ axis: 'y', dash: [1, 4], id: 'close', value: range.previousClose }),
+    // The app's own view for a mark goes on the mark, so its id is written once.
+    z.annotation.point({ id: 'live', view: LivePrice, x: live.category, y: live.value }),
+  ],
+  categories: range.categories,
+  interaction: z.interaction.scrub({ dimOpacity: 0.66, marker: z.marker.trail({ dot: true }) }),
+  series: [
+    z.series({
+      color: '#ff3b4a',
+      id: 'price',
+      label: 'Price',
+      style: { fill: z.fill({ fadeTo: 0.12, pattern: 'dots' }), strokeWidth: 2.3 },
+      values: range.values,
+    }),
+  ],
+  // The reading's own view, and where the chart puts it.
+  tooltip: z.tooltip.above({ lift: 2, view: ReadingChip }),
+  yAxis: z.axis.overlay({ format: z.format({ decimals: 2 }) }),
+}))
+
+<Chart.Line {...chart} />
+```
+
+What a series or an annotation carries for itself is lifted on the way out: `style` into
+`seriesStyles`, `view` into `annotationViews`. Both of those props are records keyed by an id
+declared elsewhere, which is a spelling of that id nothing checks — so the config writes it once,
+beside the thing it belongs to, and the record is built for you. An explicit entry in either record
+still wins over what the series or annotation named.
+
+Nothing has to be in there. A config that leaves the data out is a preset, and the props you
+spread it under fill in the rest — which is how several charts share one look, or a range
+switch keeps the styling and changes only the values.
+
+```tsx
+const scrubbing = zyplot(z => ({
+  interaction: z.interaction.scrub({ dimOpacity: 0.5, marker: z.marker.trail({ dot: true }) }),
+  plot: { clip: false },
+}))
+
+<Chart.Line {...scrubbing} categories={categories} series={series} />
+```
+
+| Argument | Returns | Description |
+| --- | --- | --- |
+| `zyplot(build)` | `ZyplotChartProps` | Calls the builder once and returns the props to spread onto a chart, with the series styling and the annotation views split out. |
+| `z` | `ZyplotFactories` | Every builder on this page, reached as `z.annotation` or `z.reveal.draw`: `annotation`, `axis`, `marker`, `reveal`, `series` and `tooltip`, plus the passthroughs `animation`, `fill`, `format`, `glow`, `halo`, `interaction`, `plot`, `seriesStyle`, `surface` and `theme`. |
+
+**Name the form to be checked where you write it.** Left plain, a config is checked where it is
+spread — the same error, one file later. `zyplot<LineChartProps>(…)` checks it against that form
+as you type and offers its fields to autocomplete, and `zyplot<Partial<LineChartProps>>(…)` does
+the same for a preset that expects its data at the call site.
+
+**Build it once.** The object is rebuilt on every call, and a chart whose props change identity
+re-serializes its whole dataset — over the bridge, on native. Declare it at module scope where
+nothing in it depends on state, and wrap it in `useMemo` keyed on the data where it does.
+
 ### series and seriesProps
 
 `seriesStyles` is a record keyed by `ChartSeries.id`, which means styling a series normally
 spells its id twice, with nothing checking the two agree. A typo does not fail: it silently
 drops the styling. `series` declares both in one place and `seriesProps` splits the list
-into the two props the chart takes.
+into the two props the chart takes — the same split `zyplot` does, on its own, for a chart
+whose other props are already where you want them.
 
 ```tsx
 const lines = useMemo(
@@ -932,6 +1015,7 @@ native. Wrap it in `useMemo` keyed on the data.
 | `annotation.range` | `ChartRangeAnnotation` | A shaded span. Takes `start` and `end`. |
 | `annotation.point` | `NativeChartPointAnnotation` | A single marked point, placed by coordinate. Takes `x` and `y`. |
 | `annotation.text` | `ChartTextAnnotation` | Free text on the plot. Omit `x` and `y` and the renderer places it. |
+| `annotation.measure` | `NativeChartPointAnnotation` | A point the chart measures and nobody draws, reported in `geometry.annotations` under its `id`. Takes `id`, `x` and `y`. For a view of your own that has to line up with the data exactly. |
 
 ```tsx
 const baseline = (value: number, label: string) =>
@@ -1350,26 +1434,46 @@ you position your own views over the plot with. All three are reported on the we
 the pointer — `NativeChartInteractionEvent` is an alias of `ChartInteractionEvent`, kept as a
 name because that is what the native props are declared with.
 
-Every coordinate in an event — `geometry` and the pointer's `nativeX`/`nativeY` — is in the
-unit the platform lays views out in: points on iOS, dp on Android, px on the web. So a view
-positioned from one lands where the chart drew, with no density arithmetic in between.
+An event says what is being read, never where the finger is. A reading moves many times a mark,
+and a position that crossed into your code to be laid out again would always land a render after
+the crosshair it belongs beside — so views that follow a reading are ones the chart mounts and
+moves itself, through `tooltip` and `rangeView`.
+
+`geometry` is the exception, and it is a layout report rather than a reading: it arrives once the
+chart has measured itself and moves when the chart does, not when a finger does. Its coordinates
+are in the unit the platform lays views out in — points on iOS, dp on Android, px on the web — so a
+grid or a row of labels laid against the plot lands where the chart drew, with no density
+arithmetic in between.
 
 ```ts
 type ChartInteractionPhase = 'began' | 'changed' | 'ended' | 'layout'
 
-type ChartInteractionEvent = {
-  /** Position of the selected mark in the chart's own data order. */
-  index?: number
-  phase?: ChartInteractionPhase
-  /** Where the plot and its annotations sit, on the "layout" phase. */
-  geometry?: ChartGeometry
-  // … plus category, value, seriesId and the pointer position
-}
+/** Discriminated by phase: test it and the field that phase is about stops being optional. */
+type ChartInteractionEvent =
+  | (Fields & { phase: 'layout'; geometry: ChartGeometry })
+  | (Fields & { phase: 'ended' })
+  | (Fields & { phase: 'began' | 'changed'; index: number })
+  | (Fields & { phase: 'began' | 'changed'; range: ChartInteractionRange })
+  /** A click or hover on a form with no scrub layer, which the web reports without a phase. */
+  | (Fields & { phase?: undefined })
+
+/** Every field an event can carry — index, category, value, seriesId, the pointer position. */
+type Fields = { index?: number; category?: string; /* … */ }
+
+type ChartInteractionHandler = (event: ChartInteractionEvent) => void
 
 type ChartGeometry = {
   annotations: readonly { id: string; x: number; y: number }[]
   plot: { height: number; width: number; x: number; y: number }
 }
+
+**For a view that has to line up with the data, measure a mark rather than the plot.** `plot` is
+the box around the marks, and each renderer puts the axis padding on its own side of it: the web's
+grid rect has the padding inside, the native ones keep the marks against the frame. So a grid or a
+label row placed off `plot` alone lands a few points out on one of the three.
+`annotation.measure()` is the exact answer instead — a point the chart measures and nobody draws,
+reported in `geometry.annotations` under the `id` you gave it. A mark lands where its data lands on
+every platform.
 
 /** How the mark under the finger is picked out. */
 type ChartSelectionMarker = {
@@ -1400,20 +1504,11 @@ type ChartRangeStyle = {
 type ChartCrosshairStyle = {
   color?: string
   dash?: number[]
-  /** What to write above the crosshair: one string per slot, in data order. */
+  /**
+   * What to write above the crosshair: one string per slot, in data order. Drawn in the theme's
+   * label colour. To make it anything else, hand the chart your own view with tooltip.view.
+   */
   labels?: string[]
-  /** Painted behind the label, which makes the words a chip. */
-  labelBackground?: string
-  /** Defaults to the theme's label colour. */
-  labelColor?: string
-  /** The gap between the label and the top of the plot. Default 8. */
-  labelLift?: number
-  /** How far the chip reaches past its text. Default {x: 10, y: 5}. */
-  labelPadding?: number | {x?: number; y?: number}
-  /** Corner radius of the chip. Defaults to half its height. */
-  labelRadius?: number
-  /** Point size of the label. Default 13. */
-  labelSize?: number
   width?: number
 }
 ```
@@ -1431,12 +1526,6 @@ type ChartCrosshairStyle = {
 | `halo.size` | `number` | `12` native | Halo diameter, in points. On the web a halo with no size is drawn at the point's own diameter, which is a ring you cannot see — name it there. |
 | `crosshairStyle.width` | `number` | `1` | Crosshair line width. |
 | `crosshairStyle.labels` | `string[]` | — | What the crosshair writes above the plot: one string per slot, in data order, and the chart draws the one for the mark being read. Your words — a time, a date, whatever the reading is called. |
-| `crosshairStyle.labelColor` | `string` | — | Colour of that label. Defaults to the theme's label colour on all three renderers. |
-| `crosshairStyle.labelSize` | `number` | `13` | Point size of the label. What the web plot gives up at the top is this plus the chip's vertical padding and `labelLift`, so the room and the text cannot drift apart. |
-| `crosshairStyle.labelBackground` | `string` | — | Painted behind the label, which makes the words a chip. Sized by `labelPadding` and rounded by `labelRadius`. |
-| `crosshairStyle.labelPadding` | `number \| {x, y}` | `{x: 10, y: 5}` | How far the chip reaches past its text. A single number pads both ways. |
-| `crosshairStyle.labelRadius` | `number` | — | Corner radius of the chip. Defaults to half its height, so it ends in a round cap. |
-| `crosshairStyle.labelLift` | `number` | `8` | The gap between the label and the top of the plot. |
 | `marker.dot` | `boolean` | `false` | Puts the dot of `"point"` on the reading as well, so a `"segment"` or a `"trail"` can light the line and still mark where the finger is. Sized by `marker.size` and blooming by `marker.glow`. |
 | `annotation.pulse` | `boolean \| ChartPulse` | `false` | A ring blooming out of a point annotation and resting before it does it again. `true` takes 450 ms out, 1550 ms at rest, 2.2× the point's ring. |
 | `annotation.labelBackground` | `string` | — | Painted behind an annotation's label, so its value stays legible where the marks run through it. |
@@ -1445,7 +1534,9 @@ type ChartCrosshairStyle = {
 | `annotation.badge` | `string` | — | A single glyph in a filled circle capping a rule at the plot edge; the rule starts below it. Leave it off and the chart draws only the rule. |
 | `annotation.size` | `number` | — | A point annotation's dot diameter, or a badge circle's. Each renderer rests at a slightly different dot size, so name it when the three have to agree; a badge takes it on iOS and the web, and Android draws a fixed one. |
 | `annotation.hidden` | `boolean` | `false` | Measured and reported in `geometry` as usual, but drawn by nobody — for an annotation that is only an anchor for a view of your own. |
-| `annotationViews` | `Record<string, ReactNode>` | — | Your own node where an annotation lands, keyed by its `id`. The chart centres it on the spot and leaves out the mark it would have drawn there. |
+| `annotationViews` | `Record<string, ChartSlotView>` | — | Your own node where an annotation lands, keyed by its `id`, or written as `view` on the annotation itself in a `zyplot` config. A point with one is not drawn at all, because the view is the mark; a rule keeps its line and loses the badge and label it would have worn, because the view caps it. A rule's view runs from the plot's edge, centred only across the rule — size it from `geometry.plot`, which arrives on layout rather than on every step of the finger. |
+| `tooltip` | `boolean \| ChartTooltip` | `true` | What appears for the reading, in one setting — there is no second switch anywhere. Left out or `true`, the chart writes its own card; `false` draws nothing, which is the answer whenever a readout of your own is above the plot; a `tooltip.beside({view})` or `tooltip.above({view})` hands over your own view, which the chart mounts inside itself and moves in its own layout pass, so it keeps up with the crosshair instead of trailing a render behind it — and it takes the place of the card, or of `crosshairStyle.labels` when placed above. The `view` is optional, so a placement can be declared on its own as a preset and the view spread in where it is known; on its own it changes nothing the chart draws, since the card the chart writes itself keeps its own placement. `beside()` sets it next to the reading inside the plot and flips it at the edge, which is what a card of rows wants, and its `align` says where down the plot it sits — `'top'` by the gap, `'center'` for halfway, `'bottom'` against the floor; `above()` centres it on the reading and lifts it clear of the plot, which is where the rule's chip goes, so it takes a `lift` rather than an `align`. Takes `gap` and `lift` respectively. |
+| `rangeView` | `ChartSlotView` | — | Your own node for the span under two fingers, centred on it and lifted clear of the plot. The chart writes nothing for a span of its own, so this adds rather than replaces. Needs `interaction.range`, and a second finger — the web never places it. |
 | `interaction.highlightColor` | `string` | — | A colour the mark under the finger is lifted towards. `Chart.Candlestick` alone reads it, on all three renderers — the other forms are lit by `marker` and `dimOpacity`. |
 | `interaction.highlightBlend` | `number` | `1` | How far towards it. Below 1 the mark's own colour still reads through the lift. Candlestick only, like the colour it blends. |
 | `interaction.dimDuration` | `number` | `0` | How long the marks take to step back to `dimOpacity` when a reading starts, and to come back up when it ends, in ms. `0` is the cut every chart has always had; a beat is worth it where the dimming is the whole feedback for the gesture. The lit stretch of a segment or a trail is held until the ramp is all the way up, so the part of the trace that was never dimmed has nothing to flash against. |
@@ -1463,17 +1554,21 @@ a shimmer. So `crosshairStyle.labels` hands the words to whoever is drawing the 
 ends of a two-finger span — hand that back as a masked second series instead and the whole chart is
 rebuilt on every step of either finger, which is the round trip paid twice over. All three renderers keep the label whole
 against both edges of the chart, so the first and last readings of a series are worth a full label
-rather than half of one, and on the web the plot gives up the label's height plus `labelLift` at the
-top to draw it in — only when labels were given and a crosshair is drawn at all, and whether or not
-a pointer is over the plot: marks that changed height the moment one arrived would be worse than
-either.
+rather than half of one, and on the web the plot gives up room at the top to draw it in — only when
+labels were given and a crosshair is drawn at all, and whether or not a pointer is over the plot:
+marks that changed height the moment one arrived would be worse than either.
 
-**You can still draw the chip yourself.** Nothing stops you: take the plot rect and the annotation
-spots out of `geometry`, put your own view on them, and it will be as much yours as any other
-component — which is the way to go for a readout the options cannot describe. Know what it costs
-first. It is the round trip above, and it shows most on the thing nearest the finger, so style the
-built-in chip where you can — `labelBackground`, `labelPadding`, `labelRadius` and `labelLift` are
-there to make it the chip your design asked for — and keep your own views for what sits still.
+**A slot takes an element or a component.** `ChartSlotView` is `ReactNode | ComponentType`. An
+element is a new value on every render, so a `zyplot` config holding one is rebuilt on every render
+with it. Name a component instead — `tooltip: z.tooltip.above({ view: ReadingChip })` — and the config
+is the same value for the life of the module: the chart renders it with no props, and what it says
+comes from its own hooks. That is the difference between a reading that re-renders the chart and one that re-renders a
+chip.
+
+**The chip is yours to draw, and it costs nothing to.** That round trip is what `tooltip.view` is
+for: hand the chart a view and the chart mounts it inside itself and moves it there, so it keeps up
+with the crosshair the way the crosshair keeps up with the finger. Which is why the built-in label
+has no chip fields — styling it is styling a view, and there is no reason to describe a pill twice.
 
 ### Native axis options
 
@@ -1514,7 +1609,7 @@ point, the web one included.
 | `style.volumeHeightRatio` | native only | The web volume histogram takes a fixed share of the plot height. |
 
 Nothing else in the presentation vocabulary is platform-specific: `glow`, `reveal`, `marker` —
-`dot` and all — `fill`, `badge`, `pulse`, `halo`, `crosshairStyle.labels` and the chip behind them,
+`dot` and all — `fill`, `badge`, `pulse`, `halo`, `crosshairStyle.labels`, `tooltip.view`,
 `minorTicks`, `annotationViews` and the overlaid axis all render in the DOM as well. Eleven forms
 do take different data props, though — see the table under "Chart coverage".
 
@@ -1561,7 +1656,6 @@ iOS axis extras, on the x axis alone:
 
 - `xAxis.visibleDomain` (`number`) — length of the visible x domain. Setting it makes the
   plot horizontally scrollable.
-- `xAxis.scrollPosition` (`number | string`) — initial scroll offset along the x axis.
 
 ### Android
 
@@ -1578,7 +1672,7 @@ export function Spend() {
     <Chart.Waterfall
       data={movements}
       format={{ prefix: '$', decimals: 0 }}
-      interaction={{ haptics: true, tooltip: true }}
+      interaction={{ haptics: true }}
     />
   )
 }
@@ -1637,9 +1731,10 @@ export const Price = ({ prices, categories }: PriceProps) => {
       <Text>{selection ? categories[selection.index] : 'Today'}</Text>
       <Chart.Line
         categories={categories}
-        interaction={{ crosshair: 'x', haptics: true, marker: marker.segment(), tooltip: false }}
+        interaction={{ crosshair: 'x', haptics: true, marker: marker.segment() }}
         onInteraction={onInteraction}
         series={[{ id: 'price', label: 'Price', values: prices }]}
+        tooltip={false}
       />
     </>
   )
@@ -1659,9 +1754,6 @@ type ChartScrubSelection = {
   /** Position of the mark in the chart's own data order. */
   index: number
   category?: string
-  /** Where the finger is, in the chart view's own coordinate space. */
-  nativeX?: number
-  nativeY?: number
   value?: number
 }
 
@@ -1671,19 +1763,19 @@ type ChartInteractionRange = {
   endIndex: number
   startCategory?: string
   endCategory?: string
-  /** Where each end's mark sits, in the chart view's own coordinate space. */
-  startX?: number
-  endX?: number
 }
 ```
 
 **A second finger moves the reading from `selection` to `range`.** Turn on `interaction.range` and
-two fingers report the span between them — `startIndex` and `endIndex` in data order, plus where
-each end's mark landed, so a total can sit over the bars it covers rather than be positioned from
-the plot's width and a guess at the axis padding. Only ever one of the two is set, so a headline
-can show a value or a total without deciding which report arrived last, and a finger lifted from a
-pair goes back to a single reading with no gesture ending in between. iOS and Android only: a
-pointer has no second finger, and the web keeps `range` at `null`.
+two fingers report the span between them — `startIndex` and `endIndex` in data order. Only ever one
+of the two is set, so a headline can show a value or a total without deciding which report arrived
+last, and a finger lifted from a pair goes back to a single reading with no gesture ending in
+between. iOS and Android only: a pointer has no second finger, and the web keeps `range` at `null`.
+
+**A view over the span is `rangeView`, not something to position.** The chart centres your node on
+the middle of what is held and keeps it inside the plot at either end, in the pass it draws the span
+in — where the span reaches is never reported, because a card placed from your own render arrives
+after the fingers have moved on.
 
 **What the span looks like is `interaction.rangeStyle`, not something to hand back.** The two
 indices are for your words — a total, a delta, the dates at each end. The stretch itself, the step
@@ -1715,16 +1807,41 @@ export const Price = ({ prices, categories }: PriceProps) => {
 }
 ```
 
-**`geometry` is the way down when a view is not on an annotation.** It reports the plot's box
-and every annotation's `x`/`y` in the chart's own coordinates, so a card can follow the finger
-with `selection.nativeX` — which is the one thing `annotationViews` cannot place for you. An
-annotation that is only an anchor for such a view takes `hidden: true`: measured and reported as
-usual, drawn by nobody.
+**Write `{align, view}` when the default place is not the one you want.** A rule that runs down the
+plot is a mark with a height of its own, so `'top'`, `'center'` and `'bottom'` are its head, its
+middle and its foot — and its head is what a view gets unless it asks, because that is where the
+chart's own badge goes. A point and a rule that runs across are spots rather than runs, so the three
+read as on the mark, above it and below it, and `'center'` is what they get unasked.
+
+```tsx
+annotationViews={{
+  // Halfway down the rule rather than capping it.
+  earnings: { align: 'center', view: EarningsChip },
+  // Sitting on the point rather than centred over it.
+  live: { align: 'top', view: LiveBadge },
+}}
+```
+
+**`geometry` is the way down for a view that stays put.** It reports the plot's box and every
+annotation's `x`/`y` in the chart's own coordinates, which is what a grid behind the marks, a row of
+labels under them or a button on a rule is laid out from. An annotation that is only an anchor for
+such a view takes `hidden: true`: measured and reported as usual, drawn by nobody.
+
+**For a view that follows the finger, it is the wrong tool.** Nothing reports where a reading is,
+because a position laid out from your own render arrives after the crosshair it belongs beside.
+`tooltip` and `rangeView` are the way: the chart mounts your node and moves it in the pass it draws
+the reading in.
 
 ```tsx
 'use client'
 
-import { annotation, Chart, useChartScrub } from '@hzblj/zyplot'
+import { annotation, Chart, tooltip, useChartScrub } from '@hzblj/zyplot'
+
+// A component, so the config holding it is the same value on every render: what the card says can
+// change without a single prop on the chart changing with it.
+// `align` says where down the plot it sits — left out it goes against the top, where a card read
+// as belonging to the reading belongs.
+const reading = tooltip.beside({ align: 'center', view: EventCard })
 
 export const Price = ({ prices, categories }: PriceProps) => {
   const { geometry, onInteraction, selection } = useChartScrub()
@@ -1732,16 +1849,19 @@ export const Price = ({ prices, categories }: PriceProps) => {
 
   return (
     <View>
-      <Chart.Line
-        annotations={[
-          // No badge: the rule is the chart's, the head is yours.
-          annotation.line({ axis: 'x', dash: [2, 4], id: 'dividend', value: '12 Jul' }),
-        ]}
-        categories={categories}
-        interaction={{ crosshair: 'x', haptics: true, tooltip: false }}
-        onInteraction={onInteraction}
-        series={[{ id: 'price', label: 'Price', values: prices }]}
-      />
+      <ReadingProvider selection={selection}>
+        <Chart.Line
+          annotations={[
+            // No badge: the rule is the chart's, the head is yours.
+            annotation.line({ axis: 'x', dash: [2, 4], id: 'dividend', value: '12 Jul' }),
+          ]}
+          categories={categories}
+          interaction={{ crosshair: 'x', haptics: true }}
+          onInteraction={onInteraction}
+          series={[{ id: 'price', label: 'Price', values: prices }]}
+          tooltip={reading}
+        />
+      </ReadingProvider>
 
       {dividend ? (
         <Pressable
@@ -1750,10 +1870,6 @@ export const Price = ({ prices, categories }: PriceProps) => {
         >
           <Text>D</Text>
         </Pressable>
-      ) : null}
-
-      {selection ? (
-        <Card left={selection.nativeX} rows={events[selection.index]} />
       ) : null}
     </View>
   )
@@ -1916,9 +2032,11 @@ The cartesian forms — line, area, bar, stacked bar and candlestick — additio
 | `axis` | `ChartAxes` | `{ x: true, y: true }` | Horizontal and vertical axis visibility. |
 | `animation` | `NativeChartAnimation` | — | Mark entrance, traced reveal and data-update animation. |
 | `annotations` | `NativeChartAnnotation[]` | — | Reference lines, highlighted ranges, points and text anchored to the plot. |
-| `annotationViews` | `Record<string, ReactNode>` | — | Your own node where an annotation lands, keyed by its `id`. The chart centres it on the spot and draws no mark of its own there. |
-| `interaction` | `NativeChartInteraction` | — | Hover, crosshair, marker, tooltip, selection, pan and zoom behaviour. |
-| `onInteraction` | `(event: ChartInteractionEvent) => void` | — | Receives normalized pointer and selection data. Needs a client component. |
+| `annotationViews` | `Record<string, ChartSlotView>` | — | Your own node where an annotation lands, keyed by its `id`, or written as `view` on the annotation itself in a `zyplot` config. A point with one is not drawn at all, because the view is the mark; a rule keeps its line and loses the badge and label it would have worn, because the view caps it. A rule's view runs from the plot's edge, centred only across the rule. |
+| `tooltip` | `boolean \| ChartTooltip` | `true` | What appears for the reading, in one setting — there is no second switch anywhere. Left out or `true`, the chart writes its own card; `false` draws nothing, which is the answer whenever a readout of your own is above the plot; a `tooltip.beside({view})` or `tooltip.above({view})` hands over your own view, which the chart mounts inside itself and moves in its own layout pass, so it keeps up with the crosshair instead of trailing a render behind it — and it takes the place of the card, or of `crosshairStyle.labels` when placed above. The `view` is optional, so a placement can be declared on its own as a preset and the view spread in where it is known; on its own it changes nothing the chart draws, since the card the chart writes itself keeps its own placement. `beside()` sets it next to the reading inside the plot and flips it at the edge, which is what a card of rows wants, and its `align` says where down the plot it sits — `'top'` by the gap, `'center'` for halfway, `'bottom'` against the floor; `above()` centres it on the reading and lifts it clear of the plot, which is where the rule's chip goes, so it takes a `lift` rather than an `align`. Takes `gap` and `lift` respectively. |
+| `rangeView` | `ChartSlotView` | — | Your own node for the span under two fingers, centred on it and lifted clear of the plot. The chart writes nothing for a span of its own, so this adds rather than replaces. Needs `interaction.range`, and a second finger — the web never places it. |
+| `interaction` | `NativeChartInteraction` | — | Hover, crosshair, marker, selection and zoom behaviour. `interaction.scrub()` presets it for a reading under a finger: an x crosshair, haptics and the nearest mark. What appears for the reading is the `tooltip` prop's to say. |
+| `onInteraction` | `ChartInteractionHandler` | — | Receives normalized pointer and selection data. Needs a client component. |
 | `plot` | `ChartPlotStyle` | — | The plot area alone — its own background, border, clipping and padding, inside the surface. |
 | `xAxis` | `NativeChartAxisOptions` | — | Scale, domain, ticks, grid, position and label for the horizontal axis. |
 | `yAxis` | `NativeChartAxisOptions` | — | The same for the vertical axis. |
@@ -2260,12 +2378,14 @@ things in the presentation vocabulary that exist because of it.
 - `feature-charts/kraken-chart.tsx` — the price trace: a dotted fill fading to the plot's floor, a
   grey rule on that floor standing in for the axis, a dashed rule at the latest price, and a haloed
   point on the last reading.
-- `feature-charts/kraken-chart-style.ts` — `fill({fadeTo, pattern: 'dots', spacing})` for the grid,
-  and `marker.trail` for a scrub that lights the trace up to the finger and dims the rest. The dot
-  opacity is resolved per scheme: ink on paper carries at a fraction of what light on black needs.
-  The times above the crosshair are handed over here too, as `crosshairStyle.labels` — one string
-  per slot, because a label pinned to a moving line has to be drawn by whoever draws the line or it
-  trails it by a frame.
+- The whole chart is one `zyplot(z => ({…}))` in that file: `z.fill({fadeTo, pattern: 'dots',
+  spacing})` for the grid, and `z.interaction.scrub({marker: z.marker.trail()})` for a scrub that
+  lights the trace up to the finger and dims the rest. The times above the crosshair are handed over
+  with it as `crosshairStyle.labels` — one string per slot, because a label pinned to a moving line
+  has to be drawn by whoever draws the line or it trails it by a frame.
+- `feature-charts/kraken-chart-style.ts` — the numbers the config reads: the dot size and opacity per
+  scheme, since ink on paper carries at a fraction of what light on black needs, the rule dashes, the
+  plot insets and the domain's headroom.
 - `apps/example/use-kraken-readout.ts` — the change is measured from the window open, while the
   dashed rule sits at the latest price. Two different questions, two different numbers.
 - `apps/example/kraken-coin.ios.tsx` / `kraken-coin.android.tsx` — one screen per platform: SwiftUI
@@ -2285,19 +2405,23 @@ over a beat, and both of those exist in the library because of this screen.
 - `feature-charts/family-chart.tsx` — the price trace, full-bleed with both axes hidden, a pulsing
   point on the latest reading, and room kept at the end of the plot for it on the two windows that
   close on now.
-- `feature-charts/family-chart-style.ts` — `animation({transition: 'morph', reveal: reveal.draw()})`
+- In that file's `zyplot` config: `z.animation({transition: 'morph', reveal: z.reveal.draw()})`
   interpolates a resting wave into the window that lands, so the placeholder is the same chart with
   other values rather than a skeleton swapped for one. The wave is laid inside the price window's own
   `yAxis.domain`, so it changes shape without travelling. A custom `skeleton` is a web-only prop,
   which is the other reason the placeholder has to be the chart itself.
-- `feature-charts/family-chart-style.ts` — `interaction({dimDuration, dimOpacity})` steps the rest of
-  the trace back over a beat instead of at the touch, and `marker.trail({dot: true})` lights the
-  stretch up to the reading with the reading's own dot at its head. The lighting is put down with the
-  step back rather than with the finger: dropped when the touch lifts, the part of the trace that was
-  never dimmed would come back up with the rest of it and the whole chart would flash.
-- `feature-charts/family-chart-style.ts` — `crosshairStyle` carries the chip: `labels` is one stamp
-  per slot, and `labelBackground` with `labelPadding` is what makes the label a pill rather than bare
-  text. `tooltip: false`, because the web draws one unless told not to and the header is the readout.
+- `z.interaction.scrub({dimDuration, dimOpacity})` steps the rest of the trace back over a beat
+  instead of at the touch, and `z.marker.trail({dot: true})` lights the stretch up to the reading with
+  the reading's own dot at its head. The lighting is put down with the step back rather than with the
+  finger: dropped when the touch lifts, the part of the trace that was never dimmed would come back up
+  with the rest of it and the whole chart would flash.
+- `crosshairStyle.labels` is one stamp per slot, placed by whoever draws the line. The pill around
+  them is the screen's own view, named in the chart's config as
+  `tooltip.above({lift: 2, view: FamilyReadingChip})`, so styling it is styling a view. The scrub preset turns the
+  the config says `tooltip: false`, because the web draws a card unless told not to and the header is
+  the readout.
+- `feature-charts/family-chart-style.ts` — what the screen shares with the chart: the timings, the
+  resting opacity the placeholder holds, the plot insets, the wave and the price domain it is laid in.
 - `apps/example/use-family-readout.ts` — `useChartScrub` turns the reading into the price, the delta
   and the percentage above the plot; `useLastReading` finds the slot the live dot belongs on, which is
   not the last slot on the axis.
@@ -2317,19 +2441,20 @@ changes, and a scale that would rather sit inside the plot than beside it.
 
 - `feature-charts/steps-chart.tsx` — the bars, with the counts overlaid inside the plot and the
   dates named rather than left to the renderer.
-- `feature-charts/steps-chart-style.ts` — `axis.overlay({grid: true, labelInset, tickValues})` writes
-  two gridlines' worth of counts against the plot's trailing edge and reserves no gutter, so the bars
-  keep the full width. Round numbers above the tallest bar, and two of them: the reader is comparing
-  bars with each other, so a third rule only adds ink. The x axis names `labelInset` for a different
-  reason — each renderer keeps a gap of its own under the label row, Swift Charts the tightest of the
-  three — and `plotDimensionStartPadding` is the wider of the two paddings, because the overlaid
-  counts already give the trailing edge air.
-- `feature-charts/steps-chart-style.ts` — `animation({reveal: reveal.fade()})` with no `transition`:
-  thirty bars and seven have no pairs to morph between, and holding the outgoing set on screen to
-  dissolve it reads as two charts at once. No `delay` either, since a window switch is a tap being
-  answered. `interaction({range: true, tooltip: isWeb})` is the reading — two fingers on iOS and
-  Android, and on the web the chart's own tooltip card, because `Chart.Bar` reports no scrub there for
-  a headline to follow.
+- In that file's `zyplot` config: `z.axis.overlay({grid: true, labelInset, tickValues})` writes two
+  gridlines' worth of counts against the plot's trailing edge and reserves no gutter, so the bars keep
+  the full width. Round numbers above the tallest bar, and two of them: the reader is comparing bars
+  with each other, so a third rule only adds ink. The x axis names `labelInset` for a different reason
+  — each renderer keeps a gap of its own under the label row, Swift Charts the tightest of the three —
+  and `plotDimensionStartPadding` is the wider of the two paddings, because the overlaid counts
+  already give the trailing edge air. `z.interaction({range: true})` with `tooltip: isWeb` is the
+  reading: two fingers on iOS and Android, and on the web the chart's own card, because `Chart.Bar`
+  reports no scrub there for a headline to follow.
+- `feature-charts/steps-chart-style.ts` — the scale's round numbers, and `stepsArrival`, a `zyplot`
+  preset both charts spread into their own config: `z.animation({reveal: z.reveal.fade()})` with no
+  `transition`, because thirty bars and seven have no pairs to morph between and holding the outgoing
+  set on screen to dissolve it reads as two charts at once. No `delay` either, since a window switch
+  is a tap being answered.
 - `feature-charts/steps-cumulative-chart.tsx` — the highlight card below the plot: the day so far
   against a usual day, smoothed, both axes hidden, `plot={{clip: false}}` so the end dots sit astride
   the last reading, and a `yAxis.domain.min` below zero for air under the flat first hours. Its axis
@@ -2353,23 +2478,25 @@ up with the plot to the pixel and none of which the chart draws.
 - `feature-charts/stocks-chart.tsx` — the price trace: a solid `fill({fadeTo})` that gathers under
   the line and lets go of the floor, no time axis at all, `plotDimension*Padding` of `0` on both axes
   so the trace runs corner to corner, and `plot={{clip: false}}` so it reaches that floor.
-- `feature-charts/stocks-chart-style.ts` — `annotation.point({hidden: true, size: 0})` at each dated
-  tick, each price rule and the far corner. A `hidden` annotation is drawn by nobody and still
-  measured, and an annotation lands where its *data* lands on all three renderers — which is the only
-  exact answer to where the plot's box is, since the reported plot rect is not the same number on
-  every one of them: the web bakes the axis padding into it, the native ones keep it inside the frame.
-  `plotGrid(geometry)` reads the marks back, and the grid, the dates and the tape are placed off them.
-  Those coordinates are the chart's own, so the views have to sit in the chart's own box and the
-  screen's gutters have to go on its parent.
+- In that file's `zyplot` config: `z.annotation.measure()` at each dated tick, each price rule and
+  the far corner — the point builder with `hidden` and `size: 0` already set. A hidden annotation is
+  drawn by nobody and still measured, and an annotation lands where its *data* lands on all three
+  renderers — which is the only exact answer to where the plot's box is, since the reported plot rect
+  is not the same number on every one of them: the web bakes the axis padding into it, the native ones
+  keep it inside the frame. `plotGrid(geometry)` reads the marks back, and the grid, the dates and the
+  tape are placed off them. Those coordinates are the chart's own, so the views have to sit in the
+  chart's own box and the screen's gutters have to go on its parent.
+- `z.interaction.scrub({dimOpacity: 1, rangeStyle})` is the reading — one finger takes the trace
+  whole, since a dimmed line under a crosshair reads as disabled when there is only one line, and two
+  fingers hand the split to the chart: the held stretch in its own direction through
+  `color`/`downColor`, the rest of the period behind it at `rangeStyle.dimOpacity`, a dot at each end.
+  Nothing about a held span reaches the props, so a span moving costs no chart.
+  `z.animation({enabled: false, initial: false, updates: false})`, because the sheet opens on a price
+  that is already true.
 - `feature-charts/stocks-chart-style.ts` — `axis.end({grid: false, tickValues})` is the price ladder:
   a gutter on the trailing edge, four rules down from the high and evenly across the data, drawing no
-  rules itself because the rules are the screen's. `interaction({dimOpacity: 1, rangeStyle})` is the
-  reading — one finger takes the trace whole, since a dimmed line under a crosshair reads as disabled
-  when there is only one line, and two fingers hand the split to the chart: the held stretch in its
-  own direction through `color`/`downColor`, the rest of the period behind it at
-  `rangeStyle.dimOpacity`, a dot at each end. Nothing about a held span reaches the props, so a span
-  moving costs no chart. `animation({enabled: false, initial: false, updates: false})`, because the
-  sheet opens on a price that is already true.
+  rules itself because the rules are the screen's. The domain, the ladder's rungs and the tick
+  positions the screen's own rows are placed on live here too, since the screen reads them as well.
 - `feature-charts/stocks-ticker-spark.tsx` — one line per row of the tape with the opening level
   dashed across it. A `Chart.Line` rather than `Chart.Sparkline`, whose axes cannot be turned off: its
   web props carry no axis at all and iOS defaults both to drawn, so it arrives with a scale around it.

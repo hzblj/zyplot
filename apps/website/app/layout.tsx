@@ -1,6 +1,6 @@
 import './styles.css'
 
-import {AnalyticsEvents, HERO_HEADLINE, HERO_LEDE} from '@zyplot/feature-website'
+import {AnalyticsEvents, HERO_HEADLINE, HERO_LEDE, THEME_SCRIPT, ThemeSync} from '@zyplot/feature-website'
 import type {Metadata} from 'next'
 import localFont from 'next/font/local'
 import Script from 'next/script'
@@ -86,11 +86,9 @@ export default function RootLayout({children}: Readonly<{children: ReactNode}>) 
       suppressHydrationWarning
     >
       <head>
-        <Script id="theme" strategy="beforeInteractive">
-          {
-            'try{const t=localStorage.getItem("zyplot-theme");const d=t==="dark"||(!t&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d);document.documentElement.classList.toggle("light",!d)}catch{}'
-          }
-        </Script>
+        {/* Inline and not `next/script`: even `beforeInteractive` is queued for the client runtime,
+            which lands after the first paint. This has to run before the body is parsed. */}
+        <script dangerouslySetInnerHTML={{__html: THEME_SCRIPT}} />
       </head>
       <body
         style={{
@@ -98,6 +96,7 @@ export default function RootLayout({children}: Readonly<{children: ReactNode}>) 
         }}
       >
         {children}
+        <ThemeSync />
         <AnalyticsEvents />
         {process.env.NODE_ENV === 'production' && (
           <>

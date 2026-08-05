@@ -121,19 +121,31 @@ const plotProps: PropRow[] = [
   },
   {
     description:
-      'Your own node where an annotation lands, keyed by its id. The chart centres it on the spot and draws no mark of its own there.',
+      'Your own view where an annotation lands, keyed by its id. A point with one is not drawn at all — the view is the mark. A rule keeps its line and loses the badge and label it would have worn, since the view caps it. A rule’s view runs from the plot’s edge, centred only across the rule. Written as view on the annotation itself in a zyplot config.',
     name: 'annotationViews',
-    type: 'Record<string, ReactNode>',
+    type: 'Record<string, ChartSlotView>',
   },
   {
-    description: 'Hover, crosshair, marker, tooltip, selection, pan and zoom behaviour.',
+    description:
+      'What appears for the reading, in one setting. Left out or true, the chart writes its own card. false draws nothing. A tooltip.beside({view}) or tooltip.above({view}) is your own view instead, mounted in the plot and moved with the finger by the chart itself — and it takes the place of the card, or of the rule’s own label when placed above.',
+    name: 'tooltip',
+    type: 'boolean | ChartTooltip',
+  },
+  {
+    description:
+      'Your own view for the span under two fingers, centred on it and lifted clear of the plot. iOS and Android only.',
+    name: 'rangeView',
+    type: 'ChartSlotView',
+  },
+  {
+    description: 'Hover, crosshair, marker, tooltip, selection and zoom behaviour.',
     name: 'interaction',
     type: 'NativeChartInteraction',
   },
   {
     description: 'Receives normalized pointer and selection data. Needs a client component.',
     name: 'onInteraction',
-    type: '(event: ChartInteractionEvent) => void',
+    type: 'ChartInteractionHandler',
   },
   {
     description: 'The plot area alone — its own background, border, clipping and padding, inside the surface.',
@@ -1093,6 +1105,7 @@ const guidePages = [
 const guidePageHeadings: Record<string, {id: string; label: string}[]> = {
   builders: [
     {id: 'builders', label: 'Builders'},
+    {id: 'builder-zyplot', label: 'zyplot'},
     {id: 'builder-series', label: 'series and seriesProps'},
     {id: 'builder-annotation', label: 'annotation'},
     {id: 'builder-axis', label: 'axis'},
@@ -1345,7 +1358,7 @@ export const DocsPage = ({
             ]}
           />
           <p>
-            All four carry the <Link href="/docs/builders">builders</Link> and{' '}
+            All four carry <Link href="/docs/builders">zyplot</Link>, the builders it hands out and{' '}
             <Link href="/docs/hooks/use-last-reading">
               <code>useLastReading</code>
             </Link>
@@ -1792,20 +1805,32 @@ type ChartTransition = 'crossfade' | 'morph'`}</CodeBlock>
             position your own views over the plot with. All three are reported on the web too, from the pointer.
           </p>
           <p>
-            Every coordinate in an event — <code>geometry</code> and the pointer's <code>nativeX</code>/
-            <code>nativeY</code> — is in the unit the platform lays views out in: points on iOS, dp on Android, px on
-            the web. So a view positioned from one lands where the chart drew, with no density arithmetic in between.
+            An event says what is being read, never where the finger is. A reading moves many times a mark, and a
+            position that crossed into your code to be laid out again would always land a render after the crosshair it
+            belongs beside — so views that follow a reading are ones the chart mounts and moves itself, through{' '}
+            <code>tooltip</code> and <code>rangeView</code>.
+          </p>
+          <p>
+            <code>geometry</code> is the exception, and it is a layout report rather than a reading: it arrives once the
+            chart has measured itself and moves when the chart does, not when a finger does. Its coordinates are in the
+            unit the platform lays views out in — points on iOS, dp on Android, px on the web — so a grid or a row of
+            labels laid against the plot lands where the chart drew, with no density arithmetic in between.
           </p>
           <CodeBlock>{`type ChartInteractionPhase = 'began' | 'changed' | 'ended' | 'layout'
 
-type ChartInteractionEvent = {
-  /** Position of the selected mark in the chart’s own data order. */
-  index?: number
-  phase?: ChartInteractionPhase
-  /** Where the plot and its annotations sit, on the "layout" phase. */
-  geometry?: ChartGeometry
-  // … plus category, value, seriesId and the pointer position
-}
+/** Discriminated by phase: test it and the field that phase is about stops being optional. */
+type ChartInteractionEvent =
+  | (Fields & { phase: 'layout'; geometry: ChartGeometry })
+  | (Fields & { phase: 'ended' })
+  | (Fields & { phase: 'began' | 'changed'; index: number })
+  | (Fields & { phase: 'began' | 'changed'; range: ChartInteractionRange })
+  /** A click or hover on a form with no scrub layer, which the web reports without a phase. */
+  | (Fields & { phase?: undefined })
+
+/** Every field an event can carry — index, category, value, seriesId, the pointer position. */
+type Fields = { index?: number; category?: string; /* … */ }
+
+type ChartInteractionHandler = (event: ChartInteractionEvent) => void
 
 type ChartGeometry = {
   annotations: readonly { id: string; x: number; y: number }[]
@@ -1841,20 +1866,11 @@ type ChartRangeStyle = {
 type ChartCrosshairStyle = {
   color?: string
   dash?: number[]
-  /** What to write above the crosshair: one string per slot, in data order. */
+  /**
+   * What to write above the crosshair: one string per slot, in data order. Drawn in the theme’s
+   * label colour. To make it anything else, hand the chart your own view with tooltip.view.
+   */
   labels?: string[]
-  /** Painted behind the label, which makes the words a chip. */
-  labelBackground?: string
-  /** Defaults to the theme’s label colour. */
-  labelColor?: string
-  /** The gap between the label and the top of the plot. Default 8. */
-  labelLift?: number
-  /** How far the chip reaches past its text. Default {x: 10, y: 5}. */
-  labelPadding?: number | {x?: number; y?: number}
-  /** Corner radius of the chip. Defaults to half its height. */
-  labelRadius?: number
-  /** Point size of the label. Default 13. */
-  labelSize?: number
   width?: number
 }`}</CodeBlock>
           <PropsTable
@@ -1921,41 +1937,6 @@ type ChartCrosshairStyle = {
                   'What the crosshair writes above the plot: one string per slot, in data order, and the chart draws the one for the mark being read. Your words — a time, a date, whatever the reading is called.',
                 name: 'crosshairStyle.labels',
                 type: 'string[]',
-              },
-              {
-                description: 'Colour of that label. Defaults to the theme’s label colour on all three renderers.',
-                name: 'crosshairStyle.labelColor',
-                type: 'string',
-              },
-              {
-                defaultValue: '13',
-                description:
-                  'Point size of the label. What the web plot gives up at the top is this plus the chip’s vertical padding and labelLift, so the room and the text cannot drift apart.',
-                name: 'crosshairStyle.labelSize',
-                type: 'number',
-              },
-              {
-                description:
-                  'Painted behind the label, which makes the words a chip. Sized by labelPadding and rounded by labelRadius.',
-                name: 'crosshairStyle.labelBackground',
-                type: 'string',
-              },
-              {
-                defaultValue: '{x: 10, y: 5}',
-                description: 'How far the chip reaches past its text. A single number pads both ways.',
-                name: 'crosshairStyle.labelPadding',
-                type: 'number | {x, y}',
-              },
-              {
-                description: 'Corner radius of the chip. Defaults to half its height, so it ends in a round cap.',
-                name: 'crosshairStyle.labelRadius',
-                type: 'number',
-              },
-              {
-                defaultValue: '8',
-                description: 'The gap between the label and the top of the plot.',
-                name: 'crosshairStyle.labelLift',
-                type: 'number',
               },
               {
                 defaultValue: 'false',
@@ -2042,9 +2023,22 @@ type ChartCrosshairStyle = {
               },
               {
                 description:
-                  'Your own node where an annotation lands, keyed by its id. The chart centres it on the spot and leaves out the mark it draws there itself.',
+                  'Your own view where an annotation lands, keyed by its id. A point with one is not drawn at all, because the view is the mark; a rule keeps its line and loses the badge and label it would have worn, because the view caps it. A rule’s view runs from the plot’s edge, centred only across the rule — size it from geometry.plot, which arrives on layout rather than on every step of the finger. In a zyplot config it is written as view on the annotation, and lifted in here for you.',
                 name: 'annotationViews',
-                type: 'Record<string, ReactNode>',
+                type: 'Record<string, ChartSlotView>',
+              },
+              {
+                defaultValue: 'true',
+                description:
+                  'What appears for the reading, in one setting — there is no second switch anywhere. Left out or true, the chart writes its own card. false draws nothing, which is the answer whenever a readout of your own is above the plot. A tooltip.beside({view}) or tooltip.above({view}) hands over your own view, which the chart mounts inside itself and moves in its own layout pass, so it keeps up with the crosshair instead of trailing a render behind it: beside() sets it next to the reading inside the plot and flips it at the edge, which is what a card of rows wants, and its align says where down the plot it sits — top by the gap, center for halfway, bottom against the floor; above() centres it on the reading and lifts it clear of the plot, which is where the rule’s chip goes and where it takes the place of crosshairStyle.labels, so it takes a lift rather than an align. The view is optional, so a placement can be declared on its own as a preset and the view spread in where it is known — on its own it changes nothing the chart draws, since the card the chart writes itself keeps its own placement.',
+                name: 'tooltip',
+                type: 'boolean | ChartTooltip',
+              },
+              {
+                description:
+                  'Your own view for the span under two fingers, centred on it and lifted clear of the plot. The chart writes nothing for a span of its own, so this adds rather than replaces. Needs interaction.range, and a second finger — the web never places it.',
+                name: 'rangeView',
+                type: 'ChartSlotView',
               },
               {
                 defaultValue: 'false',
@@ -2064,18 +2058,29 @@ type ChartCrosshairStyle = {
             a shimmer. So <code>crosshairStyle.labels</code> hands the words to whoever is drawing the line, and{' '}
             <code>marker.dot</code> does the same for the dot on the reading. All three renderers keep the label whole
             against both edges of the chart, so the first and last readings of a series are worth a full label rather
-            than half of one, and on the web the plot gives up the label’s height plus <code>labelLift</code> at the top
-            to draw it in — only when labels were given and a crosshair is drawn at all, and whether or not a pointer is
-            over the plot: marks that changed height the moment one arrived would be worse than either.
+            than half of one, and on the web the plot gives up room at the top to draw it in — only when labels were
+            given and a crosshair is drawn at all, and whether or not a pointer is over the plot: marks that changed
+            height the moment one arrived would be worse than either.
           </div>
           <div className={styles.note()}>
-            <strong>You can still draw the chip yourself.</strong> Nothing stops you: take the plot rect and the
-            annotation spots out of <code>geometry</code>, put your own view on them, and it will be as much yours as
-            any other component — which is the way to go for a readout the options cannot describe. Know what it costs
-            first. It is the round trip above, and it shows most on the thing nearest the finger, so style the built-in
-            chip where you can — <code>labelBackground</code>, <code>labelPadding</code>, <code>labelRadius</code> and{' '}
-            <code>labelLift</code> are there to make it the chip your design asked for — and keep your own views for
-            what sits still.
+            <strong>The chip is yours to draw, and it costs nothing to.</strong> That round trip is what{' '}
+            <code>tooltip.view</code> is for: hand the chart a view and the chart mounts it inside itself and moves it
+            there, so it keeps up with the crosshair the way the crosshair keeps up with the finger. Which is why the
+            built-in label has no chip fields — styling it is styling a view, and there is no reason to describe a pill
+            twice.
+          </div>
+          <div className={styles.note()}>
+            <strong>A slot takes an element or a component.</strong> An element is a new value on every render, so a{' '}
+            <Link href="/docs/builders#builder-zyplot">
+              <code>zyplot</code>
+            </Link>{' '}
+            config holding one is rebuilt on every render with it. Name a component instead —{' '}
+            <code>
+              tooltip: z.tooltip.above({'{'}view: ReadingChip{'}'})
+            </code>{' '}
+            — and the config is the same value for the life of the module: the chart is rendered with no props of its
+            own, and what the chip says comes from its own hooks. That is the difference between a reading that
+            re-renders the chart and one that re-renders a chip.
           </div>
           <div className={styles.note()}>
             <strong>
@@ -2307,11 +2312,6 @@ export function Price() {
                 name: 'xAxis.visibleDomain',
                 type: 'number',
               },
-              {
-                description: 'Initial scroll offset along the x axis.',
-                name: 'xAxis.scrollPosition',
-                type: 'number | string',
-              },
             ]}
           />
         </section>
@@ -2332,7 +2332,7 @@ export function Spend() {
     <Chart.Waterfall
       data={movements}
       format={{ prefix: '$', decimals: 0 }}
-      interaction={{ haptics: true, tooltip: true }}
+      interaction={{ haptics: true }}
     />
   )
 }`}</CodeBlock>
@@ -3018,6 +3018,15 @@ type ChartAxisDomain = {
             instead, wherever the named readings happen to fall. So a plot that leans on exactly two rules asks for them
             with <code>tickCount</code>, or switches <code>grid</code> off and draws them as annotations.
           </div>
+          <div className={styles.note()}>
+            <strong>Four of these are the web renderer&rsquo;s alone.</strong> <code>scale</code> and{' '}
+            <code>reversed</code> are read on the web and nowhere else; <code>gridDash</code> is read on the web and
+            iOS, and Android draws a solid rule whatever it is given; <code>position: &apos;end&apos;</code> moves the
+            web and iOS axes, while Android honours it on the y axis alone. Going the other way,{' '}
+            <code>plot.borderRadius</code> rounds a native plot and does nothing on the web, and <code>plot.clip</code>{' '}
+            is read on iOS and by the web&rsquo;s line, area, bar and stacked bar &mdash; not by Android. The type
+            accepts all of them everywhere; these are the places it is writing a cheque the renderer does not cash.
+          </div>
 
           <h3 id="annotations">Annotations</h3>
           <p>
@@ -3069,7 +3078,6 @@ type ChartPointAnnotation = {
   y: number
   label?: string
   color?: string
-  symbol?: ChartSymbol
 }
 
 type ChartTextAnnotation = {
@@ -3092,11 +3100,8 @@ type ChartTextAnnotation = {
   hover?: ChartHoverMode
   /** "both" | "x" | "y" | "none" */
   crosshair?: ChartCrosshairMode
-  /** Default true: every renderer draws its own card unless it is told not to. */
-  tooltip?: boolean
   /** "single" | "multiple" | "none" */
   selection?: ChartSelectionMode
-  pan?: boolean
   zoom?: boolean
   /** Whether a hovered mark grows. Read on the web candlestick, which scales by its own amount. */
   highlightScale?: number
@@ -3133,26 +3138,31 @@ type ChartTextAnnotation = {
   rangeStyle?: ChartRangeStyle
 }
 
-type ChartInteractionEvent = {
+/** Every field an event can carry. Each is optional, so one can be read without narrowing first. */
+type ChartInteractionFields = {
   seriesId?: string
   category?: string
   value?: number
-  x?: number
-  y?: number
-  /** Unix seconds, on the time-based forms. */
-  timestamp?: number
-  /** Pointer position in the chart's own coordinate space. */
-  nativeX?: number
-  nativeY?: number
   /** Position of the read mark in the chart's own data order. */
   index?: number
-  /** "began" | "changed" | "ended" | "layout" */
-  phase?: ChartInteractionPhase
   /** Where the plot and its annotations sit, on the "layout" phase. */
   geometry?: ChartGeometry
   /** The span under two fingers, when interaction.range is on and both are down. */
   range?: ChartInteractionRange
-}`}</CodeBlock>
+}
+
+/**
+ * Discriminated by phase: test it and the field that phase is about stops being optional.
+ * The phase is absent on one path alone — a click or a hover on a form with no scrub layer.
+ */
+type ChartInteractionEvent =
+  | (ChartInteractionFields & { phase: 'layout'; geometry: ChartGeometry })
+  | (ChartInteractionFields & { phase: 'ended' })
+  | (ChartInteractionFields & { phase: 'began' | 'changed'; index: number })
+  | (ChartInteractionFields & { phase: 'began' | 'changed'; range: ChartInteractionRange })
+  | (ChartInteractionFields & { phase?: undefined })
+
+type ChartInteractionHandler = (event: ChartInteractionEvent) => void`}</CodeBlock>
           <div className={styles.note()}>
             <strong>A handler is a client boundary.</strong> Everything else on a chart is serializable data, so a
             server component can render it — <code>onInteraction</code> is the one prop that cannot cross, and the file
@@ -3171,13 +3181,13 @@ type ChartInteractionEvent = {
               },
               {
                 description:
-                  'All three, and on by default — pass false whenever a readout of your own is the answer, or the chart draws a card next to it.',
-                name: 'tooltip',
+                  'The reading itself is the tooltip prop, not part of this group. The web and Android draw a card by default; iOS draws one once the chart has asked for a gesture at all. Pass tooltip: false whenever a readout of your own is the answer, or the chart draws a card next to it.',
+                name: 'tooltip (prop)',
                 type: 'all three',
               },
               {
                 description:
-                  'The web picks the tooltip’s trigger and the emphasis from it. iOS and Android read only whether it is "none", as an off switch for the whole gesture.',
+                  'The web picks the tooltip’s trigger and the emphasis from it. iOS and Android read only whether it is "none", which switches the whole gesture off — nothing else the chart passes turns one back on.',
                 name: 'hover',
                 type: 'web · native as on/off',
               },
@@ -3208,12 +3218,6 @@ type ChartInteractionEvent = {
                   'Chart.Candlestick on the web, through ECharts’ inside zoom. Native decodes it and does nothing.',
                 name: 'zoom',
                 type: 'web candlestick',
-              },
-              {
-                description:
-                  'Nowhere yet. Chart.TimeSeries drag-zooms its x range on its own, which is uPlot’s default rather than either flag being read.',
-                name: 'pan',
-                type: 'not read',
               },
               {
                 description: 'iOS and Android. The web has no honest equivalent.',
@@ -3317,11 +3321,14 @@ type ChartAnimation = {
             compose, spread and serialize, and you can build your own presets on top of them.
           </p>
           <CodeBlock>{`import {
+  // A whole chart as one object, with every builder below handed to it.
+  zyplot,
   // Builders with variants, one function per variant.
   annotation,
   axis,
   marker,
   reveal,
+  tooltip,
   // A series and its styling, declared together.
   series,
   seriesProps,
@@ -3345,12 +3352,93 @@ type ChartAnimation = {
             native canvas.
           </div>
 
+          <h3 id="builder-zyplot">zyplot</h3>
+          <p>
+            <code>zyplot</code> takes a builder and hands it every one of these functions as <code>z</code>, so a whole
+            chart — its data, its axes, its arrival, the styling of each series — is one object with one import behind
+            it. What comes back is the props that chart takes, ready to spread, which is what makes a sample something
+            you can lift into an app as it stands.
+          </p>
+          <CodeBlock>{`import {Chart, zyplot} from '@hzblj/zyplot'
+
+const chart = zyplot(z => ({
+  animation: z.animation({ duration: 420, reveal: z.reveal.draw({ duration: 240 }) }),
+  annotations: [
+    z.annotation.line({ axis: 'y', dash: [1, 4], id: 'close', value: range.previousClose }),
+    // The app's own view for a mark goes on the mark, so its id is written once.
+    z.annotation.point({ id: 'live', view: LivePrice, x: live.category, y: live.value }),
+  ],
+  categories: range.categories,
+  interaction: z.interaction.scrub({ dimOpacity: 0.66, marker: z.marker.trail({ dot: true }) }),
+  series: [
+    z.series({
+      color: '#ff3b4a',
+      id: 'price',
+      label: 'Price',
+      style: { fill: z.fill({ fadeTo: 0.12, pattern: 'dots' }), strokeWidth: 2.3 },
+      values: range.values,
+    }),
+  ],
+  // The reading's own view, and where the chart puts it.
+  tooltip: z.tooltip.above({ lift: 2, view: ReadingChip }),
+  yAxis: z.axis.overlay({ format: z.format({ decimals: 2 }) }),
+}))
+
+<Chart.Line {...chart} />`}</CodeBlock>
+          <p>
+            What a series or an annotation carries for itself is lifted on the way out: <code>style</code> into{' '}
+            <code>seriesStyles</code>, <code>view</code> into <code>annotationViews</code>. Both of those props are
+            records keyed by an id declared elsewhere, which is a spelling of that id nothing checks — so the config
+            writes it once, beside the thing it belongs to, and the record is built for you. An explicit entry in either
+            record still wins over what the series or annotation named.
+          </p>
+          <p>
+            Nothing has to be in there. A config that leaves the data out is a preset, and the props you spread it under
+            fill in the rest — which is how several charts share one look, or a range switch keeps the styling and
+            changes only the values.
+          </p>
+          <CodeBlock>{`const scrubbing = zyplot(z => ({
+  interaction: z.interaction.scrub({ dimOpacity: 0.5, marker: z.marker.trail({ dot: true }) }),
+  plot: { clip: false },
+}))
+
+<Chart.Line {...scrubbing} categories={categories} series={series} />`}</CodeBlock>
+          <PropsTable
+            rows={[
+              {
+                description:
+                  'Calls the builder once and returns the props to spread onto a chart, with the series styling split out.',
+                name: 'zyplot(build)',
+                type: 'ZyplotChartProps',
+              },
+              {
+                description:
+                  'Every builder on this page, reached as z.annotation or z.reveal.draw: annotation, axis, marker, reveal, series and tooltip, plus the passthroughs animation, fill, format, glow, halo, interaction, plot, seriesStyle, surface and theme.',
+                name: 'z',
+                type: 'ZyplotFactories',
+              },
+            ]}
+          />
+          <div className={styles.note()}>
+            <strong>Name the form to be checked where you write it.</strong> Left plain, a config is checked where it is
+            spread — the same error, one file later. <code>zyplot&lt;LineChartProps&gt;(…)</code> checks it against that
+            form as you type and offers its fields to autocomplete, and{' '}
+            <code>zyplot&lt;Partial&lt;LineChartProps&gt;&gt;(…)</code> does the same for a preset that expects its data
+            at the call site.
+          </div>
+          <div className={styles.note()}>
+            <strong>Build it once.</strong> The object is rebuilt on every call, and a chart whose props change identity
+            re-serializes its whole dataset — over the bridge, on native. Declare it at module scope where nothing in it
+            depends on state, and wrap it in <code>useMemo</code> keyed on the data where it does.
+          </div>
+
           <h3 id="builder-series">series and seriesProps</h3>
           <p>
             <code>seriesStyles</code> is a record keyed by <code>ChartSeries.id</code>, which means styling a series
             normally spells its id twice — once on the series, once as the key — with nothing checking the two agree. A
             typo does not fail: it silently drops the styling. <code>series</code> declares both in one place and{' '}
-            <code>seriesProps</code> splits the list into the two props the chart takes.
+            <code>seriesProps</code> splits the list into the two props the chart takes — the same split{' '}
+            <code>zyplot</code> does, on its own, for a chart whose other props are already where you want them.
           </p>
           <CodeBlock>{`const lines = useMemo(
   () =>
@@ -3419,6 +3507,18 @@ type ChartAnimation = {
                 description: 'Free text on the plot. Omit x and y and the renderer places it.',
                 name: 'annotation.text',
                 type: 'ChartTextAnnotation',
+              },
+              {
+                description:
+                  'A point the chart measures and nobody draws, reported in geometry.annotations under its id. Takes id, x and y — for a view of your own that has to line up with the data exactly.',
+                name: 'annotation.measure',
+                type: 'NativeChartPointAnnotation',
+              },
+              {
+                description:
+                  'Your own view in place of the mark this annotation would have drawn, on any of them. zyplot lifts it into annotationViews keyed by this id, so the id is written once — and the chart keeps measuring the annotation and moving your view with the data. A point with a view is not drawn at all; a rule keeps its line and gives up its badge and label to the view that caps it.',
+                name: 'view',
+                type: 'ChartSlotView',
               },
             ]}
           />
@@ -3578,7 +3678,7 @@ const marketOpen = (category: string) =>
   }),
 })
 
-<Chart.Line interaction={{ ...scrubbing, tooltip: false }} … />`}</CodeBlock>
+<Chart.Line interaction={scrubbing} tooltip={false} … />`}</CodeBlock>
           <PropsTable
             rows={[
               {
@@ -3643,6 +3743,12 @@ export const priceLine = seriesStyle({
             rows={[
               {description: 'Entrance and data-change timing.', name: 'animation', type: 'NativeChartAnimation'},
               {description: 'Pointer and finger behaviour.', name: 'interaction', type: 'NativeChartInteraction'},
+              {
+                description:
+                  'The same group, preset for a reading under a finger: an x crosshair, haptics and the nearest mark rather than the axis slice. Anything you pass wins. What appears for the reading is the tooltip prop’s to say.',
+                name: 'interaction.scrub',
+                type: 'NativeChartInteraction',
+              },
               {description: 'Per-series overrides.', name: 'seriesStyle', type: 'NativeChartSeriesStyle'},
               {description: 'The drawing area inside the surface.', name: 'plot', type: 'ChartPlotStyle'},
               {description: 'The box the chart sits in.', name: 'surface', type: 'ChartSurface'},
@@ -3742,9 +3848,10 @@ export const Price = ({ prices, categories }: PriceProps) => {
       <Text>{selection ? categories[selection.index] : 'Today'}</Text>
       <Chart.Line
         categories={categories}
-        interaction={{ crosshair: 'x', haptics: true, marker: marker.segment(), tooltip: false }}
+        interaction={{ crosshair: 'x', haptics: true, marker: marker.segment() }}
         onInteraction={onInteraction}
         series={[{ id: 'price', label: 'Price', values: prices }]}
+        tooltip={false}
       />
     </>
   )
@@ -3785,9 +3892,6 @@ export const Price = ({ prices, categories }: PriceProps) => {
   /** Position of the mark in the chart’s own data order. */
   index: number
   category?: string
-  /** Where the finger is, in the chart view’s own coordinate space. */
-  nativeX?: number
-  nativeY?: number
   value?: number
 }
 
@@ -3797,9 +3901,6 @@ type ChartInteractionRange = {
   endIndex: number
   startCategory?: string
   endCategory?: string
-  /** Where each end’s mark sits, in the chart view’s own coordinate space. */
-  startX?: number
-  endX?: number
 }
 
 type ChartGeometry = {
@@ -3807,6 +3908,15 @@ type ChartGeometry = {
   plot: { height: number; width: number; x: number; y: number }
 }`}</CodeBlock>
           <h3 id="scrub-overlay">Drawing your own overlay</h3>
+          <div className={styles.note()}>
+            <strong>For a view that has to line up with the data, measure a mark rather than the plot.</strong>{' '}
+            <code>plot</code> is the box around the marks, and each renderer puts the axis padding on its own side of
+            it: the web&rsquo;s grid rect has the padding inside, the native ones keep the marks against the frame. So a
+            grid or a label row placed off <code>plot</code> alone lands a few points out on one of the three.{' '}
+            <code>annotation.measure()</code> is the exact answer instead &mdash; a point the chart measures and nobody
+            draws, reported in <code>geometry.annotations</code> under the <code>id</code> you gave it. A mark lands
+            where its data lands on every platform.
+          </div>
           <div className={styles.note()}>
             <strong>
               For a view on an annotation, reach for <code>annotationViews</code> first.
@@ -3818,6 +3928,22 @@ type ChartGeometry = {
             <code>Chart.Area</code>, <code>Chart.Bar</code>, <code>Chart.StackedBar</code> and{' '}
             <code>Chart.Candlestick</code>.
           </div>
+          <div className={styles.note()}>
+            <strong>
+              Write <code>{'{align, view}'}</code> when the default place is not the one you want.
+            </strong>{' '}
+            A rule that runs down the plot is a mark with a height of its own, so <code>'top'</code>,{' '}
+            <code>'center'</code> and <code>'bottom'</code> are its head, its middle and its foot — and its head is what
+            a view gets unless it asks, because that is where the chart's own badge goes. A point and a rule that runs
+            across are spots rather than runs, so the three read as on the mark, above it and below it, and{' '}
+            <code>'center'</code> is what they get unasked.
+          </div>
+          <CodeBlock>{`annotationViews={{
+  // Halfway down the rule rather than capping it.
+  earnings: { align: 'center', view: EarningsChip },
+  // Sitting on the point rather than centred over it.
+  live: { align: 'top', view: LiveBadge },
+}}`}</CodeBlock>
           <CodeBlock>{`import { annotation, Chart, useLastReading } from '@hzblj/zyplot'
 
 export const Price = ({ prices, categories }: PriceProps) => {
@@ -3834,16 +3960,27 @@ export const Price = ({ prices, categories }: PriceProps) => {
 }`}</CodeBlock>
           <div className={styles.note()}>
             <strong>
-              <code>geometry</code> is the way down when a view is not on an annotation.
+              <code>geometry</code> is the way down for a view that stays put.
             </strong>{' '}
             It reports the plot's box and every annotation's <code>x</code>/<code>y</code> in the chart's own
-            coordinates, so a card can follow the finger with <code>selection.nativeX</code> — which is the one thing{' '}
-            <code>annotationViews</code> cannot place for you. An annotation that is only an anchor for such a view
-            takes <code>hidden: true</code>: measured and reported as usual, drawn by nobody.
+            coordinates, which is what a grid behind the marks, a row of labels under them or a button on a rule is laid
+            out from. An annotation that is only an anchor for such a view takes <code>hidden: true</code>: measured and
+            reported as usual, drawn by nobody.
+          </div>
+          <div className={styles.note()}>
+            <strong>For a view that follows the finger, it is the wrong tool.</strong> Nothing reports where a reading
+            is, because a position laid out from your own render arrives after the crosshair it belongs beside.{' '}
+            <code>tooltip</code> and <code>rangeView</code> are the way: the chart mounts your node and moves it in the
+            pass it draws the reading in.
           </div>
           <CodeBlock>{`'use client'
 
-import { annotation, Chart, useChartScrub } from '@hzblj/zyplot'
+import { annotation, Chart, tooltip, useChartScrub } from '@hzblj/zyplot'
+
+// A component, so the config holding it is the same value on every render: what the card says can
+// change without a single prop on the chart changing with it. The align says where down the plot it
+// sits — left out it goes against the top, where a card read as belonging to the reading belongs.
+const reading = tooltip.beside({ align: 'center', view: EventCard })
 
 export const Price = ({ prices, categories }: PriceProps) => {
   const { geometry, onInteraction, selection } = useChartScrub()
@@ -3851,16 +3988,19 @@ export const Price = ({ prices, categories }: PriceProps) => {
 
   return (
     <View>
-      <Chart.Line
-        annotations={[
-          // No badge: the rule is the chart's, the head is yours.
-          annotation.line({ axis: 'x', dash: [2, 4], id: 'dividend', value: '12 Jul' }),
-        ]}
-        categories={categories}
-        interaction={{ crosshair: 'x', haptics: true, tooltip: false }}
-        onInteraction={onInteraction}
-        series={[{ id: 'price', label: 'Price', values: prices }]}
-      />
+      <ReadingProvider selection={selection}>
+        <Chart.Line
+          annotations={[
+            // No badge: the rule is the chart's, the head is yours.
+            annotation.line({ axis: 'x', dash: [2, 4], id: 'dividend', value: '12 Jul' }),
+          ]}
+          categories={categories}
+          interaction={{ crosshair: 'x', haptics: true }}
+          onInteraction={onInteraction}
+          series={[{ id: 'price', label: 'Price', values: prices }]}
+          tooltip={reading}
+        />
+      </ReadingProvider>
 
       {dividend ? (
         <Pressable
@@ -3869,10 +4009,6 @@ export const Price = ({ prices, categories }: PriceProps) => {
         >
           <Text>D</Text>
         </Pressable>
-      ) : null}
-
-      {selection ? (
-        <Card left={selection.nativeX} rows={events[selection.index]} />
       ) : null}
     </View>
   )
@@ -4307,12 +4443,12 @@ export const Price = ({ prices, categories }: PriceProps) => {
             renderers draw it: a clipped dot grid on the SwiftUI and Compose canvases, a repeating canvas pattern on the
             web.
           </p>
-          <CodeBlock>{`series({
+          <CodeBlock>{`z.series({
   color: '#f48415',
   id: 'price',
   label: '24H',
   style: {
-    fill: fill({
+    fill: z.fill({
       // A tenth of its strength by the floor, so the paint gathers under the trace.
       fadeTo: 0.12,
       pattern: 'dots',
@@ -4337,19 +4473,14 @@ export const Price = ({ prices, categories }: PriceProps) => {
             dimmed, so the line reads as the story so far. That is <code>marker.trail</code> — the third selection
             marker, next to the dot and the window-around-the-reading segment.
           </p>
-          <CodeBlock>{`const scrubbing = (labels: readonly string[]) =>
-  interaction({
-    crosshair: 'x',
-    // labels is one time per reading, in data order. The chart draws the one being read.
-    crosshairStyle: { color: '#f8b877', labelColor: '#8b8b8b', labels, width: 1 },
-    // What the trace fades to past the finger. Everything before it is redrawn at full
-    // strength by the trail, so this is only ever seen ahead of the reading.
-    dimOpacity: 0.66,
-    haptics: true,
-    hover: 'nearest',
-    marker: marker.trail({ color: '#f48415' }),
-    tooltip: false,
-  })`}</CodeBlock>
+          <CodeBlock>{`interaction: z.interaction.scrub({
+  // labels is one time per reading, in data order. The chart draws the one being read.
+  crosshairStyle: { color: '#f8b877', labels: range.pointLabels, width: 1 },
+  // What the trace fades to past the finger. Everything before it is redrawn at full
+  // strength by the trail, so this is only ever seen ahead of the reading.
+  dimOpacity: 0.66,
+  marker: z.marker.trail({ color: '#f48415' }),
+})`}</CodeBlock>
           <p>
             The time above the crosshair <em>is</em> drawn by the chart, through <code>crosshairStyle.labels</code> —
             one string per slot, placed by whichever renderer is drawing the line. It is the one piece of scrub chrome
@@ -4371,19 +4502,19 @@ export const Price = ({ prices, categories }: PriceProps) => {
                 description:
                   'Lights the stretch of trace up to the reading and dims the rest, paired with dimOpacity so there is something for it to stand out from.',
                 name: 'marker.trail',
-                type: 'feature-charts/kraken-chart-style.ts',
+                type: 'feature-charts/kraken-chart.tsx',
               },
               {
                 description:
                   'The dot grid and its fade, resolved per scheme: ink on paper carries at a fraction of what light on black needs, so dark asks for roughly twice the opacity.',
                 name: 'fill',
-                type: 'feature-charts/kraken-chart-style.ts',
+                type: 'feature-charts/kraken-chart.tsx',
               },
               {
                 description:
                   'The times above the crosshair, one per reading, handed over with the interaction so the label is drawn by whoever draws the line.',
                 name: 'crosshairStyle.labels',
-                type: 'feature-charts/kraken-chart-style.ts',
+                type: 'feature-charts/kraken-chart.tsx',
               },
               {
                 description:
@@ -4448,19 +4579,23 @@ export const Price = ({ prices, categories }: PriceProps) => {
             <code>skeleton</code> is a web-only prop. <code>isLoading</code> stays <code>false</code> throughout for the
             same reason: the chart's own placeholder is the thing being replaced.
           </p>
-          <CodeBlock>{`const arrival = animation({
-  // What 'morph' interpolates over: the wave's values towards the window's.
-  duration: 360,
-  easing: 'ease-in-out',
-  reveal: reveal.draw({ duration: 620, easing: 'ease-in-out' }),
-  transition: 'morph',
-  updates: true,
-})
-
-// The wave is the placeholder, so the chart is never told it is loading.
+          <CodeBlock>{`// The wave is the placeholder, so the chart is never told it is loading.
 const values = isLoading ? waveValues(domain) : range.values
 
-<Chart.Line animation={arrival} isLoading={false} series={[series({ id: 'price', values })]} />`}</CodeBlock>
+const chart = zyplot(z => ({
+  animation: z.animation({
+    // What 'morph' interpolates over: the wave's values towards the window's.
+    duration: 360,
+    easing: 'ease-in-out',
+    reveal: z.reveal.draw({ duration: 620, easing: 'ease-in-out' }),
+    transition: 'morph',
+    updates: true,
+  }),
+  isLoading: false,
+  series: [z.series({ id: 'price', label: range.label, values })],
+}))
+
+<Chart.Line {...chart} />`}</CodeBlock>
           <div className={styles.note()}>
             <strong>The domain is the trick.</strong> The wave is built inside the price window's own{' '}
             <code>yAxis.domain</code>, not in a range of its own. A placeholder drawn somewhere else has to travel as
@@ -4481,29 +4616,22 @@ const values = isLoading ? waveValues(domain) : range.values
             come back up with everything else, and the part that was never dimmed would flash along with the part that
             was.
           </p>
-          <CodeBlock>{`const scrubbing = (stamps: readonly string[]) =>
-  interaction({
-    crosshair: 'x',
-    crosshairStyle: {
-      color: color.crosshair,
-      // A chip rather than bare text: a background is what turns the label into one.
-      labelBackground: color.pillActive,
-      labelColor: color.textMuted,
-      labelPadding: { x: 12, y: 5 },
-      // One stamp per reading, in data order. The last one says LIVE.
-      labels: stamps,
-      width: 1,
-    },
-    // The step back takes a beat in both directions instead of cutting.
-    dimDuration: 420,
-    dimOpacity: 0.34,
-    haptics: true,
-    hover: 'nearest',
-    // dot: true puts the reading's own dot at the head of the lit stretch.
-    marker: marker.trail({ color: color.trace, dot: true, size: 11 }),
-    // The web draws a tooltip unless told not to, and the header is the readout.
-    tooltip: false,
-  })`}</CodeBlock>
+          <CodeBlock>{`interaction: z.interaction.scrub({
+  crosshairStyle: {
+    color: color.crosshair,
+    // One stamp per reading, in data order. The last one says LIVE. The chart
+    // places the words; the pill around them is the screen's own view, handed
+    // named in tooltip.
+    labels: familyStamps(range.stamps),
+    width: 1,
+  },
+  // The step back takes a beat in both directions instead of cutting.
+  dimDuration: 420,
+  dimOpacity: 0.34,
+  highlightColor: color.trace,
+  // dot: true puts the reading's own dot at the head of the lit stretch.
+  marker: z.marker.trail({ color: color.trace, dot: true, size: 11 }),
+})`}</CodeBlock>
 
           <h3 id="family-source">What it uses</h3>
           <PropsTable
@@ -4518,31 +4646,31 @@ const values = isLoading ? waveValues(domain) : range.values
                 description:
                   'Interpolates the resting wave into the window that lands, so the arrival is one curve changing shape rather than a placeholder being replaced.',
                 name: "animation({transition: 'morph'})",
-                type: 'feature-charts/family-chart-style.ts',
+                type: 'feature-charts/family-chart.tsx',
               },
               {
                 description:
                   'How long the marks take to step back for a reading, and to come back up when it ends. The lit stretch of trace is held until that ramp is finished.',
                 name: 'interaction.dimDuration',
-                type: 'feature-charts/family-chart-style.ts',
+                type: 'feature-charts/family-chart.tsx',
               },
               {
                 description:
                   'Lights the trace up to the reading, with the dot on the reading drawn by the chart rather than fed back through annotations, so it keeps up with the finger.',
                 name: 'marker.trail({dot: true})',
-                type: 'feature-charts/family-chart-style.ts',
+                type: 'feature-charts/family-chart.tsx',
               },
               {
                 description:
                   'The time above the crosshair as a chip: one stamp per slot, a background and padding around the one being read, placed by whoever draws the line.',
                 name: 'crosshairStyle.labels',
-                type: 'feature-charts/family-chart-style.ts',
+                type: 'feature-charts/family-chart.tsx',
               },
               {
                 description:
                   'The live dot and its bloom, stepped back while a reading is in progress through scrubOpacity so the finger has the plot to itself.',
                 name: 'annotation.point({pulse})',
-                type: 'feature-charts/family-chart-style.ts',
+                type: 'feature-charts/family-chart.tsx',
               },
               {
                 description:
@@ -4606,23 +4734,24 @@ const values = isLoading ? waveValues(domain) : range.values
             other, so a third rule only adds ink — and an overlaid label reserves no gutter, which leaves the full width
             to the bars.
           </p>
-          <CodeBlock>{`const stepsAxis = (range: StepsRange) => {
-  // A round number above the tallest bar: 10 000 over a week of 8 400s.
+          <CodeBlock>{`// A round number above the tallest bar: 10 000 over a week of 8 400s.
+const stepsScale = (range: StepsRange) => {
   const tallest = Math.max(...range.values, 1)
   const step = Math.pow(10, Math.floor(Math.log10(tallest)))
   const top = Math.ceil(tallest / step) * step
 
-  return axis.overlay({
-    domain: { max: top, min: 0 },
-    format: { decimals: 0, locale: 'en-US' },
-    grid: true,
-    // How far inside the trailing edge the counts sit.
-    labelInset: 4,
-    labelSize: 13,
-    ticks: false,
-    tickValues: [top / 2, top],
-  })
-}`}</CodeBlock>
+  return { domain: { max: top, min: 0 }, tickValues: [top / 2, top] }
+}
+
+yAxis: z.axis.overlay({
+  ...stepsScale(range),
+  format: { decimals: 0, locale: 'en-US' },
+  grid: true,
+  // How far inside the trailing edge the counts sit.
+  labelInset: 4,
+  labelSize: 13,
+  ticks: false,
+})`}</CodeBlock>
           <p>
             The dates underneath are named for a different reason. Each renderer keeps a gap of its own under the label
             row — Swift Charts is the tightest of the three — so the row sat at a different distance on every platform
@@ -4630,7 +4759,7 @@ const values = isLoading ? waveValues(domain) : range.values
             overlaid counts give the trailing edge room of its own, so an equal inset on the leading edge reads as less
             than one.
           </p>
-          <CodeBlock>{`xAxis={{
+          <CodeBlock>{`xAxis: {
   grid: false,
   labelInset: 6,
   // Room for the overlaid counts, and more before the first bar than after the last.
@@ -4639,7 +4768,7 @@ const values = isLoading ? waveValues(domain) : range.values
   ticks: false,
   // Which days are named — a month names four of thirty.
   tickValues: range.ticks,
-}}`}</CodeBlock>
+}`}</CodeBlock>
           <div className={styles.note()}>
             <strong>Bars grow, they do not trace.</strong> The arrival is a <code>reveal.fade</code> with no{' '}
             <code>transition</code>, so a window switch simply draws the new bars: thirty of them and seven have no
@@ -4655,29 +4784,29 @@ const values = isLoading ? waveValues(domain) : range.values
             whichever arrived. That is <code>interaction.range</code>, and it is a native gesture — a pointer has no
             second finger — so the web keeps the chart's own tooltip instead.
           </p>
-          <CodeBlock>{`const reading = interaction({
+          <CodeBlock>{`interaction: z.interaction({
   crosshair: 'x',
   // One style dresses the single rule and the pair at a span's ends alike.
   crosshairStyle: { color: color.rule, width: isAndroid ? 1.2 : 1 },
   haptics: true,
   range: true,
-  // On the web Chart.Bar reports no scrub for a headline to follow, so the card stays the chart's.
-  tooltip: isWeb,
-})`}</CodeBlock>
+}),
+// On the web Chart.Bar reports no scrub for a card of ours to follow, so the card stays the chart's.
+tooltip: isWeb ? true : reading,`}</CodeBlock>
           <p>
-            Only ever one of the two is set, so the screen never has to work out which reading is newer. And a span
-            already knows where both its ends landed, which is what lets the card sit over the middle of what is held
-            rather than over one edge of it.
+            Only ever one of the two is set, so the screen never has to work out which reading is newer. Where the card
+            goes is not the screen's answer at all: the chart takes a view for one bar and a view for a span, and puts
+            each over what is held — centred on the middle of a span rather than on one edge of it, and kept inside the
+            plot at either end.
           </p>
-          <CodeBlock>{`const { geometry, onInteraction, range: span, selection } = useChartScrub()
+          <CodeBlock>{`const { onInteraction, range: span, selection } = useChartScrub()
 
 // One bar is a span of one, so the readout below has a single shape to total.
 const held = span ?? (selection ? { endIndex: selection.index, startIndex: selection.index } : null)
-const anchor = span ? (span.startX + span.endX) / 2 : (selection?.nativeX ?? null)
 
-// Kept inside the plot the chart reported, so a card near an end squares up rather than hangs off.
-const plot = geometry?.plot
-const left = Math.min(Math.max(anchor - CARD_WIDTH / 2, plot.x), plot.x + plot.width - CARD_WIDTH)`}</CodeBlock>
+// The card for one bar and the card for a span, both mounted and moved by the chart. Each reads what
+// it shows from the screen's own context, so a finger moving changes no prop on the chart.
+<StepsChart onInteraction={onInteraction} rangeView={SpanCard} tooltip={reading} />`}</CodeBlock>
 
           <h3 id="health-source">What it uses</h3>
           <PropsTable
@@ -4692,19 +4821,19 @@ const left = Math.min(Math.max(anchor - CARD_WIDTH / 2, plot.x), plot.x + plot.w
                 description:
                   'Puts the counts inside the plot against its trailing edge and reserves no gutter, so the bars keep the full width. Works on the web as well as on native.',
                 name: 'axis.overlay',
-                type: 'feature-charts/steps-chart-style.ts',
+                type: 'feature-charts/steps-chart.tsx',
               },
               {
                 description:
                   'Two fingers report the marks under each of them and everything between, which is what the card totals. iOS and Android only.',
                 name: 'interaction.range',
-                type: 'feature-charts/steps-chart-style.ts',
+                type: 'feature-charts/steps-chart.tsx',
               },
               {
                 description:
                   'The air before the first bar and after the last, named rather than left to each renderer, so the same gutter is kept on all three.',
                 name: 'plotDimensionStartPadding',
-                type: 'feature-charts/steps-chart-style.ts',
+                type: 'feature-charts/steps-chart.tsx',
               },
               {
                 description:
@@ -4773,15 +4902,17 @@ const left = Math.min(Math.max(anchor - CARD_WIDTH / 2, plot.x), plot.x + plot.w
             renderers — which makes a mark at a known coordinate the one exact answer to where that coordinate is on
             screen.
           </p>
-          <CodeBlock>{`const edge = (id: string, category: string, value: number) =>
-  annotation.point({ hidden: true, id, size: 0, x: category, y: value })
-
-// One at each dated tick along the floor, one at each price rule on the leading edge,
-// and one in the far corner that closes the box.
-const annotations = [
-  ...range.axisTicks.map((tick, index) => edge('col-' + index, categories[tick.index], domain.min)),
-  ...priceTicks(domain).map((value, index) => edge('row-' + index, categories[0], value)),
-  edge('col-end', categories[categories.length - 1], domain.min),
+          <CodeBlock>{`// One at each dated tick along the floor, one at each price rule on the leading edge,
+// and one in the far corner that closes the box. annotation.measure is the point
+// builder with hidden and size: 0 already set.
+annotations: [
+  ...range.axisTicks.map((tick, index) =>
+    z.annotation.measure({ id: 'col-' + index, x: categories[tick.index], y: domain.min })
+  ),
+  ...priceTicks(domain).map((value, index) =>
+    z.annotation.measure({ id: 'row-' + index, x: categories[0], y: value })
+  ),
+  z.annotation.measure({ id: 'col-end', x: categories[categories.length - 1], y: domain.min }),
 ]`}</CodeBlock>
           <CodeBlock>{`// Read back off the layout the chart reports, and the grid is exact on all three.
 export const plotGrid = (geometry: ChartGeometry | null) => {
@@ -4822,18 +4953,14 @@ export const plotGrid = (geometry: ChartGeometry | null) => {
             that one the chart paints itself: the stretch between them in its own direction, green if it closed up and
             red if it closed down, with the rest of the period behind it.
           </p>
-          <CodeBlock>{`const scrubbing = interaction({
-  crosshair: 'x',
+          <CodeBlock>{`interaction: z.interaction.scrub({
   crosshairStyle: { color: color.scrub, width: 1 },
   // One trace takes the reading colour whole, so there is nothing for a dim to mean.
   dimOpacity: 1,
-  haptics: true,
-  hover: 'nearest',
-  marker: marker.point({ color: color.scrub, size: 15 }),
+  marker: z.marker.point({ color: color.scrub, size: 15 }),
   range: true,
   // The held stretch: its own direction, its own dim for everything outside it, a dot at each end.
   rangeStyle: { color: color.up, dimOpacity: 0.32, dot: true, downColor: color.down },
-  tooltip: false,
 })`}</CodeBlock>
           <p>
             Nothing about a held span reaches the props, so a span moving costs no chart at all — the ends are drawn
@@ -4850,7 +4977,7 @@ export const plotGrid = (geometry: ChartGeometry | null) => {
             Nothing else moves. The animation is off in all three of its parts: the sheet opens on a price that is
             already true, and a tap on another range is a request to see that range, not to watch a month become a year.
           </p>
-          <CodeBlock>{`arrival: animation({ enabled: false, initial: false, updates: false })`}</CodeBlock>
+          <CodeBlock>{`animation: z.animation({ enabled: false, initial: false, updates: false })`}</CodeBlock>
 
           <h3 id="stocks-source">What it uses</h3>
           <PropsTable
@@ -4864,8 +4991,8 @@ export const plotGrid = (geometry: ChartGeometry | null) => {
               {
                 description:
                   'Marks nobody draws, measured and reported in geometry. The grid, the row of dates and the volume tape are all placed off where they landed.',
-                name: 'annotation.point({hidden})',
-                type: 'feature-charts/stocks-chart-style.ts',
+                name: 'annotation.measure',
+                type: 'feature-charts/stocks-chart.tsx',
               },
               {
                 description:
@@ -4877,13 +5004,13 @@ export const plotGrid = (geometry: ChartGeometry | null) => {
                 description:
                   'The held stretch in its own direction with the rest of the period stepped back behind it, drawn from the fingers so a span moving costs no re-render. Separate from dimOpacity, and it reaches the area fill too.',
                 name: 'interaction.rangeStyle',
-                type: 'feature-charts/stocks-chart-style.ts',
+                type: 'feature-charts/stocks-chart.tsx',
               },
               {
                 description:
                   'The dot under one finger: the marker on iOS and Android, and a haloed annotation on the web, whose scrub overlay draws the crosshair but skips a point marker.',
                 name: 'marker.point · halo',
-                type: 'feature-charts/stocks-chart-style.ts',
+                type: 'feature-charts/stocks-chart.tsx',
               },
               {
                 description:

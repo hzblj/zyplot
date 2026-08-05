@@ -322,8 +322,8 @@
 
   `crosshairStyle.labels` takes one string per slot in data order — a time, a date, whatever
   the reading is called — and every renderer draws the one for the read slot above the plot,
-  in the same pass that draws the line. `labelColor` and `labelSize` style it. The app still
-  writes the words; the chart only places them.
+  in the same pass that draws the line. The app still writes the words; the chart only places
+  them.
 
   This is the one piece of scrub chrome worth taking back off the app. Everything else an
   overlay draws over a plot sits still long enough for `onInteraction` to place it — a card

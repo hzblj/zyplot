@@ -1,52 +1,42 @@
 'use client'
 
-import {useEffect, useState} from 'react'
 import {tv} from 'tailwind-variants'
+import {applyTheme, storeTheme} from './theme'
+import {useColorScheme} from './use-color-scheme'
 
 const themeToggle = tv({
   slots: {
     button:
       'relative flex h-8 w-[68px] cursor-pointer items-center justify-between rounded-full border border-border-secondary bg-fill-secondary-primary px-2 text-content-tertiary shadow-card-default transition-colors hover:bg-fill-secondary-hover',
     icon: 'relative z-10 size-3.5',
+    // The thumb rides the root class rather than React state: state would only be right one render
+    // after hydration, which is a visible jump on every load in dark mode.
     thumb:
-      'absolute left-1 top-1 size-[22px] rounded-full bg-surface-primary shadow-[0_1px_4px_#00000024] transition-transform duration-200',
+      'absolute left-1 top-1 size-[22px] rounded-full bg-surface-primary shadow-[0_1px_4px_#00000024] transition-transform duration-200 dark:translate-x-9',
   },
 })
 
-type Theme = 'dark' | 'light'
-
 const styles = themeToggle()
 
-const applyTheme = (theme: Theme) => {
-  // `light` is not decoration: the chart tokens follow the OS until the root says otherwise.
-  document.documentElement.classList.toggle('dark', theme === 'dark')
-  document.documentElement.classList.toggle('light', theme === 'light')
-  localStorage.setItem('zyplot-theme', theme)
-}
-
 export const ThemeToggle = () => {
-  const [theme, setTheme] = useState<Theme>('light')
-
-  useEffect(() => {
-    const activeTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light'
-    setTheme(activeTheme)
-  }, [])
+  const isDark = useColorScheme() === 'dark'
 
   const toggleTheme = () => {
-    const nextTheme = theme === 'dark' ? 'light' : 'dark'
-    applyTheme(nextTheme)
-    setTheme(nextTheme)
+    // Off the root rather than the render, so a click landing before the store settles still flips.
+    const next = document.documentElement.classList.contains('dark') ? 'light' : 'dark'
+    applyTheme(next)
+    storeTheme(next)
   }
 
   return (
     <button
-      aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-      aria-pressed={theme === 'dark'}
+      aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
+      aria-pressed={isDark}
       className={styles.button()}
       onClick={toggleTheme}
       type="button"
     >
-      <span className={`${styles.thumb()} ${theme === 'dark' ? 'translate-x-9' : ''}`} />
+      <span className={styles.thumb()} />
       <svg aria-hidden="true" className={styles.icon()} fill="none" viewBox="0 0 16 16">
         <circle cx="8" cy="8" r="2.5" stroke="currentColor" />
         <path

@@ -26,7 +26,7 @@ const guideRoutes: Omit<DocsRoute, 'isGuide'>[] = [
   },
   {
     description:
-      'Typed builders for the props that are easy to get wrong — annotation, axis, marker, reveal and series set the discriminant for you and return plain objects.',
+      'zyplot describes a whole chart as one object, with every builder handed to it — annotation, axis, marker, reveal and series set the discriminant for you and return plain objects.',
     href: '/docs/builders',
     title: 'Builders',
   },
@@ -68,7 +68,7 @@ const guideRoutes: Omit<DocsRoute, 'isGuide'>[] = [
   },
   {
     description:
-      'Charts drawn with SwiftUI and Swift Charts. Chart.Range and Chart.Rule are iOS-only, and xAxis takes the Swift Charts scrolling options on top of the shared ones.',
+      'Charts drawn with SwiftUI and Swift Charts. Chart.Range and Chart.Rule are iOS-only, and xAxis takes the Swift Charts scrolling window on top of the shared options.',
     href: '/docs/native/ios',
     title: 'iOS renderer',
   },
@@ -249,7 +249,7 @@ const chartRoutes: {description: string; id: string; name: string}[] = [
   },
   {
     description:
-      'Tens of thousands of ordered time points, rendered through uPlot for dense telemetry that would drop frames on a scene graph.',
+      'Ordered time points from parallel arrays, for telemetry too dense to read as one named category per reading.',
     id: 'time-series',
     name: 'Time series',
   },

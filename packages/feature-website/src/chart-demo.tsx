@@ -1,6 +1,6 @@
 'use client'
 
-import {Chart, useChartScrub} from '@hzblj/zyplot'
+import {Chart, useChartScrub, zyplot} from '@hzblj/zyplot'
 import {KrakenChart, krakenColors, krakenRange} from '@zyplot/feature-charts/kraken'
 import {quoteChartStyle, quoteColors, quoteRange, RevolutChart} from '@zyplot/feature-charts/revolut'
 import {useState} from 'react'
@@ -22,14 +22,12 @@ const THEMES = [
 
 type DemoTheme = (typeof THEMES)[number]['id']
 
-const demoSeries = [
-  {
-    id: 'signal',
-    label: 'Signal',
-    slot: 1,
-    values: [18, 29, 24, 46, 55, 72, 68, 91],
-  },
-]
+const demoChart = zyplot(z => ({
+  categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
+  height: CHART_HEIGHT,
+  isLoading: false,
+  series: [z.series({id: 'signal', label: 'Signal', slot: 1, values: [18, 29, 24, 46, 55, 72, 68, 91]})],
+}))
 
 const stocksRange = quoteRange('1m')
 const cryptoRange = krakenRange('24h')
@@ -87,14 +85,7 @@ export const ChartDemo = () => {
         )}
       </div>
 
-      {theme === 'default' && (
-        <Chart.Line
-          categories={['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug']}
-          height={CHART_HEIGHT}
-          isLoading={false}
-          series={demoSeries}
-        />
-      )}
+      {theme === 'default' && <Chart.Line {...demoChart} />}
 
       {theme === 'stocks' && (
         <div className="relative">
@@ -104,10 +95,10 @@ export const ChartDemo = () => {
               isCandlestick={isCandlestick}
               isEventBadgeVisible
               isLoading={false}
-              isTooltipVisible
               onInteraction={stocks.onInteraction}
               range={stocksRange}
               scheme={scheme}
+              tooltip
             />
           </Chart.Provider>
           {!isCandlestick && stocksRange.event && (
