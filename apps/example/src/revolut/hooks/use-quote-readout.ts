@@ -1,4 +1,4 @@
-import type {ChartGeometry} from '@hzblj/zyplot'
+import type {ChartGeometry, ChartInteractionHandler} from '@hzblj/zyplot'
 import {useChartScrub} from '@hzblj/zyplot'
 import {formatNumber, INTRADAY_OPEN, type QuoteRange, splitPrice} from '@zyplot/feature-charts/revolut'
 import {useMemo} from 'react'
@@ -7,12 +7,11 @@ export type QuoteReadout = {
   amount: string
   category?: string
   geometry: ChartGeometry | null
-  nativeX?: number
   isPreMarket: boolean
   isDown: boolean
   percent: string
   price: {fraction: string; whole: string}
-  onInteraction: ReturnType<typeof useChartScrub>['onInteraction']
+  onInteraction: ChartInteractionHandler
   subtitle: string
   isScrubbing: boolean
 }
@@ -43,7 +42,6 @@ export const useQuoteReadout = (range: QuoteRange): QuoteReadout => {
       isDown,
       isPreMarket: range.id === '1d' && (selection?.index ?? INTRADAY_OPEN) < INTRADAY_OPEN,
       isScrubbing: selection !== null,
-      nativeX: selection?.nativeX,
       onInteraction,
       percent: `${formatNumber(Math.abs((change / range.baseline) * 100))}%`,
       price: splitPrice(shown),

@@ -1,4 +1,4 @@
-import type {ChartGeometry} from '@hzblj/zyplot'
+import type {ChartGeometry, ChartInteractionHandler} from '@hzblj/zyplot'
 import {useChartScrub} from '@hzblj/zyplot'
 import {
   formatPercent,
@@ -16,10 +16,11 @@ export type KrakenReadout = {
   isDown: boolean
   isOnLatest: boolean
   isScrubbing: boolean
-  nativeX?: number
-  onInteraction: ReturnType<typeof useChartScrub>['onInteraction']
+  onInteraction: ChartInteractionHandler
   percent: string
   price: {fraction: string; whole: string}
+  /** The label the rule's own chip would have shown, or `null` when nothing is read. */
+  stamp: string | null
   subtitle: string
   value: number
 }
@@ -39,10 +40,10 @@ export const useKrakenReadout = (coin: KrakenCoin, range: KrakenRange): KrakenRe
       isDown,
       isOnLatest: selection === null || selection.index === range.values.length - 1,
       isScrubbing: selection !== null,
-      nativeX: selection?.nativeX,
       onInteraction,
       percent: formatPercent(range.open === 0 ? 0 : (change / range.open) * 100),
       price: splitPrice(shown, coin.precision),
+      stamp: selection === null ? null : (range.pointLabels[selection.index] ?? null),
       subtitle: selection === null ? range.periodLabel : '',
       value: shown,
     }

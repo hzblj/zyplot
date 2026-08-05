@@ -1,3 +1,4 @@
+import {tooltip} from '@hzblj/zyplot'
 import {
   plotGrid,
   StocksChart,
@@ -5,12 +6,13 @@ import {
   type StocksRangeId,
   type StocksScheme,
 } from '@zyplot/feature-charts/stocks'
-import {useState} from 'react'
+import {useMemo, useState} from 'react'
 import {StyleSheet, View} from 'react-native'
 import {stocksLayout} from '../data/stocks-theme'
+import {StocksReadingProvider} from '../hooks/stocks-reading-context'
 import type {StocksReadout} from '../hooks/use-stocks-readout'
 import {StocksPlotGrid} from './stocks-plot-grid'
-import {StocksAxisLabels, StocksReadoutLabels} from './stocks-plot-labels'
+import {StocksAxisLabels, StocksReadingPrice, StocksReadingSpan, StocksReadoutLabels} from './stocks-plot-labels'
 import {StocksRangePills} from './stocks-range-pills'
 import {StocksVolumeTape} from './stocks-volume-tape'
 
@@ -23,6 +25,15 @@ export type StocksChartPanelProps = {
 }
 
 const AXIS_ROW = 24
+
+/**
+ * The number sits just clear of the plot's top edge, in the lower half of the row above it — where
+ * the readout's own row put it before the chart was the one placing it.
+ *
+ * Held at module scope, both of these: a new object on every render would rebuild the chart's config
+ * with it, and a config rebuilt while a finger moves is the whole thing this placement avoids.
+ */
+const READING_TOOLTIP = tooltip.above({lift: 2, view: StocksReadingPrice})
 
 /**
  * Everything laid against the plot's own box: the row above it, which is the range picker until
@@ -41,7 +52,12 @@ const AXIS_ROW = 24
  */
 export const StocksChartPanel = ({onSelect, range, readout, scheme, selected}: StocksChartPanelProps) => {
   const [width, setWidth] = useState(0)
-  const grid = plotGrid(readout.geometry)
+  /**
+   * Held, not recomputed: a finger crossing the plot re-renders this panel on every touch it
+   * reports, and a fresh box each time would put the grid and the tape through the whole of React
+   * for a reading that never moved either of them.
+   */
+  const grid = useMemo(() => plotGrid(readout.geometry), [readout.geometry])
   const left = grid ? (grid.columns[0] as number) : 0
   const end = grid ? (grid.columns[grid.columns.length - 1] as number) : width
 
@@ -56,7 +72,7 @@ export const StocksChartPanel = ({onSelect, range, readout, scheme, selected}: S
         </View>
         {readout.isReading ? (
           <View pointerEvents="none" style={[styles.layer, styles.gutter]}>
-            <StocksReadoutLabels readout={readout} width={width} />
+            <StocksReadoutLabels readout={readout} />
           </View>
         ) : null}
       </View>
@@ -66,12 +82,17 @@ export const StocksChartPanel = ({onSelect, range, readout, scheme, selected}: S
         <View onLayout={event => setWidth(event.nativeEvent.layout.width)}>
           {grid ? <StocksPlotGrid depth={AXIS_ROW} grid={grid} /> : null}
 
-          <StocksChart
-            onInteraction={readout.onInteraction}
-            range={range}
-            scheme={scheme}
-            scrubIndex={readout.scrubIndex}
-          />
+          {}
+          <StocksReadingProvider readout={readout}>
+            <StocksChart
+              isReading={readout.isScrubbing}
+              onInteraction={readout.onInteraction}
+              range={range}
+              rangeView={StocksReadingSpan}
+              scheme={scheme}
+              tooltip={READING_TOOLTIP}
+            />
+          </StocksReadingProvider>
 
           <View style={styles.axis}>
             <StocksAxisLabels left={left} range={range} width={end - left} />

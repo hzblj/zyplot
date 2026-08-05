@@ -1,14 +1,16 @@
-import {useChartScrub} from '@hzblj/zyplot'
-import {type FamilyRange, familyToken, formatAmount} from '@zyplot/feature-charts/family'
+import {type ChartInteractionHandler, useChartScrub} from '@hzblj/zyplot'
+import {type FamilyRange, familyStamps, familyToken, formatAmount} from '@zyplot/feature-charts/family'
 import {useMemo} from 'react'
 
 export type FamilyReadout = {
   amount: string
   isDown: boolean
   isScrubbing: boolean
-  onInteraction: ReturnType<typeof useChartScrub>['onInteraction']
+  onInteraction: ChartInteractionHandler
   percent: string
   price: string
+  /** The stamp the rule's own chip would have shown, or `null` when nothing is read. */
+  stamp: string | null
   subtitle: string
   value: number
 }
@@ -34,6 +36,7 @@ export const useFamilyReadout = (range: FamilyRange): FamilyReadout => {
       onInteraction,
       percent: `${formatAmount(Math.abs((change / range.baseline) * 100))}%`,
       price: formatAmount(shown),
+      stamp: selection === null ? null : (familyStamps(range.stamps)[index] ?? null),
       subtitle: range.periodLabel,
       value: shown,
     }

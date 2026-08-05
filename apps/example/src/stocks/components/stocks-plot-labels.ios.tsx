@@ -1,50 +1,23 @@
 import {Host, HStack} from '@expo/ui/swift-ui'
 import {type StocksRange, stocksCategories, tickPosition} from '@zyplot/feature-charts/stocks'
+import {memo} from 'react'
 import {StyleSheet, View} from 'react-native'
 import {stocksLayout, useStocksTheme} from '../data/stocks-theme'
+import {useStocksReading} from '../hooks/stocks-reading-context'
 import type {StocksReadout} from '../hooks/use-stocks-readout'
-import {StocksCentered} from './stocks-centered'
 import {StocksText} from './stocks-text.ios'
 
 const AXIS_INSET = 5
-const ROW = 21
 
 /**
- * What is being read, in the row the range pills otherwise hold. The date sits over the plot
- * whichever mark is under the finger; the number sits over the finger itself, because that is
- * the one that has to be connected to a place on the line.
+ * What is being read, in the row the range pills otherwise hold. Only the date: it is centred on the
+ * row whichever mark is under the finger, so it is the screen's to place. The number is not — it has
+ * to be connected to a place on the line, so the chart mounts and moves it. See `StocksReadingPrice`.
  */
-export const StocksReadoutLabels = ({readout, width}: {readout: StocksReadout; width: number}) => {
-  const {color} = useStocksTheme()
-  const {scrub, span} = readout
-  const tint = span?.isDown ? color.down : color.up
+export const StocksReadoutLabels = ({readout}: {readout: StocksReadout}) => {
+  const label = readout.span?.dates ?? readout.scrub?.date
 
-  if (span) {
-    const middle = ((span.startX ?? 0) + (span.endX ?? width)) / 2
-    return (
-      <View style={styles.slot}>
-        <Host matchContents>
-          <StocksText size={13} weight="semibold">
-            {span.dates}
-          </StocksText>
-        </Host>
-        <StocksCentered top={ROW} width={width} x={middle}>
-          <Host matchContents>
-            <HStack spacing={26}>
-              <StocksText color={tint} size={17} tabular weight="semibold">
-                {span.delta}
-              </StocksText>
-              <StocksText color={tint} size={17} tabular weight="semibold">
-                {span.percent}
-              </StocksText>
-            </HStack>
-          </Host>
-        </StocksCentered>
-      </View>
-    )
-  }
-
-  if (!scrub) {
+  if (label === undefined) {
     return null
   }
 
@@ -52,22 +25,61 @@ export const StocksReadoutLabels = ({readout, width}: {readout: StocksReadout; w
     <View style={styles.slot}>
       <Host matchContents>
         <StocksText size={13} weight="semibold">
-          {scrub.date}
+          {label}
         </StocksText>
       </Host>
-      <StocksCentered top={ROW} width={width} x={scrub.x ?? width / 2}>
-        <Host matchContents>
-          <StocksText color={color.scrub} size={17} tabular weight="semibold">
-            {scrub.value}
-          </StocksText>
-        </Host>
-      </StocksCentered>
     </View>
   )
 }
 
+/**
+ * The price over the finger. Named in the chart's config as its `tooltip.above` view, so where it
+ * sits is the chart's answer and moves with the touch itself rather than with a render — and what it
+ * says is read from the screen's own context, so a reading never touches the chart's props.
+ */
+export const StocksReadingPrice = () => {
+  const {color} = useStocksTheme()
+  const scrub = useStocksReading()?.scrub
+
+  if (!scrub) {
+    return null
+  }
+
+  return (
+    <Host matchContents>
+      <StocksText color={color.scrub} size={17} tabular weight="semibold">
+        {scrub.value}
+      </StocksText>
+    </Host>
+  )
+}
+
+/** What the stretch under two fingers did, as the chart's `rangeView` — centred on the span itself. */
+export const StocksReadingSpan = () => {
+  const {color} = useStocksTheme()
+  const span = useStocksReading()?.span
+
+  if (!span) {
+    return null
+  }
+  const tint = span.isDown ? color.down : color.up
+
+  return (
+    <Host matchContents>
+      <HStack spacing={26}>
+        <StocksText color={tint} size={17} tabular weight="semibold">
+          {span.delta}
+        </StocksText>
+        <StocksText color={tint} size={17} tabular weight="semibold">
+          {span.percent}
+        </StocksText>
+      </HStack>
+    </Host>
+  )
+}
+
 /** The five dates under the plot, each hanging off the rule it belongs to. */
-export const StocksAxisLabels = ({left, range, width}: {left: number; range: StocksRange; width: number}) => (
+const AxisLabels = ({left, range, width}: {left: number; range: StocksRange; width: number}) => (
   <View style={styles.axis}>
     {range.axisTicks.map(tick => (
       <View
@@ -86,6 +98,9 @@ export const StocksAxisLabels = ({left, range, width}: {left: number; range: Sto
     ))}
   </View>
 )
+
+/** Held against the plot's own box, which a reading never moves. */
+export const StocksAxisLabels = memo(AxisLabels)
 
 const styles = StyleSheet.create({
   axis: {height: 20},

@@ -1,19 +1,24 @@
 import {Column, Host} from '@expo/ui/jetpack-compose'
 import {padding} from '@expo/ui/jetpack-compose/modifiers'
+import {tooltip} from '@hzblj/zyplot'
 import {type QuoteRangeId, type QuoteTabId, quoteRange, quoteTabs, RevolutChart} from '@zyplot/feature-charts/revolut'
-import {useState} from 'react'
+import {useMemo, useState} from 'react'
 import {StyleSheet, View} from 'react-native'
 import {useSafeAreaInsets} from 'react-native-safe-area-context'
 import {AppHeader} from '../components/app-header'
-import {QuoteChartOverlay} from './components/quote-chart-overlay'
+import {QuoteEventBadge, QuoteReadingCard} from './components/quote-chart-overlay'
 import {QuoteSymbolHeader} from './components/quote-nav-bar.android'
 import {QuotePageView} from './components/quote-page-view'
 import {QuotePriceReadout} from './components/quote-price-readout.android'
 import {QuoteRangeSelector} from './components/quote-range-selector.android'
 import {QuoteTabRow} from './components/quote-tab-row.android'
 import {quoteLayout, useQuoteTheme} from './data/quote-theme'
+import {QuoteReadingProvider} from './hooks/quote-reading-context'
 import {useChartPlaceholder} from './hooks/use-chart-placeholder'
 import {useQuoteReadout} from './hooks/use-quote-readout'
+
+/** Held at module scope: a new object on every render would rebuild the chart's config with it. */
+const READING_TOOLTIP = tooltip.beside({align: 'center', view: QuoteReadingCard})
 
 export const RevolutScreen = () => {
   const insets = useSafeAreaInsets()
@@ -24,6 +29,17 @@ export const RevolutScreen = () => {
   const isLoading = useChartPlaceholder()
   const range = quoteRange(rangeId)
   const readout = useQuoteReadout(range)
+
+  // Both views are named as components — one in `tooltip`, one on the event annotation — so this is
+  // what they read. Memoized on what actually decides it, which is never the reading itself.
+  const reading = useMemo(
+    () => ({
+      candles: isCandlestick ? range.candles : undefined,
+      event: isCandlestick ? undefined : range.event,
+      readout,
+    }),
+    [isCandlestick, range, readout]
+  )
 
   return (
     <View style={[styles.screen, {backgroundColor: color.background, paddingTop: insets.top}]}>
@@ -56,18 +72,17 @@ export const RevolutScreen = () => {
                 </Host>
 
                 <View style={styles.chart}>
-                  <RevolutChart
-                    isCandlestick={isCandlestick}
-                    isLoading={isLoading}
-                    onInteraction={readout.onInteraction}
-                    range={range}
-                    scheme={scheme}
-                  />
-                  <QuoteChartOverlay
-                    candles={isCandlestick ? range.candles : undefined}
-                    event={isCandlestick ? undefined : range.event}
-                    readout={readout}
-                  />
+                  <QuoteReadingProvider reading={reading}>
+                    <RevolutChart
+                      eventView={isCandlestick || !range.event ? undefined : QuoteEventBadge}
+                      isCandlestick={isCandlestick}
+                      isLoading={isLoading}
+                      onInteraction={readout.onInteraction}
+                      range={range}
+                      scheme={scheme}
+                      tooltip={READING_TOOLTIP}
+                    />
+                  </QuoteReadingProvider>
                 </View>
 
                 <Host matchContents style={styles.controls}>

@@ -1,4 +1,5 @@
 import type {StocksPlotGrid as Grid} from '@zyplot/feature-charts/stocks'
+import {memo} from 'react'
 import {StyleSheet, View} from 'react-native'
 import {useStocksTheme} from '../data/stocks-theme'
 
@@ -9,8 +10,11 @@ import {useStocksTheme} from '../data/stocks-theme'
  * chart can be asked for.
  *
  * The floor takes the divider colour rather than the grid's: it is the axis, not a rule.
+ *
+ * Held against the box it was given: the rules are the plot's, so they are laid once and a finger
+ * crossing them is none of their business.
  */
-export const StocksPlotGrid = ({depth, grid}: {depth: number; grid: Grid}) => {
+const PlotGrid = ({depth, grid}: {depth: number; grid: Grid}) => {
   const {color} = useStocksTheme()
   const top = grid.rows[0] as number
   const floor = grid.rows[grid.rows.length - 1] as number
@@ -42,6 +46,8 @@ export const StocksPlotGrid = ({depth, grid}: {depth: number; grid: Grid}) => {
     </View>
   )
 }
+
+export const StocksPlotGrid = memo(PlotGrid)
 
 const styles = StyleSheet.create({
   rule: {height: StyleSheet.hairlineWidth, position: 'absolute', width: StyleSheet.hairlineWidth},

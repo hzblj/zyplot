@@ -1,4 +1,4 @@
-import type {ChartGeometry} from '@hzblj/zyplot'
+import type {ChartGeometry, ChartInteractionHandler} from '@hzblj/zyplot'
 import {useChartScrub} from '@hzblj/zyplot'
 import {
   formatPercent,
@@ -11,21 +11,21 @@ import {
 } from '@zyplot/feature-charts/stocks'
 import {useMemo} from 'react'
 
-/** One finger: the mark under it, and where it is. */
+/**
+ * What one finger is reading. Words only — where the reading sits is the chart's answer, and the
+ * views it mounts for it are placed in its own layout pass rather than from anything here.
+ */
 export type StocksScrubLabel = {
   date: string
   value: string
-  x?: number
 }
 
-/** Two fingers: what the stretch between them did, and where its edges are. */
+/** Two fingers: what the stretch between them did. Where it reaches is the chart's, as above. */
 export type StocksSpanLabel = {
   dates: string
   delta: string
-  endX?: number
   isDown: boolean
   percent: string
-  startX?: number
 }
 
 export type StocksReadout = {
@@ -34,12 +34,12 @@ export type StocksReadout = {
   geometry: ChartGeometry | null
   isDown: boolean
   isReading: boolean
-  onInteraction: ReturnType<typeof useChartScrub>['onInteraction']
+  /** Whether the reading is one finger's, which is the only one the trace takes a colour for. */
+  isScrubbing: boolean
+  onInteraction: ChartInteractionHandler
   percent: string
   price: string
   scrub: StocksScrubLabel | null
-  /** The mark one finger is on, for the chart, beside the words `scrub` carries for the screen. */
-  scrubIndex: number | null
   span: StocksSpanLabel | null
 }
 
@@ -56,7 +56,6 @@ export const useStocksReadout = (range: StocksRange): StocksReadout => {
         : {
             date: range.pointLabels[selection.index] ?? '',
             value: formatPrice(range.values[selection.index] ?? reading.last),
-            x: selection.nativeX,
           }
 
     const span = (() => {
@@ -68,10 +67,8 @@ export const useStocksReadout = (range: StocksRange): StocksReadout => {
       return {
         dates: `${range.pointLabels[held.startIndex] ?? ''} – ${range.pointLabels[held.endIndex] ?? ''}`,
         delta: formatSigned(to - from),
-        endX: held.endX,
         isDown: !rose(range.values, held.startIndex, held.endIndex),
         percent: formatPercent(percentChange(from, to)),
-        startX: held.startX,
       }
     })()
 
@@ -80,11 +77,11 @@ export const useStocksReadout = (range: StocksRange): StocksReadout => {
       geometry,
       isDown: change < 0,
       isReading: scrub !== null || span !== null,
+      isScrubbing: scrub !== null,
       onInteraction,
       percent: formatPercent(percentChange(range.open, reading.last)),
       price: formatPrice(reading.last),
       scrub,
-      scrubIndex: selection?.index ?? null,
       span,
     }
   }, [geometry, held, onInteraction, range, selection])

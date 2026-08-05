@@ -1,34 +1,18 @@
-import {formatNumber, type QuoteCandle, type QuoteEvent} from '@zyplot/feature-charts/revolut'
+import {formatNumber, type QuoteCandle} from '@zyplot/feature-charts/revolut'
 import {type ReactNode, useEffect, useRef, useState} from 'react'
-import {
-  Animated,
-  Easing,
-  type LayoutChangeEvent,
-  type StyleProp,
-  StyleSheet,
-  Text,
-  View,
-  type ViewStyle,
-} from 'react-native'
+import {Animated, Easing, type StyleProp, StyleSheet, Text, View, type ViewStyle} from 'react-native'
 import {type QuoteColors, useQuoteTheme} from '../data/quote-theme'
-import type {QuoteReadout} from '../hooks/use-quote-readout'
+import {useQuoteReading} from '../hooks/quote-reading-context'
 
 const BADGE = 18
-const CARD_WIDTH = 150
-const CARD_GAP = 12
 const BADGE_LIFT = 6
+const CARD_WIDTH = 150
 const FADE_IN = 140
 const FADE_OUT = 200
 
-export type QuoteChartOverlayProps = {
-  candles?: QuoteCandle[]
-  event?: QuoteEvent
-  readout: QuoteReadout
-}
-
 type CardRow = {id: string; label: string; tint?: string; value: string}
 
-type CardModel = {left: number; rows: CardRow[]; title?: string; top: number}
+type CardModel = {rows: CardRow[]; title?: string}
 
 const candleRows = (candle: QuoteCandle, color: QuoteColors): CardRow[] => {
   const change = candle.open === 0 ? 0 : ((candle.close - candle.open) / candle.open) * 100
@@ -73,77 +57,76 @@ const QuoteFadeView = ({
   )
 }
 
-export const QuoteChartOverlay = ({candles, event, readout}: QuoteChartOverlayProps) => {
+/**
+ * The pill on the event rule. Named in the chart's config as the view for the `event` annotation, so
+ * the chart caps the rule with it the way its own badge would — the lift is the only offset left to us.
+ */
+export const QuoteEventBadge = () => {
   const {color} = useQuoteTheme()
-  const [cardHeight, setCardHeight] = useState(0)
-  const [card, setCard] = useState<CardModel | null>(null)
-  const geometry = readout.geometry
-  const plot = geometry?.plot
-  const spot = event && geometry ? geometry.annotations.find(annotation => annotation.id === 'event') : undefined
-  const isOnEvent = readout.isScrubbing && readout.category === event?.category
-  const candle =
-    readout.isScrubbing && !isOnEvent ? candles?.find(item => item.category === readout.category) : undefined
-  const isCardVisible = Boolean(candle) || Boolean(isOnEvent && event && spot)
-  const anchor = readout.nativeX ?? spot?.x
-  const category = readout.category
+  const event = useQuoteReading()?.event
 
-  useEffect(() => {
-    if (!plot || !isCardVisible) {
-      return
-    }
-    const room = plot.x + plot.width - CARD_WIDTH
-    const trailing = (anchor ?? plot.x) + CARD_GAP
-    const left = trailing <= room ? trailing : (anchor ?? plot.x) - CARD_GAP - CARD_WIDTH
-    const scrubbed = candles?.find(item => item.category === category)
-    setCard({
-      left: Math.max(plot.x, Math.min(left, room)),
-      rows:
-        candle && scrubbed ? candleRows(scrubbed, color) : (event?.rows.map(row => ({...row, id: row.label})) ?? []),
-      title: candle ? undefined : event?.title,
-      top: plot.y + Math.max(0, (plot.height - cardHeight) / 2),
-    })
-  }, [anchor, candle, candles, cardHeight, category, color, event, isCardVisible, plot])
-
-  if (!geometry || !plot) {
+  if (!event) {
     return null
   }
 
   return (
-    <View pointerEvents="none" style={styles.overlay}>
-      {event && spot ? (
-        <QuoteFadeView
-          style={[
-            styles.badge,
-            {
-              backgroundColor: color.pill,
-              borderColor: color.pillPressed,
-              left: spot.x - BADGE / 2,
-              top: spot.y - BADGE / 2 - BADGE_LIFT,
-            },
-          ]}
-          visible
-        >
-          <Text style={[styles.badgeText, {color: color.label}]}>{event.badge}</Text>
-        </QuoteFadeView>
-      ) : null}
+    <QuoteFadeView
+      style={[
+        styles.badge,
+        {backgroundColor: color.pill, borderColor: color.pillPressed, transform: [{translateY: -BADGE_LIFT}]},
+      ]}
+      visible
+    >
+      <Text style={[styles.badgeText, {color: color.label}]}>{event.badge}</Text>
+    </QuoteFadeView>
+  )
+}
 
-      {card ? (
-        <QuoteFadeView
-          style={[styles.card, {backgroundColor: color.card, left: card.left, top: card.top}]}
-          visible={isCardVisible}
-        >
-          <View onLayout={(layout: LayoutChangeEvent) => setCardHeight(layout.nativeEvent.layout.height)}>
-            {card.title ? <Text style={[styles.cardTitle, {color: color.text}]}>{card.title}</Text> : null}
-            {card.rows.map(row => (
-              <View key={row.id} style={styles.cardRow}>
-                <Text style={[styles.cardLabel, {color: color.textMuted}]}>{row.label}</Text>
-                <Text style={[styles.cardValue, {color: row.tint ?? color.text}]}>{row.value}</Text>
-              </View>
-            ))}
-          </View>
-        </QuoteFadeView>
-      ) : null}
-    </View>
+/**
+ * What the finger is reading. Named in the chart's config as its `tooltip.view`, so where it sits is
+ * the chart's answer and moves with the touch rather than with a render — and what it says is read
+ * from the screen's own context, so a reading never touches the chart's props.
+ *
+ * The last rows it showed are kept while it fades out: the reading is already gone by then, and a
+ * card that emptied itself on the way out would blink before it went.
+ */
+export const QuoteReadingCard = () => {
+  const {color} = useQuoteTheme()
+  const reading = useQuoteReading()
+  const [card, setCard] = useState<CardModel | null>(null)
+  const {candles, event} = reading ?? {}
+  const readout = reading?.readout
+  const isOnEvent = readout?.isScrubbing && readout.category === event?.category
+  const candle =
+    readout?.isScrubbing && !isOnEvent ? candles?.find(item => item.category === readout.category) : undefined
+  const isVisible = Boolean(candle) || Boolean(isOnEvent && event)
+
+  useEffect(() => {
+    if (!isVisible) {
+      return
+    }
+    const scrubbed = candles?.find(item => item.category === readout?.category)
+    setCard({
+      rows:
+        candle && scrubbed ? candleRows(scrubbed, color) : (event?.rows.map(row => ({...row, id: row.label})) ?? []),
+      title: candle ? undefined : event?.title,
+    })
+  }, [candle, candles, color, event, isVisible, readout?.category])
+
+  if (!card) {
+    return null
+  }
+
+  return (
+    <QuoteFadeView style={[styles.card, {backgroundColor: color.card}]} visible={isVisible}>
+      {card.title ? <Text style={[styles.cardTitle, {color: color.text}]}>{card.title}</Text> : null}
+      {card.rows.map(row => (
+        <View key={row.id} style={styles.cardRow}>
+          <Text style={[styles.cardLabel, {color: color.textMuted}]}>{row.label}</Text>
+          <Text style={[styles.cardValue, {color: row.tint ?? color.text}]}>{row.value}</Text>
+        </View>
+      ))}
+    </QuoteFadeView>
   )
 }
 
@@ -154,7 +137,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     height: BADGE,
     justifyContent: 'center',
-    position: 'absolute',
     width: BADGE,
   },
   badgeText: {fontSize: 10, fontWeight: '600'},
@@ -162,12 +144,10 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 8,
-    position: 'absolute',
     width: CARD_WIDTH,
   },
   cardLabel: {fontSize: 12},
   cardRow: {flexDirection: 'row', justifyContent: 'space-between', marginTop: 3},
   cardTitle: {fontSize: 13, fontWeight: '600'},
   cardValue: {fontSize: 12, fontVariant: ['tabular-nums']},
-  overlay: {bottom: 0, left: 0, position: 'absolute', right: 0, top: 0},
 })

@@ -1,4 +1,5 @@
 import type {StocksRange} from '@zyplot/feature-charts/stocks'
+import {memo} from 'react'
 import {StyleSheet, View} from 'react-native'
 import {stocksLayout, useStocksTheme} from '../data/stocks-theme'
 
@@ -10,8 +11,11 @@ import {stocksLayout, useStocksTheme} from '../data/stocks-theme'
  * two charts never do: each renderer insets its own plot by a different amount, so a bar chart
  * given the same box as a line chart still puts its marks somewhere else. Ticks the screen
  * lays out itself land where the screen says.
+ *
+ * Held against the range, because a hundred and twenty ticks are a hundred and twenty views and
+ * nothing a finger reads changes one of them.
  */
-export const StocksVolumeTape = ({range}: {range: StocksRange}) => {
+const VolumeTape = ({range}: {range: StocksRange}) => {
   const {color} = useStocksTheme()
   const peak = Math.max(...range.volumes, 1)
 
@@ -29,6 +33,8 @@ export const StocksVolumeTape = ({range}: {range: StocksRange}) => {
     </View>
   )
 }
+
+export const StocksVolumeTape = memo(VolumeTape)
 
 const styles = StyleSheet.create({
   tape: {

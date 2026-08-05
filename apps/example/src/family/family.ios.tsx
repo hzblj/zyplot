@@ -1,5 +1,6 @@
 import {Host, VStack} from '@expo/ui/swift-ui'
 import {padding} from '@expo/ui/swift-ui/modifiers'
+import {tooltip} from '@hzblj/zyplot'
 import {FamilyChart, type FamilyRangeId, familyRange} from '@zyplot/feature-charts/family'
 import {useState} from 'react'
 import {StyleSheet, View} from 'react-native'
@@ -9,9 +10,14 @@ import {FamilyChartArrival} from './components/family-chart-arrival'
 import {FamilyTokenIdentity} from './components/family-nav.ios'
 import {FamilyPriceReadout} from './components/family-price-readout.ios'
 import {FamilyRangeSelector} from './components/family-range-selector.ios'
+import {FamilyReadingChip} from './components/family-reading-chip'
 import {familyLayout, useFamilyTheme} from './data/family-theme'
+import {FamilyReadingProvider} from './hooks/family-reading-context'
 import {useChartPlaceholder} from './hooks/use-chart-placeholder'
 import {useFamilyReadout} from './hooks/use-family-readout'
+
+/** Held at module scope: a new object on every render would rebuild the chart's config with it. */
+const READING_TOOLTIP = tooltip.above({lift: 2, view: FamilyReadingChip})
 
 const BOTTOM = 20
 
@@ -52,7 +58,15 @@ export const FamilyScreen = () => {
 
       <View style={styles.chart}>
         <FamilyChartArrival isLoading={isLoading} scheme={scheme}>
-          <FamilyChart isLoading={isLoading} onInteraction={readout.onInteraction} range={range} scheme={scheme} />
+          <FamilyReadingProvider readout={readout}>
+            <FamilyChart
+              isLoading={isLoading}
+              onInteraction={readout.onInteraction}
+              range={range}
+              scheme={scheme}
+              tooltip={READING_TOOLTIP}
+            />
+          </FamilyReadingProvider>
         </FamilyChartArrival>
       </View>
 

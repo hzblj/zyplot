@@ -1,3 +1,4 @@
+import {tooltip} from '@hzblj/zyplot'
 import {Chart} from '@hzblj/zyplot/web'
 import {FamilyChart, type FamilyRangeId, familyChartStyle, familyRange} from '@zyplot/feature-charts/family'
 import {useState} from 'react'
@@ -9,9 +10,14 @@ import {FamilyChartArrival} from './components/family-chart-arrival'
 import {FamilyTokenIdentity} from './components/family-nav'
 import {FamilyPriceReadout} from './components/family-price-readout'
 import {FamilyRangeSelector} from './components/family-range-selector'
+import {FamilyReadingChip} from './components/family-reading-chip'
 import {familyLayout, useFamilyTheme} from './data/family-theme'
+import {FamilyReadingProvider} from './hooks/family-reading-context'
 import {useChartPlaceholder} from './hooks/use-chart-placeholder'
 import {useFamilyReadout} from './hooks/use-family-readout'
+
+/** Held at module scope: a new object on every render would rebuild the chart's config with it. */
+const READING_TOOLTIP = tooltip.above({lift: 2, view: FamilyReadingChip})
 
 const TOP = 16
 const BOTTOM = 20
@@ -48,7 +54,15 @@ export const FamilyScreen = () => {
         <View style={styles.chart}>
           <FamilyChartArrival isLoading={isLoading} scheme={scheme}>
             <Chart.Provider colorMode={scheme} theme={familyChartStyle(scheme).theme}>
-              <FamilyChart isLoading={isLoading} onInteraction={readout.onInteraction} range={range} scheme={scheme} />
+              <FamilyReadingProvider readout={readout}>
+                <FamilyChart
+                  isLoading={isLoading}
+                  onInteraction={readout.onInteraction}
+                  range={range}
+                  scheme={scheme}
+                  tooltip={READING_TOOLTIP}
+                />
+              </FamilyReadingProvider>
             </Chart.Provider>
           </FamilyChartArrival>
         </View>

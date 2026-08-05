@@ -1,3 +1,4 @@
+import {tooltip} from '@hzblj/zyplot'
 import {
   StepsChart,
   type StepsRangeId,
@@ -12,14 +13,21 @@ import {AppHeader} from '../components/app-header'
 import {contentWidth} from '../theme/tokens'
 import {StepsComparisonCard, StepsCumulativeCard} from './components/steps-highlight-card'
 import {StepsRangeTabs} from './components/steps-range-tabs'
-import {CARD_WIDTH, StepsHeadline, StepsSpanCard} from './components/steps-readout'
+import {StepsHeadline, StepsReadingCard, StepsSpanCard} from './components/steps-readout'
 import {StepsText} from './components/steps-text'
 import {stepsLayout, useStepsTheme} from './data/steps-theme'
+import {StepsReadingProvider} from './hooks/steps-reading-context'
 import {useChartPlaceholder} from './hooks/use-chart-placeholder'
 import {useStepsView} from './hooks/use-steps-view'
 
 const TOP = 16
 const READOUT_HEIGHT = 84
+
+/**
+ * The card's bottom sits on the plot's top edge, which is where the readout row it used to live in
+ * left it. Held at module scope so the chart's config is the same value on every render.
+ */
+const READING_TOOLTIP = tooltip.above({lift: 0, view: StepsReadingCard})
 
 export const StepsScreen = () => {
   const insets = useSafeAreaInsets()
@@ -30,12 +38,6 @@ export const StepsScreen = () => {
   const view = useStepsView(range)
   const cumulative = useMemo(stepsCumulative, [])
   const comparisons = useMemo(stepsComparisons, [])
-
-  const plot = view.geometry?.plot
-  const cardLeft =
-    plot === undefined || view.anchor === null
-      ? null
-      : Math.min(Math.max(view.anchor - CARD_WIDTH / 2, plot.x), Math.max(plot.x, plot.x + plot.width - CARD_WIDTH))
 
   return (
     <View style={[styles.screen, {backgroundColor: color.background, paddingTop: Math.max(insets.top, TOP)}]}>
@@ -55,11 +57,20 @@ export const StepsScreen = () => {
           <View style={[styles.headline, view.isReading ? styles.hidden : null]}>
             <StepsHeadline readout={view.readout} />
           </View>
-          {view.isReading && cardLeft !== null ? <StepsSpanCard left={cardLeft} readout={view.readout} /> : null}
         </View>
 
+        {}
         <View style={styles.column}>
-          <StepsChart isLoading={isLoading} onInteraction={view.onInteraction} range={range} scheme={scheme} />
+          <StepsReadingProvider view={view}>
+            <StepsChart
+              isLoading={isLoading}
+              onInteraction={view.onInteraction}
+              range={range}
+              rangeView={StepsSpanCard}
+              scheme={scheme}
+              tooltip={READING_TOOLTIP}
+            />
+          </StepsReadingProvider>
         </View>
 
         <View style={[styles.column, styles.highlights]}>

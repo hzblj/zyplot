@@ -1,5 +1,6 @@
 import {Host, VStack} from '@expo/ui/swift-ui'
 import {padding} from '@expo/ui/swift-ui/modifiers'
+import {tooltip} from '@hzblj/zyplot'
 import {
   KrakenChart,
   type KrakenCoin,
@@ -14,9 +15,14 @@ import {AppHeader} from '../components/app-header'
 import {KrakenExtremes} from './components/kraken-extremes.ios'
 import {KrakenPriceReadout} from './components/kraken-price-readout.ios'
 import {KrakenRangeTabs} from './components/kraken-range-tabs.ios'
+import {KrakenReadingChip} from './components/kraken-reading-chip'
 import {krakenLayout, useKrakenTheme} from './data/kraken-theme'
+import {KrakenReadingProvider} from './hooks/kraken-reading-context'
 import {useChartPlaceholder} from './hooks/use-chart-placeholder'
 import {useKrakenReadout} from './hooks/use-kraken-readout'
+
+/** Held at module scope: a new object on every render would rebuild the chart's config with it. */
+const READING_TOOLTIP = tooltip.above({view: KrakenReadingChip})
 
 export const KrakenCoinScreen = ({coin}: {coin: KrakenCoin}) => {
   const insets = useSafeAreaInsets()
@@ -44,13 +50,16 @@ export const KrakenCoinScreen = ({coin}: {coin: KrakenCoin}) => {
 
       {}
       <View style={styles.chart}>
-        <KrakenChart
-          isLatestRead={readout.isOnLatest}
-          isLoading={isLoading}
-          onInteraction={readout.onInteraction}
-          range={range}
-          scheme={scheme}
-        />
+        <KrakenReadingProvider readout={readout}>
+          <KrakenChart
+            tooltip={READING_TOOLTIP}
+            isLatestRead={readout.isOnLatest}
+            isLoading={isLoading}
+            onInteraction={readout.onInteraction}
+            range={range}
+            scheme={scheme}
+          />
+        </KrakenReadingProvider>
       </View>
 
       <Host matchContents style={[styles.host, styles.extremes]}>

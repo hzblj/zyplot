@@ -1,3 +1,4 @@
+import {tooltip} from '@hzblj/zyplot'
 import {Chart} from '@hzblj/zyplot/web'
 import {
   KrakenChart,
@@ -14,9 +15,14 @@ import {contentWidth} from '../theme/tokens'
 import {KrakenExtremes} from './components/kraken-extremes'
 import {KrakenPriceReadout} from './components/kraken-price-readout'
 import {KrakenRangeTabs} from './components/kraken-range-tabs'
+import {KrakenReadingChip} from './components/kraken-reading-chip'
 import {krakenLayout, useKrakenTheme} from './data/kraken-theme'
+import {KrakenReadingProvider} from './hooks/kraken-reading-context'
 import {useChartPlaceholder} from './hooks/use-chart-placeholder'
 import {useKrakenReadout} from './hooks/use-kraken-readout'
+
+/** Held at module scope: a new object on every render would rebuild the chart's config with it. */
+const READING_TOOLTIP = tooltip.above({view: KrakenReadingChip})
 
 const TOP = 12
 
@@ -44,13 +50,16 @@ export const KrakenCoinScreen = ({coin}: {coin: KrakenCoin}) => {
         <View style={styles.chart}>
           {}
           <Chart.Provider colorMode={scheme}>
-            <KrakenChart
-              isLatestRead={readout.isOnLatest}
-              isLoading={isLoading}
-              onInteraction={readout.onInteraction}
-              range={range}
-              scheme={scheme}
-            />
+            <KrakenReadingProvider readout={readout}>
+              <KrakenChart
+                tooltip={READING_TOOLTIP}
+                isLatestRead={readout.isOnLatest}
+                isLoading={isLoading}
+                onInteraction={readout.onInteraction}
+                range={range}
+                scheme={scheme}
+              />
+            </KrakenReadingProvider>
           </Chart.Provider>
         </View>
 
