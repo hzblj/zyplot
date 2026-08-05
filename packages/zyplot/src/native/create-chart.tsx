@@ -1,27 +1,24 @@
-import {
-  type ChartGeometry,
-  mergeChartSurface,
-  type NativeChartBaseProps,
-  type NativeChartInteractionEvent,
-} from '@hzblj/zyplot-core'
+import {mergeChartSurface, type NativeChartBaseProps, type NativeChartInteractionEvent} from '@hzblj/zyplot-core'
 import {requireNativeView} from 'expo'
-import {type ComponentType, memo, type ReactNode, useCallback, useMemo, useRef, useState} from 'react'
-import {type LayoutChangeEvent, type NativeSyntheticEvent, StyleSheet, View, type ViewProps} from 'react-native'
-import {
-  annotationViewIds,
-  type ChartAnnotationViewProps,
-  hasAnnotationView,
-  hideViewedAnnotations,
-  sameChartGeometry,
-} from '../shared/annotation-views'
+import {type ComponentType, memo, type ReactNode, useMemo} from 'react'
+import {type NativeSyntheticEvent, StyleSheet, type ViewProps} from 'react-native'
+import {annotationViewAligns, annotationViewIds, hideViewedAnnotations} from '../shared/annotation-views'
+import {type ChartSlotViewProps, chartSlots, resolveInteraction, tooltipAnchorOf} from '../shared/chart-slots'
 import {useChartContext} from './chart-provider'
 
 type NativeViewProps = ViewProps & {
+  children?: ReactNode
   configuration: string
   onInteraction?: (event: NativeSyntheticEvent<NativeChartInteractionEvent>) => void
 }
 
+type NativeSlotViewProps = ViewProps & {
+  children?: ReactNode
+  slot: string
+}
+
 const NativeChartView: ComponentType<NativeViewProps> = requireNativeView('Zyplot')
+const NativeSlotView: ComponentType<NativeSlotViewProps> = requireNativeView('Zyplot', 'ZyplotSlot')
 
 const PAYLOAD_RENAMES: Partial<Record<string, readonly [string, string]>> = {
   candlestick: ['data', 'candlesticks'],
@@ -33,38 +30,43 @@ const PAYLOAD_RENAMES: Partial<Record<string, readonly [string, string]>> = {
   treemap: ['data', 'hierarchy'],
 }
 
-const ChartAnnotationView = ({children, x, y}: {children: ReactNode; x: number; y: number}) => {
-  const [size, setSize] = useState<{height: number; width: number} | null>(null)
-
-  const onLayout = useCallback((event: LayoutChangeEvent) => {
-    const {height, width} = event.nativeEvent.layout
-    setSize(current => (current?.height === height && current?.width === width ? current : {height, width}))
-  }, [])
-
-  return (
-    <View
-      onLayout={onLayout}
-      pointerEvents="none"
-      style={{
-        left: x - (size?.width ?? 0) / 2,
-        opacity: size ? 1 : 0,
-        position: 'absolute',
-        top: y - (size?.height ?? 0) / 2,
-      }}
-    >
-      {children}
-    </View>
-  )
-}
+/**
+ * Laid out at the origin at its own size, because the chart moves it by translating the
+ * container it is mounted in and never by the frame React Native gave it.
+ */
+const styles = StyleSheet.create({
+  slot: {left: 0, position: 'absolute', top: 0},
+})
 
 export const createChart = <Props extends NativeChartBaseProps>(type: string) => {
-  const NativeChart = ({height = 320, onInteraction, ...props}: Props) => {
+  const NativeChart = ({
+    annotationViews,
+    height = 320,
+    onInteraction,
+    rangeView,
+    tooltip,
+    ...props
+  }: Props & ChartSlotViewProps) => {
     const inherited = useChartContext()
+    const viewedIds = annotationViewIds(annotationViews)
+    const slots = chartSlots({annotationViews, rangeView, tooltip})
+    const annotations = useMemo(
+      () => hideViewedAnnotations(props.annotations, viewedIds),
+      [props.annotations, viewedIds]
+    )
+
     const configuration: Record<string, unknown> = {
       ...props,
+      annotations,
+      // Where each of the app's own annotation views sits on its mark. The views themselves cannot
+      // cross the bridge; this is the part of them the native side has to be told.
+      annotationViewAlign: annotationViewAligns(annotationViews),
       height,
+      interaction: resolveInteraction(props.interaction, tooltip),
       surface: mergeChartSurface(inherited.surface, props.surface),
       theme: props.theme ?? inherited.theme,
+      // The view itself cannot cross the bridge; where to put it is all the native side is told.
+      tooltipAnchor: tooltipAnchorOf(tooltip),
       type,
     }
     const rename = PAYLOAD_RENAMES[type]
@@ -80,63 +82,19 @@ export const createChart = <Props extends NativeChartBaseProps>(type: string) =>
         configuration={JSON.stringify(configuration)}
         onInteraction={onInteraction ? event => onInteraction(event.nativeEvent) : undefined}
         style={{height, width: '100%'}}
-      />
+      >
+        {slots.map(slot => (
+          <NativeSlotView key={slot.id} pointerEvents="none" slot={slot.id} style={styles.slot}>
+            {slot.node}
+          </NativeSlotView>
+        ))}
+      </NativeChartView>
     )
   }
 
-  NativeChart.displayName = `Chart.${type}.Native`
+  NativeChart.displayName = `Chart.${type}`
 
-  const MemoChart = memo(NativeChart)
-
-  const Chart = ({annotationViews, ...props}: Props & ChartAnnotationViewProps) => {
-    const [geometry, setGeometry] = useState<ChartGeometry | null>(null)
-    const ids = annotationViewIds(annotationViews)
-    const listener = useRef(props.onInteraction)
-    const wantsGeometry = useRef(false)
-    listener.current = props.onInteraction
-    wantsGeometry.current = ids !== ''
-
-    const annotations = useMemo(() => hideViewedAnnotations(props.annotations, ids), [props.annotations, ids])
-
-    const onInteraction = useCallback((event: NativeChartInteractionEvent) => {
-      const reported = event.geometry
-      if (wantsGeometry.current && reported) {
-        setGeometry(current => (sameChartGeometry(current, reported) ? current : reported))
-      }
-      listener.current?.(event)
-    }, [])
-
-    const chart = (
-      <MemoChart
-        {...(props as Props)}
-        annotations={annotations}
-        onInteraction={ids || props.onInteraction ? onInteraction : undefined}
-      />
-    )
-
-    if (!ids) {
-      return chart
-    }
-
-    return (
-      <View>
-        {chart}
-        <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-          {(geometry?.annotations ?? []).map(spot => {
-            const view = annotationViews?.[spot.id]
-
-            return hasAnnotationView(view) ? (
-              <ChartAnnotationView key={spot.id} x={spot.x} y={spot.y}>
-                {view}
-              </ChartAnnotationView>
-            ) : null
-          })}
-        </View>
-      </View>
-    )
-  }
-
-  Chart.displayName = `Chart.${type}`
-
-  return Chart
+  // Left callable rather than widened to `ComponentType`, because apps read a chart's own props
+  // back off it with `Parameters<typeof Chart.Line>[0]`.
+  return memo(NativeChart)
 }

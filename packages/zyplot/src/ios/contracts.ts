@@ -1,9 +1,7 @@
-import type {NativeChartAxisOptions, NativeChartBaseProps} from '@hzblj/zyplot-core'
+import type {ChartOrientation, NativeChartAxisOptions, NativeChartBaseProps} from '@hzblj/zyplot-core'
 
 /** The x axis, plus the scrolling window Swift Charts can show. */
 export type ChartAxisXIos = NativeChartAxisOptions & {
-  /** Which value the visible window starts at. */
-  scrollPosition?: number | string
   /** How much of the domain fits on screen at once. */
   visibleDomain?: number
 }
@@ -30,7 +28,7 @@ export type ChartRuleDatumIos = {
 export type ChartRulePropsIos = NativeChartBaseProps &
   ChartPlatformPropsIos & {
     data: readonly ChartRuleDatumIos[]
-    orientation?: 'horizontal' | 'vertical'
+    orientation?: ChartOrientation
   }
 
 /** One band: a low-to-high span sitting on a category. */
@@ -47,6 +45,3 @@ export type ChartRangePropsIos = NativeChartBaseProps &
   ChartPlatformPropsIos & {
     data: readonly ChartRangeDatumIos[]
   }
-
-/** The forms only the iOS renderer provides. */
-export type ChartExtensionKindIos = 'range' | 'rule'

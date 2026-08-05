@@ -24,13 +24,13 @@ import {buildChartReveal} from '../shared/reveal'
 import type {ChartScrubConfig} from '../shared/scrub'
 import {skeletonAxis} from '../shared/skeleton'
 import {emphasisSeriesColor, useChartTokens} from '../shared/tokens'
-import type {ChartBaseProps, ChartNumberFormat, ChartSeries, NativeChartInteraction} from '../shared/types'
+import type {ChartNumberFormat, ChartSeries, ChartSeriesPlotProps, NativeChartInteraction} from '../shared/types'
 import {LineChartSkeleton} from './line-chart-skeleton'
 
 echarts.use([EChartsLineChart])
 
 /** Props for `Chart.Line`. */
-export type LineChartProps = ChartBaseProps & {
+export type LineChartProps = ChartSeriesPlotProps & {
   categories: readonly string[]
   /** Keeps one series in colour and drops the rest to grey. */
   emphasisId?: string

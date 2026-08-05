@@ -16,7 +16,7 @@ import {
 } from '../shared/option'
 import {skeletonAxis} from '../shared/skeleton'
 import {useChartTokens} from '../shared/tokens'
-import type {ChartBaseProps, ChartDumbbellRow, ChartNumberFormat} from '../shared/types'
+import type {ChartAxesProps, ChartDumbbellRow, ChartNumberFormat} from '../shared/types'
 import {DumbbellChartSkeleton} from './dumbbell-chart-skeleton'
 
 echarts.use([CustomChart])
@@ -25,7 +25,7 @@ const DOT_RADIUS = 5
 const CONNECTOR_WIDTH = 2
 
 /** Props for `Chart.Dumbbell`. */
-export type DumbbellChartProps = ChartBaseProps & {
+export type DumbbellChartProps = ChartAxesProps & {
   afterLabel: string
   beforeLabel: string
   format?: ChartNumberFormat

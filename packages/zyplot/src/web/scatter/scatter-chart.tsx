@@ -16,22 +16,18 @@ import {
 } from '../shared/option'
 import {skeletonAxis} from '../shared/skeleton'
 import {seriesColor, useChartTokens} from '../shared/tokens'
-import {
-  CHART_ALL_PAIRS_SERIES_LIMIT,
-  type ChartBaseProps,
-  type ChartNumberFormat,
-  type ChartScatterSeries,
-} from '../shared/types'
+import type {ChartAxesProps, ChartNumberFormat, ChartScatterSeries} from '../shared/types'
 import {ScatterChartSkeleton} from './scatter-chart-skeleton'
 
 echarts.use([EChartsScatterChart])
 
+const CHART_ALL_PAIRS_SERIES_LIMIT = 3
 const DEFAULT_SYMBOL_SIZE = 9
 const MAX_SYMBOL_SIZE = 28
 const PROGRESSIVE_THRESHOLD = 3000
 
 /** Props for `Chart.Scatter`. */
-export type ScatterChartProps = ChartBaseProps & {
+export type ScatterChartProps = ChartAxesProps & {
   series: readonly ChartScatterSeries[]
   xFormat?: ChartNumberFormat
   xLabel?: string

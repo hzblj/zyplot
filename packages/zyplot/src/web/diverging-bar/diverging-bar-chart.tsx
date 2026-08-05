@@ -15,7 +15,7 @@ import {
 } from '../shared/option'
 import {skeletonAxis} from '../shared/skeleton'
 import {useChartTokens} from '../shared/tokens'
-import type {ChartBaseProps, ChartDatum, ChartNumberFormat} from '../shared/types'
+import type {ChartAxesProps, ChartDatum, ChartNumberFormat, ChartOrientation} from '../shared/types'
 import {DivergingBarChartSkeleton} from './diverging-bar-chart-skeleton'
 
 echarts.use([EChartsBarChart])
@@ -31,10 +31,10 @@ const baselineFor = (isHorizontal: boolean) => {
 }
 
 /** Props for `Chart.DivergingBar`. */
-export type DivergingBarChartProps = ChartBaseProps & {
+export type DivergingBarChartProps = ChartAxesProps & {
   data: readonly ChartDatum[]
   format?: ChartNumberFormat
-  orientation?: 'horizontal' | 'vertical'
+  orientation?: ChartOrientation
 }
 
 /**

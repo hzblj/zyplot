@@ -15,7 +15,7 @@ import {
 } from '../shared/option'
 import {skeletonAxis} from '../shared/skeleton'
 import {emphasisSeriesColor, useChartTokens} from '../shared/tokens'
-import type {ChartBaseProps, ChartNumberFormat, ChartSeries} from '../shared/types'
+import type {ChartNumberFormat, ChartOrientation, ChartSeries, ChartSeriesPlotProps} from '../shared/types'
 import {StackedBarChartSkeleton} from './stacked-bar-chart-skeleton'
 
 echarts.use([EChartsBarChart])
@@ -23,14 +23,14 @@ echarts.use([EChartsBarChart])
 const SEGMENT_GAP = 1
 
 /** Props for `Chart.StackedBar`. */
-export type StackedBarChartProps = ChartBaseProps & {
+export type StackedBarChartProps = ChartSeriesPlotProps & {
   categories: readonly string[]
   /** Keeps one series in colour and drops the rest to grey. */
   emphasisId?: string
   format?: ChartNumberFormat
   /** Normalises every stack to 100%, so the chart compares shape and not size. */
   isNormalized?: boolean
-  orientation?: 'horizontal' | 'vertical'
+  orientation?: ChartOrientation
   series: readonly ChartSeries[]
 }
 

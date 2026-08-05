@@ -22,13 +22,13 @@ import {
 import type {ChartScrubConfig} from '../shared/scrub'
 import {skeletonAxis} from '../shared/skeleton'
 import {useChartTokens} from '../shared/tokens'
-import type {ChartBaseProps, ChartNumberFormat} from '../shared/types'
+import type {ChartNumberFormat, ChartPlotProps} from '../shared/types'
 import {CandlestickChartSkeleton} from './candlestick-chart-skeleton'
 
 echarts.use([DataZoomComponent, EChartsBarChart, EChartsCandlestickChart])
 
 /** Props for `Chart.Candlestick`. */
-export type CandlestickChartProps = ChartBaseProps & {
+export type CandlestickChartProps = ChartPlotProps & {
   data: readonly ChartCandlestickDatum[]
   format?: ChartNumberFormat
   showVolume?: boolean

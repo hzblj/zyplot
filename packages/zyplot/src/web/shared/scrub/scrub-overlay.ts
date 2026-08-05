@@ -2,12 +2,7 @@ import type {EChartsType} from 'echarts/core'
 import {graphic} from 'echarts/core'
 import {isHiddenAnnotation} from '../../../shared/annotation-views'
 import {blendChartColor, fadeChartColor} from '../color'
-import {
-  CROSSHAIR_LABEL_LIFT,
-  CROSSHAIR_LABEL_PADDING_ACROSS,
-  CROSSHAIR_LABEL_PADDING_DOWN,
-  CROSSHAIR_LABEL_SIZE,
-} from '../option'
+import {CROSSHAIR_LABEL_LIFT, CROSSHAIR_LABEL_SIZE} from '../option'
 import type {
   ChartCrosshairMode,
   ChartCrosshairStyle,
@@ -109,22 +104,6 @@ const startPulse = (
   }
 
   bloom()
-}
-
-/** Room around a crosshair label, which only a chip has: without a background the label is the text. */
-const labelPadding = (style: ChartCrosshairStyle | undefined) => {
-  if (!style?.labelBackground) {
-    return {across: 0, down: 0}
-  }
-  const padding = style.labelPadding
-  if (typeof padding === 'number') {
-    return {across: padding, down: padding}
-  }
-
-  return {
-    across: padding?.x ?? CROSSHAIR_LABEL_PADDING_ACROSS,
-    down: padding?.y ?? CROSSHAIR_LABEL_PADDING_DOWN,
-  }
 }
 
 const annotationFade = (scrubOpacity: number | undefined, isScrubbing: boolean | undefined): number =>
@@ -348,14 +327,12 @@ export const createScrubOverlay = (instance: EChartsType) => {
       return
     }
 
-    const crosshair = style.crosshairStyle
-    const {across, down} = labelPadding(crosshair)
     const text = new graphic.Text({
       silent: true,
       style: {
         align: 'center',
-        fill: crosshair?.labelColor ?? style.axisColor,
-        fontSize: crosshair?.labelSize ?? CROSSHAIR_LABEL_SIZE,
+        fill: style.axisColor,
+        fontSize: CROSSHAIR_LABEL_SIZE,
         fontWeight: 500,
         text: label,
         verticalAlign: 'top',
@@ -366,22 +343,9 @@ export const createScrubOverlay = (instance: EChartsType) => {
     })
 
     const measured = text.getBoundingRect()
-    const width = measured.width + across * 2
-    const height = measured.height + down * 2
-    const top = Math.max(0, plot.y - (crosshair?.labelLift ?? CROSSHAIR_LABEL_LIFT) - height)
-    const centre = pinnedLabelCentre(x, width, instance.getWidth())
-    text.attr({style: {x: centre, y: top + down}})
+    const top = Math.max(0, plot.y - CROSSHAIR_LABEL_LIFT - measured.height)
+    text.attr({style: {x: pinnedLabelCentre(x, measured.width, instance.getWidth()), y: top}})
 
-    if (crosshair?.labelBackground) {
-      marks.add(
-        new graphic.Rect({
-          shape: {height, r: [crosshair.labelRadius ?? height / 2], width, x: centre - width / 2, y: top},
-          silent: true,
-          style: {fill: crosshair.labelBackground},
-          z: FRONT_Z,
-        })
-      )
-    }
     marks.add(text)
   }
 

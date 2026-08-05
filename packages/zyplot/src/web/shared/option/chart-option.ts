@@ -1,4 +1,5 @@
 import {isHiddenAnnotation} from '../../../shared/annotation-views'
+import type {ResolvedChartInteraction} from '../../../shared/chart-slots'
 import {escapeChartHtml, formatChartNumber} from '../format'
 import {isRevealSeriesId} from '../reveal'
 import {type ChartTokens, emphasisSeriesColor} from '../tokens'
@@ -37,8 +38,6 @@ const PLOT_TOP = 8
 const UPDATE_DURATION = 320
 export const CROSSHAIR_LABEL_SIZE = 13
 export const CROSSHAIR_LABEL_LIFT = 8
-export const CROSSHAIR_LABEL_PADDING_ACROSS = 10
-export const CROSSHAIR_LABEL_PADDING_DOWN = 5
 
 export const crosshairHeadroom = (interaction?: NativeChartInteraction): number => {
   const style = interaction?.crosshairStyle
@@ -46,10 +45,7 @@ export const crosshairHeadroom = (interaction?: NativeChartInteraction): number 
     return 0
   }
 
-  const padding = typeof style.labelPadding === 'number' ? style.labelPadding : style.labelPadding?.y
-  const down = style.labelBackground ? (padding ?? CROSSHAIR_LABEL_PADDING_DOWN) : 0
-
-  return (style.labelSize ?? CROSSHAIR_LABEL_SIZE) + down * 2 + (style.labelLift ?? CROSSHAIR_LABEL_LIFT)
+  return CROSSHAIR_LABEL_SIZE + CROSSHAIR_LABEL_LIFT
 }
 
 export type ChartAxisPointerKind = 'line' | 'none' | 'shadow'
@@ -386,7 +382,11 @@ export const chartEasing = (easing: ChartAnimation['easing'] | undefined) => {
   }
 }
 
-export const buildChartInteraction = (tokens: ChartTokens, interaction?: ChartInteraction, drawsCrosshair = false) => {
+export const buildChartInteraction = (
+  tokens: ChartTokens,
+  interaction?: ResolvedChartInteraction,
+  drawsCrosshair = false
+) => {
   let pointer: ChartAxisPointerKind = 'line'
   if (drawsCrosshair || interaction?.crosshair === 'none' || interaction?.hover === 'none') {
     pointer = 'none'
@@ -462,14 +462,18 @@ export const buildChartAnnotationOption = (
   return {
     markArea: ranges.length
       ? {
-          data: ranges.map(item => [
-            item.axis === 'x' ? {name: item.label, xAxis: item.start} : {name: item.label, yAxis: item.start},
-            item.axis === 'x' ? {xAxis: item.end} : {yAxis: item.end},
-          ]),
-          itemStyle: {
-            color: ranges[0]?.color,
-            opacity: ranges[0]?.opacity ?? 0.12,
-          },
+          // The styling sits on each band's own start rather than on the series, so a second
+          // range keeps its own colour instead of taking the first one's.
+          data: ranges.map(item => {
+            const itemStyle = {color: item.color, opacity: item.opacity ?? 0.12}
+
+            return [
+              item.axis === 'x'
+                ? {itemStyle, name: item.label, xAxis: item.start}
+                : {itemStyle, name: item.label, yAxis: item.start},
+              item.axis === 'x' ? {xAxis: item.end} : {yAxis: item.end},
+            ]
+          }),
           silent: true,
         }
       : undefined,

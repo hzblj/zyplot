@@ -16,13 +16,16 @@ export {
   seriesStyle,
   surface,
   theme,
+  tooltip,
+  zyplot,
 } from '@hzblj/zyplot-core'
 
 import {ChartProvider} from './native/chart-provider'
 import {createSharedCharts} from './native/shared-charts'
 
 export type {ChartProviderProps} from './native/chart-provider'
-export type {ChartAnnotationViews} from './shared/annotation-views'
+export type {ChartAnnotationViews, ChartSlotView} from './shared/annotation-views'
+export type {ChartSlotViewProps, ChartTooltip} from './shared/chart-slots'
 export type {ChartScrub, ChartScrubSelection} from './shared/use-chart-scrub'
 export {useChartScrub} from './shared/use-chart-scrub'
 export type {ChartReading} from './shared/use-last-reading'

@@ -4,8 +4,8 @@ import type {EChartsType} from 'echarts/core'
 import {useEffect, useRef} from 'react'
 import {chartEasing} from '../option'
 import type {
-  ChartInteractionEvent,
   ChartInteractionPhase,
+  ChartRendererEvent,
   NativeChartAnimation,
   NativeChartAnnotation,
   NativeChartInteraction,
@@ -67,7 +67,7 @@ export const useChartScrubLayer = (
   instance: EChartsType | null,
   layoutVersion: number,
   config: ChartScrubConfig | undefined,
-  onInteraction?: (event: ChartInteractionEvent) => void
+  onInteraction?: (event: ChartRendererEvent) => void
 ) => {
   const configRef = useRef(config)
   const emitRef = useRef(onInteraction)

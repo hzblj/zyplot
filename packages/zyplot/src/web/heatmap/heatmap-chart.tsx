@@ -16,7 +16,7 @@ import {
 } from '../shared/option'
 import {skeletonAxis} from '../shared/skeleton'
 import {useChartTokens} from '../shared/tokens'
-import type {ChartBaseProps, ChartHeatmapCell, ChartNumberFormat} from '../shared/types'
+import type {ChartAxesProps, ChartHeatmapCell, ChartNumberFormat} from '../shared/types'
 import {HeatmapChartSkeleton} from './heatmap-chart-skeleton'
 
 echarts.use([EChartsHeatmapChart, VisualMapComponent])
@@ -24,7 +24,7 @@ echarts.use([EChartsHeatmapChart, VisualMapComponent])
 const CELL_GAP = 1
 
 /** Props for `Chart.Heatmap`. */
-export type HeatmapChartProps = ChartBaseProps & {
+export type HeatmapChartProps = ChartAxesProps & {
   cells: readonly ChartHeatmapCell[]
   columns: readonly string[]
   format?: ChartNumberFormat

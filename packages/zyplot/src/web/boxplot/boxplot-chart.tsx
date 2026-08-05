@@ -15,13 +15,13 @@ import {
 } from '../shared/option'
 import {skeletonAxis} from '../shared/skeleton'
 import {useChartTokens} from '../shared/tokens'
-import type {ChartBaseProps, ChartBoxplotGroup, ChartNumberFormat} from '../shared/types'
+import type {ChartAxesProps, ChartBoxplotGroup, ChartNumberFormat, ChartOrientation} from '../shared/types'
 import {BoxplotChartSkeleton} from './boxplot-chart-skeleton'
 
 echarts.use([EChartsBoxplotChart, EChartsScatterChart])
 
 /** Props for `Chart.Boxplot`. */
-export type BoxplotChartProps = ChartBaseProps & {
+export type BoxplotChartProps = ChartAxesProps & {
   format?: ChartNumberFormat
   groups: readonly ChartBoxplotGroup[]
   labels: {
@@ -31,7 +31,7 @@ export type BoxplotChartProps = ChartBaseProps & {
     q1: string
     q3: string
   }
-  orientation?: 'horizontal' | 'vertical'
+  orientation?: ChartOrientation
 }
 
 /**

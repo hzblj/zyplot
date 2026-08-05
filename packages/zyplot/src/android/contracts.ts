@@ -1,14 +1,12 @@
-import type {ChartDatum, NativeChartAxisOptions, NativeChartBaseProps} from '@hzblj/zyplot-core'
+import type {ChartDatum, ChartOrientation, NativeChartAxisOptions, NativeChartBaseProps} from '@hzblj/zyplot-core'
 
 /** The x axis, plus what Compose does with a label too long for its slot. */
 export type ChartAxisXAndroid = NativeChartAxisOptions & {
   labelOverflow?: 'clip' | 'ellipsis' | 'visible'
 }
 
-/** The y axis, plus what Compose does with a label too long for its slot. */
-export type ChartAxisYAndroid = NativeChartAxisOptions & {
-  labelOverflow?: 'clip' | 'ellipsis' | 'visible'
-}
+/** The y axis. Same options as the x one, `labelOverflow` included. */
+export type ChartAxisYAndroid = ChartAxisXAndroid
 
 /** The axis options every Android chart accepts on top of the shared ones. */
 export type ChartPlatformPropsAndroid = {
@@ -33,8 +31,5 @@ export type ChartWaterfallPropsAndroid = NativeChartBaseProps &
 export type ChartLollipopPropsAndroid = NativeChartBaseProps &
   ChartPlatformPropsAndroid & {
     data: readonly ChartDatum[]
-    orientation?: 'horizontal' | 'vertical'
+    orientation?: ChartOrientation
   }
-
-/** The forms only the Android renderer provides. */
-export type ChartExtensionKindAndroid = 'lollipop' | 'waterfall'

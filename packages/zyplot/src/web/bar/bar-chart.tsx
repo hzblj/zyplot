@@ -15,27 +15,25 @@ import {
 } from '../shared/option'
 import {skeletonAxis} from '../shared/skeleton'
 import {emphasisSeriesColor, useChartTokens} from '../shared/tokens'
-import type {ChartBaseProps, ChartNumberFormat, ChartSeries} from '../shared/types'
+import type {ChartNumberFormat, ChartOrientation, ChartSeries, ChartSeriesPlotProps} from '../shared/types'
 import {BarChartSkeleton} from './bar-chart-skeleton'
 
 echarts.use([EChartsBarChart])
 
 const BAR_RADIUS = 4
 
-/** Which way the bars run. Vertical by default. */
-export type BarChartOrientation = 'horizontal' | 'vertical'
-
 /** Props for `Chart.Bar`. */
-export type BarChartProps = ChartBaseProps & {
+export type BarChartProps = ChartSeriesPlotProps & {
   categories: readonly string[]
   /** Keeps one series in colour and drops the rest to grey. */
   emphasisId?: string
   format?: ChartNumberFormat
-  orientation?: BarChartOrientation
+  /** Which way the bars run. Vertical by default. */
+  orientation?: ChartOrientation
   series: readonly ChartSeries[]
 }
 
-const barRadiusFor = (orientation: BarChartOrientation): number[] => {
+const barRadiusFor = (orientation: ChartOrientation): number[] => {
   if (orientation === 'horizontal') {
     return [0, BAR_RADIUS, BAR_RADIUS, 0]
   }

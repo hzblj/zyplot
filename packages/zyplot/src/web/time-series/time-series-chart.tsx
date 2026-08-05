@@ -7,7 +7,7 @@ import {formatChartNumber} from '../shared/format'
 import {ChartLegend, ChartReveal} from '../shared/frame'
 import {skeletonAxis} from '../shared/skeleton'
 import {seriesColor, useChartTokens} from '../shared/tokens'
-import type {ChartBaseProps, ChartNumberFormat, ChartSeries, ChartTimePoints} from '../shared/types'
+import type {ChartAxesProps, ChartNumberFormat, ChartSeries, ChartTimePoints} from '../shared/types'
 import {TimeSeriesChartSkeleton} from './time-series-chart-skeleton'
 
 const DEFAULT_HEIGHT = 240
@@ -37,7 +37,7 @@ const valueAxisSize =
   }
 
 /** Props for `Chart.TimeSeries`. */
-export type TimeSeriesChartProps = ChartBaseProps & {
+export type TimeSeriesChartProps = ChartAxesProps & {
   format?: ChartNumberFormat
   points: ChartTimePoints
   /** Identity and colour only: the values live in `points`, one row per series. */

@@ -12,6 +12,41 @@ export type ChartEngine = {
   layoutVersion: number
 }
 
+/**
+ * Raises the `globalout` a lifted finger never sends. ZRender turns `touchend` into a `mouseup`
+ * alone — no `mouseout` behind it, and `touchcancel` it does not listen for at all — so a reading
+ * taken by touch has no event to close it and the tooltip, the axis pointer and the scrub overlay
+ * all stay up. Each of them already watches `globalout`, so one leave closes the lot.
+ */
+const watchTouchRelease = (instance: EChartsType, dom: HTMLElement) => {
+  let frame: number | null = null
+
+  /**
+   * Next frame rather than now: a touch under the click delay makes ZRender fire a synthetic
+   * `click` of its own, which would put the tooltip straight back up if the leave landed first.
+   */
+  const release = () => {
+    frame ??= window.requestAnimationFrame(() => {
+      frame = null
+      if (!instance.isDisposed()) {
+        instance.getZr().trigger('globalout', {zrByTouch: true})
+      }
+    })
+  }
+
+  // Captured on the way down, so nothing the canvas does to the event can keep it from arriving.
+  dom.addEventListener('touchcancel', release, {capture: true})
+  dom.addEventListener('touchend', release, {capture: true})
+
+  return () => {
+    dom.removeEventListener('touchcancel', release, {capture: true})
+    dom.removeEventListener('touchend', release, {capture: true})
+    if (frame !== null) {
+      window.cancelAnimationFrame(frame)
+    }
+  }
+}
+
 export const useECharts = (option: EChartsCoreOption | null): ChartEngine => {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const instanceRef = useRef<EChartsType | null>(null)
@@ -38,8 +73,10 @@ export const useECharts = (option: EChartsCoreOption | null): ChartEngine => {
       setLayoutVersion(version => version + 1)
     })
     observer.observe(container)
+    const stopTouchRelease = watchTouchRelease(created, container)
 
     return () => {
+      stopTouchRelease()
       observer.disconnect()
       created.dispose()
       instanceRef.current = null
@@ -73,11 +110,14 @@ export const useChartHoverEvents = (
       return
     }
 
+    /**
+     * What was hit, and nothing about where. A form with no scrub layer reports no mark either, so
+     * there was never a reading for a position to belong to — a view placed off one would have had
+     * somewhere to sit and nothing to say.
+     */
     const emit = (params: any) => {
       emitRef.current?.({
         category: typeof params?.name === 'string' ? params.name : undefined,
-        nativeX: params?.event?.offsetX,
-        nativeY: params?.event?.offsetY,
         seriesId: params?.seriesId,
         value: Array.isArray(params?.value) ? params.value.at(-1) : params?.value,
       })

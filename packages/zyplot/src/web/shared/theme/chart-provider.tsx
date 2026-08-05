@@ -1,6 +1,6 @@
 'use client'
 
-import type {ChartSurface, ChartThemeColors, ChartTypography} from '@hzblj/zyplot-core'
+import type {ChartColorMode, ChartSurface, ChartThemeColors, ChartTypography} from '@hzblj/zyplot-core'
 import {
   type CSSProperties,
   createContext,
@@ -12,8 +12,16 @@ import {
   useRef,
 } from 'react'
 
-export type ChartColorMode = 'dark' | 'inherit' | 'light' | 'system'
+/**
+ * `ChartColorMode` plus the one a provider alone can take: `'inherit'` leaves the scheme to
+ * whatever the page around it has already decided.
+ */
+export type ChartProviderColorMode = ChartColorMode | 'inherit'
 
+/**
+ * `ChartTheme`'s colours plus the ones the DOM renderer can use, which it publishes as CSS
+ * variables on the provider's own element rather than passing to each chart.
+ */
 export type ChartProviderTheme = {
   colors?: ChartThemeColors & {
     border?: string
@@ -30,10 +38,11 @@ export type ChartProviderTheme = {
   typography?: ChartTypography
 }
 
+/** Props for `Chart.Provider`. */
 export type ChartProviderProps = {
   children: ReactNode
   className?: string
-  colorMode?: ChartColorMode
+  colorMode?: ChartProviderColorMode
   surface?: ChartSurface
   theme?: ChartProviderTheme
 }
@@ -91,6 +100,10 @@ const createThemeStyle = (theme: ChartProviderTheme | undefined): ChartCSSProper
   return style
 }
 
+/**
+ * Sets the colour scheme, `surface` and theme for every chart below it. Anything a chart passes
+ * itself wins, and the theme colours reach the charts as CSS variables on this element.
+ */
 export const ChartProvider: FC<ChartProviderProps> = ({children, className, colorMode = 'inherit', surface, theme}) => {
   const rootRef = useRef<HTMLDivElement | null>(null)
   const context = useMemo(() => ({rootRef}), [])

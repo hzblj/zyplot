@@ -18,7 +18,7 @@ import {
 } from '../shared/option'
 import {skeletonAxis} from '../shared/skeleton'
 import {emphasisSeriesColor, useChartTokens} from '../shared/tokens'
-import type {ChartBaseProps, ChartNumberFormat, ChartSeries} from '../shared/types'
+import type {ChartNumberFormat, ChartSeries, ChartSeriesPlotProps} from '../shared/types'
 import {AreaChartSkeleton} from './area-chart-skeleton'
 
 echarts.use([EChartsLineChart])
@@ -27,7 +27,7 @@ const SINGLE_SERIES_FILL_OPACITY = 0.16
 const STACKED_FILL_OPACITY = 0.85
 
 /** Props for `Chart.Area`. */
-export type AreaChartProps = ChartBaseProps & {
+export type AreaChartProps = ChartSeriesPlotProps & {
   categories: readonly string[]
   /** Keeps one series in colour and drops the rest to grey. */
   emphasisId?: string

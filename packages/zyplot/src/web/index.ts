@@ -21,8 +21,11 @@ export {
   seriesStyle,
   surface,
   theme,
+  tooltip,
+  zyplot,
 } from '@hzblj/zyplot-core'
-export type {ChartAnnotationViews} from '../shared/annotation-views'
+export type {ChartAnnotationViews, ChartSlotView} from '../shared/annotation-views'
+export type {ChartSlotViewProps, ChartTooltip} from '../shared/chart-slots'
 export type {ChartScrub, ChartScrubSelection} from '../shared/use-chart-scrub'
 export {useChartScrub} from '../shared/use-chart-scrub'
 export type {ChartReading} from '../shared/use-last-reading'
@@ -57,7 +60,7 @@ export type {RadarChartProps, RadarChartSkeletonProps} from './radar'
 export type {SankeyChartProps, SankeyChartSkeletonProps} from './sankey'
 export type {ScatterChartProps, ScatterChartSkeletonProps} from './scatter'
 export type {
-  ChartColorMode,
+  ChartProviderColorMode,
   ChartProviderProps,
   ChartProviderTheme,
 } from './shared/theme'

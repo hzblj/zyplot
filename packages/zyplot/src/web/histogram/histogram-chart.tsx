@@ -16,7 +16,7 @@ import {
 } from '../shared/option'
 import {skeletonAxis} from '../shared/skeleton'
 import {useChartTokens} from '../shared/tokens'
-import type {ChartBaseProps, ChartNumberFormat} from '../shared/types'
+import type {ChartAxesProps, ChartNumberFormat} from '../shared/types'
 import {HistogramChartSkeleton} from './histogram-chart-skeleton'
 
 echarts.use([EChartsBarChart])
@@ -24,7 +24,7 @@ echarts.use([EChartsBarChart])
 const DEFAULT_BIN_COUNT = 12
 
 /** Props for `Chart.Histogram`. */
-export type HistogramChartProps = ChartBaseProps & {
+export type HistogramChartProps = ChartAxesProps & {
   binCount?: number
   /** Raw observations. Binning happens here. */
   values: readonly number[]
