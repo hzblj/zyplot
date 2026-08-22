@@ -1,5 +1,14 @@
 # @hzblj/zyplot
 
+## 0.5.2
+
+### Patch Changes
+
+- [#12](https://github.com/hzblj/zyplot/pull/12) [`7622700`](https://github.com/hzblj/zyplot/commit/762270062c4342acebfffddba806fb30d2b3ff1d) Thanks [@hzblj](https://github.com/hzblj)! - Build the Android module with `expo-module-gradle-plugin` instead of the legacy `ExpoModulesCorePlugin.gradle` helpers, so it stops crashing on startup under Expo SDK 57 with `UnsupportedOperationException: This function has a reified type parameter`. From SDK 57 on, the Compose `View` and `Prop` definitions inline calls into the Pika compiler plugin, which only the module plugin applies; compiled without it, those calls survive as stubs that throw the moment the module registers. The Compose compiler now also follows the host project's Kotlin version rather than a pinned one. Thanks [@divineniiquaye](https://github.com/divineniiquaye) for the report and the diagnosis.
+
+- Updated dependencies []:
+  - @hzblj/zyplot-core@0.5.2
+
 ## 0.5.1
 
 ### Patch Changes
