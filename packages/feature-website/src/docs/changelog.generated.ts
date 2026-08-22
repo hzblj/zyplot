@@ -9,6 +9,40 @@ export const CHANGELOG: ChangelogRelease[] = [
         "entries": [
           {
             "paragraphs": [
+              "[#12](https://github.com/hzblj/zyplot/pull/12) [`7622700`](https://github.com/hzblj/zyplot/commit/762270062c4342acebfffddba806fb30d2b3ff1d) Thanks [@hzblj](https://github.com/hzblj)! - Build the Android module with `expo-module-gradle-plugin` instead of the legacy `ExpoModulesCorePlugin.gradle` helpers, so it stops crashing on startup under Expo SDK 57 with `UnsupportedOperationException: This function has a reified type parameter`. From SDK 57 on, the Compose `View` and `Prop` definitions inline calls into the Pika compiler plugin, which only the module plugin applies; compiled without it, those calls survive as stubs that throw the moment the module registers. The Compose compiler now also follows the host project's Kotlin version rather than a pinned one. Thanks [@divineniiquaye](https://github.com/divineniiquaye) for the report and the diagnosis."
+            ]
+          }
+        ],
+        "label": "Patch Changes"
+      }
+    ],
+    "version": "0.5.2"
+  },
+  {
+    "groups": [
+      {
+        "entries": [
+          {
+            "paragraphs": [
+              "Restore the package README to its pre-rewrite form, so the npm page shows the badges, social card, and docs link again instead of the rewritten copy with a stray `+` in the heading."
+            ],
+            "commit": {
+              "href": "https://github.com/hzblj/zyplot/commit/03fd23536452fde9f6518d6baec923a53cc691a9",
+              "sha": "03fd235"
+            }
+          }
+        ],
+        "label": "Patch Changes"
+      }
+    ],
+    "version": "0.5.1"
+  },
+  {
+    "groups": [
+      {
+        "entries": [
+          {
+            "paragraphs": [
               "Give measuring a mark its own name, instead of a point annotation dressed down to nothing.",
               "Lining a view of your own up with the data — a grid, a row of labels, a box around a stretch — already worked: an annotation with `hidden` lands where its data lands and reports back through `geometry`, on all three renderers. But asking for one meant writing `annotation.point({color, zero.",
               "`annotation.measure({id, x, y})` is that, spelled as what it is. Nothing else about it is adjustable, because a measurement has no appearance to set.",
