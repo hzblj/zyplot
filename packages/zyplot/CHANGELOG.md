@@ -1,5 +1,14 @@
 # @hzblj/zyplot
 
+## 0.5.3
+
+### Patch Changes
+
+- [`6ad0e3d`](https://github.com/hzblj/zyplot/commit/6ad0e3d2d46d010a6675faf4efa2bcbd0378e8e6) Thanks [@hzblj](https://github.com/hzblj)! - The README links to the other libraries, at libraries.janblazej.dev.
+
+- Updated dependencies []:
+  - @hzblj/zyplot-core@0.5.3
+
 ## 0.5.2
 
 ### Patch Changes
