@@ -1,5 +1,14 @@
 # @hzblj/zyplot
 
+## 0.5.4
+
+### Patch Changes
+
+- [`73d1d04`](https://github.com/hzblj/zyplot/commit/73d1d0472b5bec305e85d4552ea14498b91c0123) Thanks [@hzblj](https://github.com/hzblj)! - The LICENSE is the complete MIT license, with the limitation of liability it was missing.
+
+- Updated dependencies []:
+  - @hzblj/zyplot-core@0.5.4
+
 ## 0.5.3
 
 ### Patch Changes
