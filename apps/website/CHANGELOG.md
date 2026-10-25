@@ -1,5 +1,14 @@
 # @zyplot/website
 
+## 0.0.11
+
+### Patch Changes
+
+- Updated dependencies [[`896a725`](https://github.com/hzblj/zyplot/commit/896a7251d7765efe22ebf308b0f1d4a8c4148b80)]:
+  - @hzblj/zyplot@0.5.5
+  - @zyplot/feature-charts@0.0.8
+  - @zyplot/feature-website@0.0.11
+
 ## 0.0.10
 
 ### Patch Changes

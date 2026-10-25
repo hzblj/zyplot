@@ -1,5 +1,14 @@
 # @hzblj/zyplot
 
+## 0.5.5
+
+### Patch Changes
+
+- [`896a725`](https://github.com/hzblj/zyplot/commit/896a7251d7765efe22ebf308b0f1d4a8c4148b80) Thanks [@hzblj](https://github.com/hzblj)! - The README shows the example app on iOS and Android.
+
+- Updated dependencies []:
+  - @hzblj/zyplot-core@0.5.5
+
 ## 0.5.4
 
 ### Patch Changes
